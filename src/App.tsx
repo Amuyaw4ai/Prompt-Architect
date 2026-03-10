@@ -19,6 +19,7 @@ export default function App() {
   const [editingPrompt, setEditingPrompt] = useState<SavedPrompt | undefined>(undefined);
   const [currentSession, setCurrentSession] = useState<ChatSession | undefined>(undefined);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [chatKey, setChatKey] = useState<number>(0);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -34,6 +35,7 @@ export default function App() {
     setEditingPrompt(undefined);
     setCurrentSession(undefined);
     setCurrentView('architect');
+    setChatKey(prev => prev + 1);
   };
 
   const handleEditPrompt = (prompt: SavedPrompt) => {
@@ -41,6 +43,7 @@ export default function App() {
     setPromptType(prompt.type);
     setCurrentSession(undefined);
     setCurrentView('architect');
+    setChatKey(prev => prev + 1);
   };
 
   const handleNewArchitect = () => {
@@ -48,6 +51,7 @@ export default function App() {
     setPrefilledPrompt(null);
     setCurrentSession(undefined);
     setCurrentView('architect');
+    setChatKey(prev => prev + 1);
   };
 
   const handleSelectSession = (session: ChatSession) => {
@@ -56,6 +60,7 @@ export default function App() {
     setEditingPrompt(undefined);
     setPrefilledPrompt(null);
     setCurrentView('architect');
+    setChatKey(prev => prev + 1);
   };
 
   return (
@@ -124,6 +129,7 @@ export default function App() {
             >
               <div className="flex-1 min-w-0">
                 <ChatInterface 
+                  key={chatKey}
                   promptType={promptType} 
                   onTypeChange={setPromptType}
                   initialInput={prefilledPrompt?.content}

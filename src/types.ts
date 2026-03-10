@@ -5,6 +5,7 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
+  imageUrl?: string;
 }
 
 export interface PromptResult {

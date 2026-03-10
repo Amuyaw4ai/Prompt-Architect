@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock } from 'lucide-react';
+import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../types';
 import { refinePrompt } from '../services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -35,10 +35,14 @@ export const ChatInterface: React.FC<Props> = ({
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [lastResult, setLastResult] = useState<PromptResult | null>(initialResult || null);
+  const [resultHistory, setResultHistory] = useState<PromptResult[]>(initialResult ? [initialResult] : []);
+  const [currentResultIndex, setCurrentResultIndex] = useState<number>(initialResult ? 0 : -1);
+  const lastResult = currentResultIndex >= 0 ? resultHistory[currentResultIndex] : null;
   const [copied, setCopied] = useState(false);
   const [variables, setVariables] = useState<Record<string, string>>({});
+  const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Session Management
   const saveSession = async (msgs: Message[], type: PromptType) => {
@@ -110,37 +114,52 @@ export const ChatInterface: React.FC<Props> = ({
   }, [initialInput]);
 
   useEffect(() => {
-    if (initialMessages) {
-      setMessages(initialMessages);
-    } else {
-      setMessages([]);
-    }
-    
-    if (initialResult) {
-      setLastResult(initialResult);
-    } else {
-      setLastResult(null);
-    }
-  }, [initialMessages, initialResult]);
-
-  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      const base64Data = base64String.split(',')[1];
+      
+      setSelectedImage({
+        data: base64Data,
+        mimeType: file.type,
+        url: base64String // Store full base64 for persistence
+      });
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !selectedImage) || isLoading) return;
+
+    let userContent = input;
+    if (selectedImage && !input.trim()) {
+      userContent = "Analyze this image and generate a highly detailed prompt that would recreate it.";
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: userContent,
       timestamp: Date.now(),
+      imageUrl: selectedImage?.url,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    const imageToSend = selectedImage ? { data: selectedImage.data, mimeType: selectedImage.mimeType } : undefined;
+    setSelectedImage(null);
     setIsLoading(true);
 
     try {
@@ -148,8 +167,12 @@ export const ChatInterface: React.FC<Props> = ({
         .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
         .join('\n');
 
-      const result = await refinePrompt(input, promptType, context);
-      setLastResult(result);
+      const result = await refinePrompt(userContent, promptType, context, imageToSend);
+      setResultHistory(prev => {
+        const newHistory = [...prev.slice(0, currentResultIndex + 1), result];
+        setCurrentResultIndex(newHistory.length - 1);
+        return newHistory;
+      });
 
       let assistantContent = result.explanation;
       if (result.questions && result.questions.length > 0) {
@@ -190,7 +213,8 @@ export const ChatInterface: React.FC<Props> = ({
 
   const clearChat = () => {
     setMessages([]);
-    setLastResult(null);
+    setResultHistory([]);
+    setCurrentResultIndex(-1);
     if (onSessionUpdate) onSessionUpdate(undefined as any);
   };
 
@@ -402,6 +426,9 @@ export const ChatInterface: React.FC<Props> = ({
                   ? 'bg-emerald-600 dark:bg-emerald-600 text-white rounded-tr-none' 
                   : 'bg-white dark:bg-slate-800 border border-stone-100 dark:border-slate-700 rounded-tl-none'
               }`}>
+                {m.imageUrl && (
+                  <img src={m.imageUrl} alt="Uploaded" className="max-w-full h-auto max-h-64 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
+                )}
                 <div className={cn("markdown-body", m.role === 'user' ? "text-white" : "text-stone-800 dark:text-slate-200")}>
                   <ReactMarkdown>{m.content}</ReactMarkdown>
                 </div>
@@ -431,30 +458,57 @@ export const ChatInterface: React.FC<Props> = ({
           animate={{ opacity: 1, y: 0 }}
           className="px-8 py-6 bg-emerald-50/50 dark:bg-emerald-900/10 border-t border-emerald-100 dark:border-emerald-900/30 backdrop-blur-sm"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Architectural Output</span>
-              <div className="hidden sm:flex items-center gap-2 px-2 py-0.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+              {resultHistory.length > 1 && (
+                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-800/50">
+                  <button 
+                    onClick={() => setCurrentResultIndex(prev => Math.max(0, prev - 1))}
+                    disabled={currentResultIndex === 0}
+                    className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
+                    title="Previous Version"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1">
+                    {currentResultIndex + 1} / {resultHistory.length}
+                  </span>
+                  <button 
+                    onClick={() => setCurrentResultIndex(prev => Math.min(resultHistory.length - 1, prev + 1))}
+                    disabled={currentResultIndex === resultHistory.length - 1}
+                    className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
+                    title="Next Version"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 px-2 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                 {getFinalPrompt().split(/\s+/).filter(Boolean).length} WORDS
               </div>
-              <div className="hidden sm:flex items-center gap-2 px-2 py-0.5 bg-teal-100/50 dark:bg-teal-900/30 rounded-md text-[10px] font-bold text-teal-600 dark:text-teal-400">
+              <div className="flex items-center gap-2 px-2 py-1 bg-teal-100/50 dark:bg-teal-900/30 rounded-md text-[10px] font-bold text-teal-600 dark:text-teal-400">
                 SCORE: {Math.min(100, Math.floor(getFinalPrompt().length / 10 + 40))}%
               </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            <div className="flex flex-wrap items-center gap-2 w-full">
               <button
                 onClick={() => setShowSaveModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition-all border border-emerald-100 dark:border-emerald-800/50"
+                className="flex-1 justify-center flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition-all border border-emerald-100 dark:border-emerald-800/50 min-w-[100px]"
               >
                 {editingPrompt ? <Save size={14} /> : <Plus size={14} />}
                 {editingPrompt ? 'UPDATE' : 'SAVE'}
               </button>
               <button
                 onClick={copyToClipboard}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl text-xs font-bold shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all"
+                className="flex-1 justify-center flex items-center gap-2 px-3 py-2.5 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl text-xs font-bold shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all min-w-[100px]"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? 'COPIED!' : 'COPY FINAL'}
+                {copied ? 'COPIED!' : 'COPY'}
               </button>
               <button
                 onClick={() => {
@@ -462,7 +516,7 @@ export const ChatInterface: React.FC<Props> = ({
                   navigator.clipboard.writeText(`\`\`\`\n${final}\n\`\`\``);
                   alert('Copied as Markdown block!');
                 }}
-                className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 text-stone-400 dark:text-slate-400 rounded-xl hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all border border-stone-100 dark:border-slate-700"
+                className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 text-stone-400 dark:text-slate-400 rounded-xl hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all border border-stone-100 dark:border-slate-700 shrink-0"
                 title="Copy as Markdown Block"
               >
                 <MessageSquare size={16} />
@@ -518,19 +572,44 @@ export const ChatInterface: React.FC<Props> = ({
 
       {/* Input Area */}
       <div className="p-6 border-t border-stone-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {selectedImage && (
+          <div className="mb-4 relative inline-block">
+            <img src={selectedImage.url} alt="Selected" className="h-24 w-24 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" referrerPolicy="no-referrer" />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-2 -right-2 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-1 shadow-md hover:bg-pink-600 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <div className="relative flex items-center group">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute left-3 p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors z-10"
+            title="Upload image for reverse engineering"
+          >
+            <ImagePlus size={20} />
+          </button>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Describe your idea (e.g., 'a futuristic city at night')"
-            className="w-full pl-6 pr-16 py-5 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
+            placeholder="Describe your idea or upload an image..."
+            className="w-full pl-12 pr-16 py-5 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
             disabled={isLoading}
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={(!input.trim() && !selectedImage) || isLoading}
             className="absolute right-3 p-3 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95"
           >
             <Send size={20} />
