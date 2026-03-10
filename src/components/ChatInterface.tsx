@@ -4,7 +4,7 @@ import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../
 import { refinePrompt } from '../services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
-import { cn } from '../utils';
+import { cn, calculatePromptScore } from '../utils';
 import { PromptTypeSelector } from './PromptTypeSelector';
 
 interface Props {
@@ -35,8 +35,8 @@ export const ChatInterface: React.FC<Props> = ({
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [resultHistory, setResultHistory] = useState<PromptResult[]>(initialResult ? [initialResult] : []);
-  const [currentResultIndex, setCurrentResultIndex] = useState<number>(initialResult ? 0 : -1);
+  const [resultHistory, setResultHistory] = useState<PromptResult[]>(currentSession?.resultHistory || (initialResult ? [initialResult] : []));
+  const [currentResultIndex, setCurrentResultIndex] = useState<number>(currentSession?.currentResultIndex ?? (initialResult ? 0 : -1));
   const lastResult = currentResultIndex >= 0 ? resultHistory[currentResultIndex] : null;
   const [copied, setCopied] = useState(false);
   const [variables, setVariables] = useState<Record<string, string>>({});
@@ -45,7 +45,7 @@ export const ChatInterface: React.FC<Props> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Session Management
-  const saveSession = async (msgs: Message[], type: PromptType) => {
+  const saveSession = async (msgs: Message[], type: PromptType, history?: PromptResult[], index?: number) => {
     if (msgs.length === 0) return;
     
     const sessionData = {
@@ -53,6 +53,8 @@ export const ChatInterface: React.FC<Props> = ({
       title: currentSession?.title || msgs[0].content.slice(0, 30) + (msgs[0].content.length > 30 ? '...' : ''),
       messages: msgs,
       currentType: type,
+      resultHistory: history || resultHistory,
+      currentResultIndex: index !== undefined ? index : currentResultIndex,
     };
 
     try {
@@ -168,11 +170,11 @@ export const ChatInterface: React.FC<Props> = ({
         .join('\n');
 
       const result = await refinePrompt(userContent, promptType, context, imageToSend);
-      setResultHistory(prev => {
-        const newHistory = [...prev.slice(0, currentResultIndex + 1), result];
-        setCurrentResultIndex(newHistory.length - 1);
-        return newHistory;
-      });
+      const newHistory = [...resultHistory.slice(0, currentResultIndex + 1), result];
+      const newIndex = newHistory.length - 1;
+      
+      setResultHistory(newHistory);
+      setCurrentResultIndex(newIndex);
 
       let assistantContent = result.explanation;
       if (result.questions && result.questions.length > 0) {
@@ -189,7 +191,7 @@ export const ChatInterface: React.FC<Props> = ({
 
       const finalMessages = [...messages, userMessage, assistantMessage];
       setMessages(finalMessages);
-      saveSession(finalMessages, promptType);
+      saveSession(finalMessages, promptType, newHistory, newIndex);
     } catch (error) {
       console.error(error);
       const errorMessage: Message = {
@@ -216,6 +218,13 @@ export const ChatInterface: React.FC<Props> = ({
     setResultHistory([]);
     setCurrentResultIndex(-1);
     if (onSessionUpdate) onSessionUpdate(undefined as any);
+  };
+
+  const handleResultIndexChange = (newIndex: number) => {
+    setCurrentResultIndex(newIndex);
+    if (messages.length > 0) {
+      saveSession(messages, promptType, resultHistory, newIndex);
+    }
   };
 
   const handleTypeChange = (type: PromptType) => {
@@ -464,7 +473,7 @@ export const ChatInterface: React.FC<Props> = ({
               {resultHistory.length > 1 && (
                 <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-800/50">
                   <button 
-                    onClick={() => setCurrentResultIndex(prev => Math.max(0, prev - 1))}
+                    onClick={() => handleResultIndexChange(Math.max(0, currentResultIndex - 1))}
                     disabled={currentResultIndex === 0}
                     className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
                     title="Previous Version"
@@ -475,7 +484,7 @@ export const ChatInterface: React.FC<Props> = ({
                     {currentResultIndex + 1} / {resultHistory.length}
                   </span>
                   <button 
-                    onClick={() => setCurrentResultIndex(prev => Math.min(resultHistory.length - 1, prev + 1))}
+                    onClick={() => handleResultIndexChange(Math.min(resultHistory.length - 1, currentResultIndex + 1))}
                     disabled={currentResultIndex === resultHistory.length - 1}
                     className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
                     title="Next Version"
@@ -490,8 +499,20 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="flex items-center gap-2 px-2 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                 {getFinalPrompt().split(/\s+/).filter(Boolean).length} WORDS
               </div>
-              <div className="flex items-center gap-2 px-2 py-1 bg-teal-100/50 dark:bg-teal-900/30 rounded-md text-[10px] font-bold text-teal-600 dark:text-teal-400">
-                SCORE: {Math.min(100, Math.floor(getFinalPrompt().length / 10 + 40))}%
+              <div className={cn("flex items-center gap-2 px-2 py-1 rounded-md text-[10px] font-bold group relative cursor-help",
+                calculatePromptScore(getFinalPrompt()).score >= 80 ? "bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" :
+                calculatePromptScore(getFinalPrompt()).score >= 50 ? "bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" :
+                "bg-pink-100/50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
+              )}>
+                SCORE: {calculatePromptScore(getFinalPrompt()).score}%
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-64 p-3 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-50">
+                  <div className="font-bold mb-1">Score Breakdown:</div>
+                  <ul className="list-disc pl-4 space-y-1">
+                    {calculatePromptScore(getFinalPrompt()).feedback.map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
 

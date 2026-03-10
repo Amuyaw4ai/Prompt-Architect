@@ -4,7 +4,7 @@ import { SavedPrompts } from './components/SavedPrompts';
 import { TemplatesGallery } from './components/TemplatesGallery';
 import { ChatHistory } from './components/ChatHistory';
 import { PromptType, SavedPrompt, ChatSession } from './types';
-import { Sparkles, Info, Bookmark, Layout, Terminal, History, PlusCircle, Moon, Sun } from 'lucide-react';
+import { Sparkles, Info, Bookmark, Layout, Terminal, History, PlusCircle, Moon, Sun, Edit3, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { NavigationMenu } from './components/NavigationMenu';
@@ -20,6 +20,7 @@ export default function App() {
   const [currentSession, setCurrentSession] = useState<ChatSession | undefined>(undefined);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [chatKey, setChatKey] = useState<number>(0);
+  const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -142,9 +143,22 @@ export default function App() {
                   onSaveSuccess={() => {}}
                 />
               </div>
-              <div className="w-full lg:w-80 xl:w-96 shrink-0 h-[750px] bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 overflow-hidden transition-colors duration-300">
-                <Scratchpad />
-              </div>
+              {isScratchpadOpen ? (
+                <div className="w-full lg:w-80 xl:w-96 shrink-0 h-[750px] bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 overflow-hidden transition-colors duration-300 relative">
+                  <Scratchpad onClose={() => setIsScratchpadOpen(false)} />
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsScratchpadOpen(true)} 
+                  className="fixed bottom-6 right-6 lg:static lg:bottom-auto lg:right-auto lg:h-[750px] lg:w-16 shrink-0 bg-white dark:bg-slate-800 rounded-full lg:rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 flex items-center justify-center hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors z-50 p-4 lg:p-0 group"
+                  title="Open Scratchpad"
+                >
+                  <div className="flex lg:flex-col items-center gap-3 text-stone-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <Edit3 size={20} />
+                    <span className="hidden lg:block text-xs font-bold tracking-widest" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>SCRATCHPAD</span>
+                  </div>
+                </button>
+              )}
             </motion.div>
           )}
 

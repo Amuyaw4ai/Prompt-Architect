@@ -38,10 +38,19 @@ db.exec(`
     title TEXT NOT NULL,
     messages TEXT NOT NULL,
     current_type TEXT NOT NULL,
+    result_history TEXT,
+    current_result_index INTEGER,
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 `);
+
+try {
+  db.exec("ALTER TABLE chat_sessions ADD COLUMN result_history TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE chat_sessions ADD COLUMN current_result_index INTEGER;");
+} catch (e) {}
 
 async function startServer() {
   const app = express();
@@ -135,11 +144,15 @@ async function startServer() {
     const rows = db.prepare("SELECT * FROM chat_sessions ORDER BY updated_at DESC").all();
     const result = rows.map((row: any) => {
       let messages = [];
+      let resultHistory = [];
       try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
+      try { resultHistory = row.result_history ? JSON.parse(row.result_history) : []; } catch (e) {}
       return {
         ...row,
         messages,
         currentType: row.current_type,
+        resultHistory,
+        currentResultIndex: row.current_result_index,
         updatedAt: row.updated_at * 1000,
         createdAt: row.created_at * 1000
       };
@@ -153,36 +166,40 @@ async function startServer() {
     if (!row) return res.status(404).json({ error: "Session not found" });
     
     let messages = [];
+    let resultHistory = [];
     try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
+    try { resultHistory = row.result_history ? JSON.parse(row.result_history) : []; } catch (e) {}
     
     res.json({
       ...row,
       messages,
       currentType: row.current_type,
+      resultHistory,
+      currentResultIndex: row.current_result_index,
       updatedAt: row.updated_at * 1000,
       createdAt: row.created_at * 1000
     });
   });
 
   app.post("/api/sessions", (req, res) => {
-    const { id, title, messages, currentType } = req.body;
+    const { id, title, messages, currentType, resultHistory, currentResultIndex } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO chat_sessions (id, title, messages, current_type)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO chat_sessions (id, title, messages, current_type, result_history, current_result_index)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, title, JSON.stringify(messages), currentType);
+    stmt.run(id, title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0);
     res.json({ success: true });
   });
 
   app.put("/api/sessions/:id", (req, res) => {
     const { id } = req.params;
-    const { title, messages, currentType } = req.body;
+    const { title, messages, currentType, resultHistory, currentResultIndex } = req.body;
     const stmt = db.prepare(`
       UPDATE chat_sessions 
-      SET title = ?, messages = ?, current_type = ?, updated_at = strftime('%s', 'now')
+      SET title = ?, messages = ?, current_type = ?, result_history = ?, current_result_index = ?, updated_at = strftime('%s', 'now')
       WHERE id = ?
     `);
-    stmt.run(title, JSON.stringify(messages), currentType, id);
+    stmt.run(title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, id);
     res.json({ success: true });
   });
 

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Edit3, Save, Trash2, Copy, Check } from 'lucide-react';
+import { Edit3, Save, Trash2, Copy, Check, X } from 'lucide-react';
 
-export const Scratchpad: React.FC = () => {
+interface ScratchpadProps {
+  onClose?: () => void;
+}
+
+export const Scratchpad: React.FC<ScratchpadProps> = ({ onClose }) => {
   const [content, setContent] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -52,6 +56,15 @@ export const Scratchpad: React.FC = () => {
           >
             <Trash2 size={16} />
           </button>
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="p-2 text-stone-400 hover:text-stone-900 dark:hover:text-slate-100 transition-colors ml-2 border-l border-stone-200 dark:border-slate-700 pl-4"
+              title="Close scratchpad"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
       </div>
       <div className="flex-1 p-6 bg-stone-50/20 dark:bg-slate-900/20">

@@ -19,6 +19,8 @@ export interface ChatSession {
   title: string;
   messages: Message[];
   currentType: PromptType;
+  resultHistory?: PromptResult[];
+  currentResultIndex?: number;
   updatedAt: number;
   createdAt: number;
 }
