@@ -73,15 +73,21 @@ async function startServer() {
     query += " ORDER BY created_at DESC";
     const rows = db.prepare(query).all(...params);
     
-    // Parse JSON fields
-    const result = rows.map((row: any) => ({
-      ...row,
-      tags: row.tags ? JSON.parse(row.tags) : [],
-      messages: row.messages ? JSON.parse(row.messages) : [],
-      originalIdea: row.original_idea,
-      refinedPrompt: row.refined_prompt,
-      createdAt: row.created_at * 1000
-    }));
+    const result = rows.map((row: any) => {
+      let tags = [];
+      let messages = [];
+      try { tags = row.tags ? JSON.parse(row.tags) : []; } catch (e) {}
+      try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
+      
+      return {
+        ...row,
+        tags,
+        messages,
+        originalIdea: row.original_idea,
+        refinedPrompt: row.refined_prompt,
+        createdAt: row.created_at * 1000
+      };
+    });
 
     res.json(result);
   });
@@ -127,13 +133,17 @@ async function startServer() {
   // Chat Sessions API
   app.get("/api/sessions", (req, res) => {
     const rows = db.prepare("SELECT * FROM chat_sessions ORDER BY updated_at DESC").all();
-    const result = rows.map((row: any) => ({
-      ...row,
-      messages: JSON.parse(row.messages),
-      currentType: row.current_type,
-      updatedAt: row.updated_at * 1000,
-      createdAt: row.created_at * 1000
-    }));
+    const result = rows.map((row: any) => {
+      let messages = [];
+      try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
+      return {
+        ...row,
+        messages,
+        currentType: row.current_type,
+        updatedAt: row.updated_at * 1000,
+        createdAt: row.created_at * 1000
+      };
+    });
     res.json(result);
   });
 
@@ -142,9 +152,12 @@ async function startServer() {
     const row = db.prepare("SELECT * FROM chat_sessions WHERE id = ?").get(id) as any;
     if (!row) return res.status(404).json({ error: "Session not found" });
     
+    let messages = [];
+    try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
+    
     res.json({
       ...row,
-      messages: JSON.parse(row.messages),
+      messages,
       currentType: row.current_type,
       updatedAt: row.updated_at * 1000,
       createdAt: row.created_at * 1000

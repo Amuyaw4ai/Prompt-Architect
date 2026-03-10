@@ -23,9 +23,14 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
       
       const res = await fetch(`/api/prompts?${params.toString()}`);
       const data = await res.json();
-      setPrompts(data);
+      if (Array.isArray(data)) {
+        setPrompts(data);
+      } else {
+        setPrompts([]);
+      }
     } catch (error) {
       console.error('Error fetching prompts:', error);
+      setPrompts([]);
     } finally {
       setIsLoading(false);
     }
@@ -50,23 +55,23 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-slate-500" size={18} />
           <input
             type="text"
             placeholder="Search by title, tag, or content..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 transition-all text-sm"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
           />
         </div>
         
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+        <div className="flex gap-2 p-1 bg-stone-100 dark:bg-slate-800 rounded-lg overflow-x-auto hide-scrollbar w-full md:w-auto">
           {['all', 'image', 'video', 'text'].map((t) => (
             <button
               key={t}
               onClick={() => setFilterType(t as any)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
-                filterType === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all whitespace-nowrap ${
+                filterType === t ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-stone-500 dark:text-slate-400 hover:text-stone-700 dark:hover:text-slate-200'
               }`}
             >
               {t}
@@ -84,22 +89,22 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all group relative overflow-hidden flex flex-col"
+              className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all group relative overflow-hidden flex flex-col"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full -mr-12 -mt-12 group-hover:bg-indigo-500/10 transition-colors" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 dark:bg-emerald-500/10 blur-2xl rounded-full -mr-12 -mt-12 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/20 transition-colors" />
               
               <div className="flex justify-between items-start mb-6">
                 <div className="flex-1">
-                  <h3 className="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">{p.title}</h3>
-                  <div className="flex items-center gap-3 mt-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <h3 className="text-xl font-black text-stone-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors tracking-tight">{p.title}</h3>
+                  <div className="flex items-center gap-3 mt-2 text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-500">
                     <div className="flex items-center gap-1">
                       <Calendar size={12} />
                       {new Date(p.createdAt).toLocaleDateString()}
                     </div>
                     <span className={cn(
                       "px-2 py-0.5 rounded border",
-                      p.type === 'image' ? "bg-purple-50 text-purple-600 border-purple-100" : 
-                      p.type === 'video' ? "bg-pink-50 text-pink-600 border-pink-100" : "bg-amber-50 text-amber-600 border-amber-100"
+                      p.type === 'image' ? "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800/50" : 
+                      p.type === 'video' ? "bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 border-pink-100 dark:border-pink-800/50" : "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800/50"
                     )}>
                       {p.type}
                     </span>
@@ -108,14 +113,14 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     onClick={() => onEdit(p)}
-                    className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                    className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm"
                     title="Edit/Reiterate"
                   >
                     <Edit3 size={16} />
                   </button>
                   <button 
                     onClick={() => handleDelete(p.id)}
-                    className="p-2 bg-pink-50 text-pink-600 rounded-xl hover:bg-pink-600 hover:text-white transition-all shadow-sm"
+                    className="p-2 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-600 dark:hover:bg-pink-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm"
                     title="Delete"
                   >
                     <Trash2 size={16} />
@@ -125,12 +130,12 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
 
               <div className="space-y-4 flex-1">
                 <div>
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Original Idea</span>
-                  <p className="text-sm text-slate-600 line-clamp-2 italic mt-1 leading-relaxed">"{p.originalIdea}"</p>
+                  <span className="text-[10px] font-black text-emerald-400 dark:text-emerald-500 uppercase tracking-widest">Original Idea</span>
+                  <p className="text-sm text-stone-600 dark:text-slate-400 line-clamp-2 italic mt-1 leading-relaxed">"{p.originalIdea}"</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Refined Architecture</span>
-                  <div className="mt-2 p-4 bg-slate-50 rounded-2xl text-xs font-mono text-slate-700 line-clamp-4 border border-slate-100 shadow-inner leading-relaxed">
+                  <span className="text-[10px] font-black text-emerald-400 dark:text-emerald-500 uppercase tracking-widest">Refined Architecture</span>
+                  <div className="mt-2 p-4 bg-stone-50 dark:bg-slate-900 rounded-2xl text-xs font-mono text-stone-700 dark:text-slate-300 line-clamp-4 border border-stone-100 dark:border-slate-700 shadow-inner leading-relaxed">
                     {p.refinedPrompt}
                   </div>
                 </div>
@@ -139,7 +144,7 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
               {p.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-6">
                   {p.tags.map((tag, i) => (
-                    <span key={i} className="flex items-center gap-1 px-3 py-1 bg-white border border-indigo-100 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+                    <span key={i} className="flex items-center gap-1 px-3 py-1 bg-white dark:bg-slate-700 border border-emerald-100 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
                       <Tag size={10} />
                       {tag}
                     </span>
@@ -152,8 +157,8 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
       </div>
 
       {!isLoading && prompts.length === 0 && (
-        <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-          <p className="text-slate-400 font-medium">No saved prompts found.</p>
+        <div className="text-center py-20 bg-stone-50 dark:bg-slate-800/50 rounded-3xl border-2 border-dashed border-stone-200 dark:border-slate-700">
+          <p className="text-stone-400 dark:text-slate-500 font-medium">No saved prompts found.</p>
         </div>
       )}
     </div>

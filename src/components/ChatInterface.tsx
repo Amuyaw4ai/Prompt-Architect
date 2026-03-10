@@ -110,8 +110,17 @@ export const ChatInterface: React.FC<Props> = ({
   }, [initialInput]);
 
   useEffect(() => {
-    if (initialMessages) setMessages(initialMessages);
-    if (initialResult) setLastResult(initialResult);
+    if (initialMessages) {
+      setMessages(initialMessages);
+    } else {
+      setMessages([]);
+    }
+    
+    if (initialResult) {
+      setLastResult(initialResult);
+    } else {
+      setLastResult(null);
+    }
   }, [initialMessages, initialResult]);
 
   useEffect(() => {
@@ -257,9 +266,9 @@ export const ChatInterface: React.FC<Props> = ({
   const isExpired = currentSession && (Date.now() - currentSession.createdAt) > 3600000;
 
   return (
-    <div className="flex flex-col h-[750px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative">
+    <div className="flex flex-col h-[750px] bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 overflow-hidden relative transition-colors duration-300">
       {isExpired && (
-        <div className="absolute top-0 left-0 right-0 z-50 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest py-1.5 text-center animate-pulse">
+        <div className="absolute top-0 left-0 right-0 z-50 bg-amber-500 dark:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest py-1.5 text-center animate-pulse">
           Session Expired (1 Hour Limit) - Please start a new chat for fresh context
         </div>
       )}
@@ -270,34 +279,34 @@ export const ChatInterface: React.FC<Props> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6"
+            className="absolute inset-0 z-50 bg-slate-900/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-6"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl w-full max-w-md"
+              className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-full max-w-md"
             >
-              <h3 className="text-3xl font-black mb-2 tracking-tight">{editingPrompt ? 'Update' : 'Save'} Prompt</h3>
-              <p className="text-slate-500 mb-8">{editingPrompt ? 'Modify your saved architecture.' : 'Add this masterpiece to your library.'}</p>
+              <h3 className="text-3xl font-black mb-2 tracking-tight text-stone-900 dark:text-slate-100">{editingPrompt ? 'Update' : 'Save'} Prompt</h3>
+              <p className="text-stone-500 dark:text-slate-400 mb-8">{editingPrompt ? 'Modify your saved architecture.' : 'Add this masterpiece to your library.'}</p>
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Title</label>
+                  <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Title</label>
                   <input 
                     type="text" 
                     value={saveData.title}
                     onChange={e => setSaveData(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full px-5 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
                     placeholder="e.g. Cyberpunk Portrait"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Tags (comma separated)</label>
+                  <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Tags (comma separated)</label>
                   <input 
                     type="text" 
                     value={saveData.tags}
                     onChange={e => setSaveData(prev => ({ ...prev, tags: e.target.value }))}
-                    className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full px-5 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
                     placeholder="e.g. neon, portrait, cinematic"
                   />
                 </div>
@@ -305,13 +314,13 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="flex gap-4 mt-10">
                 <button 
                   onClick={() => setShowSaveModal(false)}
-                  className="flex-1 py-4 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors"
+                  className="flex-1 py-4 text-sm font-bold text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                  className="flex-1 py-4 bg-stone-900 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl text-sm font-bold hover:bg-stone-800 dark:hover:bg-emerald-400 transition-all shadow-lg shadow-stone-200 dark:shadow-none"
                 >
                   {editingPrompt ? 'Update' : 'Save'} Prompt
                 </button>
@@ -322,17 +331,17 @@ export const ChatInterface: React.FC<Props> = ({
       </AnimatePresence>
 
       {/* Header with Model Selector */}
-      <div className="px-8 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+      <div className="px-8 py-4 border-b border-stone-100 dark:border-slate-700 flex items-center justify-between bg-stone-50/30 dark:bg-slate-800/50">
         <div className="flex items-center gap-4">
           <PromptTypeSelector selected={promptType} onChange={handleTypeChange} />
           <div className="hidden sm:flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AI Architect Active</span>
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-black text-stone-400 dark:text-slate-500 uppercase tracking-widest">AI Architect Active</span>
           </div>
           {currentSession && (
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white border border-slate-100 rounded-full shadow-sm">
-              <Clock size={12} className="text-slate-400" />
-              <span className="text-[10px] font-bold text-slate-500">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white dark:bg-slate-700 border border-stone-100 dark:border-slate-600 rounded-full shadow-sm">
+              <Clock size={12} className="text-stone-400 dark:text-slate-400" />
+              <span className="text-[10px] font-bold text-stone-500 dark:text-slate-300">
                 SESSION: {new Date(currentSession.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
@@ -340,14 +349,14 @@ export const ChatInterface: React.FC<Props> = ({
         </div>
         <div className="flex items-center gap-4">
           {editingPrompt && (
-             <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100">
+             <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100 dark:border-amber-800/50">
                Editing: {editingPrompt.title}
              </div>
           )}
           {messages.length > 0 && (
             <button 
               onClick={clearChat}
-              className="text-xs font-bold text-slate-400 hover:text-pink-600 transition-colors flex items-center gap-2 group"
+              className="text-xs font-bold text-stone-400 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 transition-colors flex items-center gap-2 group"
             >
               <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
               <span className="hidden sm:inline">CLEAR SESSION</span>
@@ -359,16 +368,16 @@ export const ChatInterface: React.FC<Props> = ({
       {/* Messages Area */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth bg-slate-50/20"
+        className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth bg-stone-50/20 dark:bg-slate-900/20"
       >
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-            <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-500 animate-bounce">
+            <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 animate-bounce">
               <Bot size={40} />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">Ready to build your prompt?</p>
-              <p className="text-slate-500 max-w-xs mx-auto mt-2">Enter your basic idea below and I'll architect a detailed expansion for you.</p>
+              <p className="text-2xl font-black text-stone-900 dark:text-slate-100 tracking-tight">Ready to build your prompt?</p>
+              <p className="text-stone-500 dark:text-slate-400 max-w-xs mx-auto mt-2">Enter your basic idea below and I'll architect a detailed expansion for you.</p>
             </div>
           </div>
         )}
@@ -383,17 +392,17 @@ export const ChatInterface: React.FC<Props> = ({
             >
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
                 m.role === 'user' 
-                  ? 'bg-linear-to-br from-slate-800 to-slate-900 text-white' 
-                  : 'bg-white border border-slate-200 text-indigo-600'
+                  ? 'bg-stone-800 dark:bg-emerald-500 text-white dark:text-slate-900' 
+                  : 'bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400'
               }`}>
                 {m.role === 'user' ? <User size={20} /> : <Bot size={20} />}
               </div>
               <div className={`max-w-[85%] p-6 rounded-[2rem] shadow-sm ${
                 m.role === 'user' 
-                  ? 'bg-linear-to-br from-indigo-600 to-indigo-700 text-white rounded-tr-none' 
-                  : 'bg-white border border-slate-100 rounded-tl-none'
+                  ? 'bg-emerald-600 dark:bg-emerald-600 text-white rounded-tr-none' 
+                  : 'bg-white dark:bg-slate-800 border border-stone-100 dark:border-slate-700 rounded-tl-none'
               }`}>
-                <div className={cn("markdown-body", m.role === 'user' ? "text-white" : "text-slate-800")}>
+                <div className={cn("markdown-body", m.role === 'user' ? "text-white" : "text-stone-800 dark:text-slate-200")}>
                   <ReactMarkdown>{m.content}</ReactMarkdown>
                 </div>
               </div>
@@ -403,13 +412,13 @@ export const ChatInterface: React.FC<Props> = ({
 
         {isLoading && (
           <div className="flex gap-4">
-            <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-              <Bot size={20} className="text-indigo-600 animate-pulse" />
+            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
+              <Bot size={20} className="text-emerald-600 dark:text-emerald-400 animate-pulse" />
             </div>
-            <div className="flex gap-1.5 items-center p-6 bg-white rounded-[2rem] rounded-tl-none border border-slate-100">
-              <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
+            <div className="flex gap-1.5 items-center p-6 bg-white dark:bg-slate-800 rounded-[2rem] rounded-tl-none border border-stone-100 dark:border-slate-700">
+              <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-bounce" />
             </div>
           </div>
         )}
@@ -420,29 +429,29 @@ export const ChatInterface: React.FC<Props> = ({
         <motion.div 
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          className="px-8 py-6 bg-indigo-50/50 border-t border-indigo-100 backdrop-blur-sm"
+          className="px-8 py-6 bg-emerald-50/50 dark:bg-emerald-900/10 border-t border-emerald-100 dark:border-emerald-900/30 backdrop-blur-sm"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <span className="text-xs font-black uppercase tracking-widest text-indigo-600">Architectural Output</span>
-              <div className="hidden sm:flex items-center gap-2 px-2 py-0.5 bg-indigo-100/50 rounded-md text-[10px] font-bold text-indigo-500">
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Architectural Output</span>
+              <div className="hidden sm:flex items-center gap-2 px-2 py-0.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                 {getFinalPrompt().split(/\s+/).filter(Boolean).length} WORDS
               </div>
-              <div className="hidden sm:flex items-center gap-2 px-2 py-0.5 bg-emerald-100/50 rounded-md text-[10px] font-bold text-emerald-600">
+              <div className="hidden sm:flex items-center gap-2 px-2 py-0.5 bg-teal-100/50 dark:bg-teal-900/30 rounded-md text-[10px] font-bold text-teal-600 dark:text-teal-400">
                 SCORE: {Math.min(100, Math.floor(getFinalPrompt().length / 10 + 40))}%
               </div>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowSaveModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-600 rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition-all border border-indigo-100"
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition-all border border-emerald-100 dark:border-emerald-800/50"
               >
                 {editingPrompt ? <Save size={14} /> : <Plus size={14} />}
                 {editingPrompt ? 'UPDATE' : 'SAVE'}
               </button>
               <button
                 onClick={copyToClipboard}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl text-xs font-bold shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? 'COPIED!' : 'COPY FINAL'}
@@ -453,7 +462,7 @@ export const ChatInterface: React.FC<Props> = ({
                   navigator.clipboard.writeText(`\`\`\`\n${final}\n\`\`\``);
                   alert('Copied as Markdown block!');
                 }}
-                className="flex items-center justify-center w-10 h-10 bg-white text-slate-400 rounded-xl hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-slate-100"
+                className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 text-stone-400 dark:text-slate-400 rounded-xl hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all border border-stone-100 dark:border-slate-700"
                 title="Copy as Markdown Block"
               >
                 <MessageSquare size={16} />
@@ -463,32 +472,32 @@ export const ChatInterface: React.FC<Props> = ({
 
           {/* Variable Filler */}
           {Object.keys(variables).length > 0 && (
-            <div className="mb-6 p-4 bg-white/60 rounded-2xl border border-indigo-100/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mb-6 p-4 bg-white/60 dark:bg-slate-800/60 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/30 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-full flex items-center gap-2 mb-1">
-                <Sparkles size={14} className="text-indigo-500" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Variable Blueprints</span>
+                <Sparkles size={14} className="text-emerald-500 dark:text-emerald-400" />
+                <span className="text-[10px] font-black text-stone-400 dark:text-slate-400 uppercase tracking-widest">Variable Blueprints</span>
               </div>
               {Object.entries(variables).map(([name, value]) => (
                 <div key={name} className="space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">{name}</label>
+                  <label className="block text-[10px] font-bold text-stone-500 dark:text-slate-400 uppercase tracking-wider ml-1">{name}</label>
                   <input 
                     type="text"
                     value={value}
                     onChange={e => setVariables(prev => ({ ...prev, [name]: e.target.value }))}
                     placeholder={`Enter ${name.toLowerCase()}...`}
-                    className="w-full px-4 py-2 bg-white border border-slate-100 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-300"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-300 dark:placeholder:text-slate-500 text-stone-900 dark:text-slate-100"
                   />
                 </div>
               ))}
             </div>
           )}
 
-          <div className="p-5 bg-white rounded-2xl border border-indigo-100 font-mono text-sm text-slate-800 break-words max-h-40 overflow-y-auto shadow-inner leading-relaxed">
+          <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 font-mono text-sm text-stone-800 dark:text-slate-200 break-words max-h-40 overflow-y-auto shadow-inner leading-relaxed">
             {getFinalPrompt()}
           </div>
           
           <div className="mt-4 flex items-center justify-between">
-            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Rate this architecture</span>
+            <span className="text-[10px] font-black text-emerald-400 dark:text-emerald-500 uppercase tracking-widest">Rate this architecture</span>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -496,7 +505,7 @@ export const ChatInterface: React.FC<Props> = ({
                   onClick={() => submitFeedback(star)}
                   className={cn(
                     "p-1 transition-all duration-300 hover:scale-125",
-                    feedbackData.rating >= star ? "text-amber-400" : "text-slate-300"
+                    feedbackData.rating >= star ? "text-amber-400" : "text-stone-300 dark:text-slate-600"
                   )}
                 >
                   <Sparkles size={18} fill={feedbackData.rating >= star ? "currentColor" : "none"} />
@@ -508,7 +517,7 @@ export const ChatInterface: React.FC<Props> = ({
       )}
 
       {/* Input Area */}
-      <div className="p-6 border-t border-slate-100 bg-white">
+      <div className="p-6 border-t border-stone-100 dark:border-slate-700 bg-white dark:bg-slate-800">
         <div className="relative flex items-center group">
           <input
             type="text"
@@ -516,13 +525,13 @@ export const ChatInterface: React.FC<Props> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Describe your idea (e.g., 'a futuristic city at night')"
-            className="w-full pl-6 pr-16 py-5 bg-slate-50 border-2 border-transparent rounded-[2rem] focus:bg-white focus:border-indigo-500 outline-none transition-all text-sm font-medium shadow-inner"
+            className="w-full pl-6 pr-16 py-5 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
             disabled={isLoading}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="absolute right-3 p-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-200 active:scale-95"
+            className="absolute right-3 p-3 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95"
           >
             <Send size={20} />
           </button>
