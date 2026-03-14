@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Tag, Calendar, Trash2, Edit3 } from 'lucide-react';
+import { Search, Tag, Calendar, Trash2, Edit3, Star } from 'lucide-react';
 import { SavedPrompt, PromptType } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
@@ -11,7 +11,7 @@ interface Props {
 export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
   const [prompts, setPrompts] = useState<SavedPrompt[]>([]);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<PromptType | 'all'>('all');
+  const [filterType, setFilterType] = useState<PromptType | 'all' | 'favorites'>('all');
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchPrompts = async () => {
@@ -19,12 +19,16 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
-      if (filterType !== 'all') params.append('type', filterType);
+      if (filterType !== 'all' && filterType !== 'favorites') params.append('type', filterType);
       
       const res = await fetch(`/api/prompts?${params.toString()}`);
       const data = await res.json();
       if (Array.isArray(data)) {
-        setPrompts(data);
+        let filteredData = data;
+        if (filterType === 'favorites') {
+          filteredData = data.filter(p => p.isFavorite);
+        }
+        setPrompts(filteredData);
       } else {
         setPrompts([]);
       }
@@ -43,6 +47,22 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
       setPrompts(prev => prev.filter(p => p.id !== id));
     } catch (error) {
       console.error('Error deleting prompt:', error);
+    }
+  };
+
+  const toggleFavorite = async (id: number, currentStatus: boolean) => {
+    try {
+      await fetch(`/api/prompts/${id}/favorite`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite: !currentStatus })
+      });
+      setPrompts(prev => prev.map(p => p.id === id ? { ...p, isFavorite: !currentStatus } : p));
+      if (filterType === 'favorites' && currentStatus) {
+        setPrompts(prev => prev.filter(p => p.id !== id));
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
     }
   };
 
@@ -66,7 +86,7 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
         </div>
         
         <div className="flex gap-2 p-1 bg-stone-100 dark:bg-slate-800 rounded-lg overflow-x-auto hide-scrollbar w-full md:w-auto">
-          {['all', 'image', 'video', 'text'].map((t) => (
+          {['all', 'favorites', 'image', 'video', 'text'].map((t) => (
             <button
               key={t}
               onClick={() => setFilterType(t as any)}
@@ -74,7 +94,7 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                 filterType === t ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-stone-500 dark:text-slate-400 hover:text-stone-700 dark:hover:text-slate-200'
               }`}
             >
-              {t}
+              {t === 'favorites' ? <span className="flex items-center gap-1"><Star size={12} className="fill-current" /> Favorites</span> : t}
             </button>
           ))}
         </div>
@@ -111,6 +131,18 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                   </div>
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => toggleFavorite(p.id, !!p.isFavorite)}
+                    className={cn(
+                      "p-2 rounded-xl transition-all shadow-sm",
+                      p.isFavorite 
+                        ? "bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50" 
+                        : "bg-stone-50 dark:bg-slate-700 text-stone-400 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-500 dark:hover:text-amber-400"
+                    )}
+                    title={p.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                  >
+                    <Star size={16} className={p.isFavorite ? "fill-current" : ""} />
+                  </button>
                   <button 
                     onClick={() => onEdit(p)}
                     className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm"

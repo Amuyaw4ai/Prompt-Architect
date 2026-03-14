@@ -20,6 +20,7 @@ db.exec(`
     type TEXT NOT NULL,
     tags TEXT,
     messages TEXT,
+    is_favorite INTEGER DEFAULT 0,
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 
@@ -50,6 +51,9 @@ try {
 } catch (e) {}
 try {
   db.exec("ALTER TABLE chat_sessions ADD COLUMN current_result_index INTEGER;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE saved_prompts ADD COLUMN is_favorite INTEGER DEFAULT 0;");
 } catch (e) {}
 
 async function startServer() {
@@ -94,6 +98,7 @@ async function startServer() {
         messages,
         originalIdea: row.original_idea,
         refinedPrompt: row.refined_prompt,
+        isFavorite: row.is_favorite === 1,
         createdAt: row.created_at * 1000
       };
     });
@@ -102,24 +107,36 @@ async function startServer() {
   });
 
   app.post("/api/prompts", (req, res) => {
-    const { title, originalIdea, refinedPrompt, type, tags, messages } = req.body;
+    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages, is_favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []));
+    const info = stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0);
     res.json({ id: info.lastInsertRowid });
   });
 
   app.put("/api/prompts/:id", (req, res) => {
     const { id } = req.params;
-    const { title, originalIdea, refinedPrompt, type, tags, messages } = req.body;
+    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite } = req.body;
     const stmt = db.prepare(`
       UPDATE saved_prompts 
-      SET title = ?, original_idea = ?, refined_prompt = ?, type = ?, tags = ?, messages = ?
+      SET title = ?, original_idea = ?, refined_prompt = ?, type = ?, tags = ?, messages = ?, is_favorite = ?
       WHERE id = ?
     `);
-    stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), id);
+    stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, id);
+    res.json({ success: true });
+  });
+
+  app.put("/api/prompts/:id/favorite", (req, res) => {
+    const { id } = req.params;
+    const { isFavorite } = req.body;
+    const stmt = db.prepare(`
+      UPDATE saved_prompts 
+      SET is_favorite = ?
+      WHERE id = ?
+    `);
+    stmt.run(isFavorite ? 1 : 0, id);
     res.json({ success: true });
   });
 

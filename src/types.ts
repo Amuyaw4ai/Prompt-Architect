@@ -12,6 +12,8 @@ export interface PromptResult {
   refinedPrompt: string;
   explanation: string;
   questions?: string[];
+  suggestedTitle?: string;
+  suggestedTags?: string[];
 }
 
 export interface ChatSession {
@@ -33,6 +35,7 @@ export interface SavedPrompt {
   type: PromptType;
   tags: string[];
   messages: Message[];
+  isFavorite?: boolean;
   createdAt: number;
 }
 
