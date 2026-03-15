@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChatSession } from '../types';
 import { Clock, MessageSquare, Trash2, ChevronRight, Calendar } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
 export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchSessions = async () => {
     try {
@@ -36,12 +38,31 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
 
   const deleteSession = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this session?')) return;
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDeleteSession = async () => {
+    if (!confirmDeleteId) return;
     try {
-      await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
-      setSessions(prev => prev.filter(s => s.id !== id));
+      await fetch(`/api/sessions/${confirmDeleteId}`, { method: 'DELETE' });
+      setSessions(prev => prev.filter(s => s.id !== confirmDeleteId));
+      setConfirmDeleteId(null);
     } catch (error) {
       console.error('Error deleting session:', error);
+    }
+  };
+
+  const clearAllHistory = async () => {
+    setConfirmDeleteAll(true);
+  };
+
+  const confirmClearAllHistory = async () => {
+    try {
+      await fetch('/api/sessions', { method: 'DELETE' });
+      setSessions([]);
+      setConfirmDeleteAll(false);
+    } catch (error) {
+      console.error('Error clearing history:', error);
     }
   };
 
@@ -67,8 +88,18 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {sessions.map((session) => (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          onClick={clearAllHistory}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/40 rounded-xl transition-colors"
+        >
+          <Trash2 size={14} />
+          CLEAR ALL HISTORY
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sessions.map((session) => (
         <motion.div
           key={session.id}
           initial={{ opacity: 0, scale: 0.95 }}
@@ -119,6 +150,43 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
           </div>
         </motion.div>
       ))}
+      </div>
+
+      <AnimatePresence>
+        {(confirmDeleteAll || confirmDeleteId) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-900/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-full max-w-sm text-center"
+            >
+              <h3 className="text-2xl font-black mb-2 text-stone-900 dark:text-slate-100">Are you sure?</h3>
+              <p className="text-stone-500 dark:text-slate-400 mb-8">
+                {confirmDeleteAll ? 'This will delete ALL chat history. This action cannot be undone.' : 'This will delete this session permanently.'}
+              </p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => { setConfirmDeleteAll(false); setConfirmDeleteId(null); }}
+                  className="flex-1 py-3 text-sm font-bold text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => confirmDeleteAll ? confirmClearAllHistory() : confirmDeleteSession()}
+                  className="flex-1 py-3 bg-pink-600 text-white rounded-xl text-sm font-bold hover:bg-pink-700 transition-all shadow-lg shadow-pink-200 dark:shadow-none"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -109,6 +109,19 @@ export const TemplatesGallery: React.FC<Props> = ({ onSelect }) => {
                   placeholder={`Define the ${p.replace('_', ' ')}...`}
                   className="w-full px-6 py-4 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
                 />
+                {selectedTemplate.suggestions?.[p] && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {selectedTemplate.suggestions[p].map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setFormValues(prev => ({ ...prev, [p]: suggestion }))}
+                        className="px-3 py-1.5 text-[11px] font-semibold bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400 rounded-lg border border-stone-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

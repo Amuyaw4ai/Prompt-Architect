@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, Save, Trash2, Copy, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ScratchpadProps {
   onClose?: () => void;
@@ -8,6 +9,7 @@ interface ScratchpadProps {
 export const Scratchpad: React.FC<ScratchpadProps> = ({ onClose }) => {
   const [content, setContent] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
 
   // Load from local storage on mount
   useEffect(() => {
@@ -27,9 +29,12 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ onClose }) => {
   };
 
   const handleClear = () => {
-    if (window.confirm('Are you sure you want to clear your scratchpad?')) {
-      setContent('');
-    }
+    setShowConfirmClear(true);
+  };
+
+  const confirmClear = () => {
+    setContent('');
+    setShowConfirmClear(false);
   };
 
   return (
@@ -75,6 +80,42 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ onClose }) => {
           className="w-full h-full resize-none bg-transparent border-none outline-none text-sm text-stone-700 dark:text-slate-300 placeholder:text-stone-400 dark:placeholder:text-slate-600 leading-relaxed font-mono"
         />
       </div>
+
+      <AnimatePresence>
+        {showConfirmClear && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-900/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-full max-w-sm text-center"
+            >
+              <h3 className="text-2xl font-black mb-2 text-stone-900 dark:text-slate-100">Are you sure?</h3>
+              <p className="text-stone-500 dark:text-slate-400 mb-8">
+                This will clear everything in your scratchpad.
+              </p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowConfirmClear(false)}
+                  className="flex-1 py-3 text-sm font-bold text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmClear}
+                  className="flex-1 py-3 bg-pink-600 text-white rounded-xl text-sm font-bold hover:bg-pink-700 transition-all shadow-lg shadow-pink-200 dark:shadow-none"
+                >
+                  Clear
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

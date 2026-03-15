@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate } from 'lucide-react';
 import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../types';
 import { refinePrompt } from '../services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -7,6 +7,67 @@ import ReactMarkdown from 'react-markdown';
 import { cn, calculatePromptScore } from '../utils';
 import { PromptTypeSelector } from './PromptTypeSelector';
 import { PromptEditor } from './PromptEditor';
+
+const VARIABLE_SUGGESTIONS: Record<string, string[]> = {
+  'SUBJECT': ['A cyberpunk hacker', 'A serene landscape', 'A futuristic car', 'A cute alien', 'A majestic dragon'],
+  'LIGHTING': ['Cinematic lighting', 'Golden hour', 'Volumetric fog', 'Neon glow', 'Harsh shadows', 'Soft studio lighting'],
+  'STYLE': ['Photorealistic', 'Oil painting', 'Anime', '3D render', 'Pencil sketch', 'Watercolor', 'Pixel art'],
+  'CAMERA': ['Wide angle', 'Macro', 'Drone shot', 'Low angle', 'Fisheye', 'Telephoto'],
+  'MOOD': ['Dark and gritty', 'Uplifting', 'Ethereal', 'Mysterious', 'Energetic', 'Melancholic'],
+  'ROLE': ['Expert Copywriter', 'Senior Developer', 'Helpful Assistant', 'Creative Director', 'Data Scientist'],
+  'TONE': ['Professional', 'Humorous', 'Empathetic', 'Authoritative', 'Casual', 'Persuasive'],
+  'FORMAT': ['Bullet points', 'JSON', 'Step-by-step guide', 'Essay', 'Table', 'Markdown'],
+  'AUDIENCE': ['Beginners', 'Executives', 'Children', 'Tech enthusiasts', 'General public'],
+  'PROBLEM': ['Low conversion rate', 'Slow performance', 'Lack of engagement', 'High churn rate'],
+  'TASK': ['Write a blog post', 'Debug this code', 'Create a marketing plan', 'Summarize this article'],
+  'CONTEXT': ['E-commerce website', 'Mobile app launch', 'B2B software', 'Social media campaign'],
+  'ENVIRONMENT': ['Sci-fi metropolis', 'Enchanted forest', 'Abandoned factory', 'Cozy cafe'],
+  'COLOR': ['Vibrant', 'Monochrome', 'Pastel', 'High contrast', 'Muted tones'],
+  'RESOLUTION': ['8k', '4k', 'Highly detailed', 'Masterpiece'],
+  'PRODUCT_SERVICE': ['SaaS platform', 'Fitness app', 'Eco-friendly water bottle', 'Online course'],
+  'ACTION': ['Running', 'Fighting', 'Flying', 'Dancing', 'Driving'],
+  'MOTION': ['Slow motion', 'Fast-paced', 'Smooth pan', 'Handheld', 'Hyperlapse'],
+  'START_STATE': ['Day', 'Seed', 'Empty', 'Ruins'],
+  'END_STATE': ['Night', 'Tree', 'Full', 'City'],
+  'TOPIC': ['Quantum computing', 'Machine learning', 'Climate change', 'Cryptocurrency', 'Healthy eating'],
+  'LANGUAGE': ['Python', 'JavaScript', 'TypeScript', 'Rust', 'Go', 'C++'],
+  'FOCUS_AREA': ['Performance', 'Security', 'Readability', 'Best practices'],
+  'INDUSTRY': ['Tech startup', 'Coffee shop', 'Fitness brand', 'Eco-friendly', 'Gaming'],
+  'EMOTION': ['Joy', 'Sadness', 'Surprise', 'Anger', 'Confusion', 'Excitement']
+};
+
+const FRAMEWORKS = {
+  text: [
+    { name: 'Chain of Thought', template: 'Think step-by-step to solve this:\n[PROBLEM]' },
+    { name: 'Roleplay', template: 'Act as an expert [ROLE]. Your task is to [TASK]. Here is the context:\n[CONTEXT]' },
+    { name: 'Few-Shot', template: 'Here are some examples:\nInput: [EXAMPLE_1_INPUT]\nOutput: [EXAMPLE_1_OUTPUT]\n\nNow process this:\nInput: [ACTUAL_INPUT]' },
+    { name: 'AIDA Copywriting', template: 'Write copy using the AIDA framework (Attention, Interest, Desire, Action) for:\n[PRODUCT_SERVICE]' },
+    { name: 'ELI5 Explanation', template: 'Explain [TOPIC] to me like I am a 5-year-old. Use simple analogies and avoid jargon.' },
+    { name: 'Pros & Cons Analysis', template: 'Provide a detailed pros and cons analysis of [TOPIC]. Format the output as a [FORMAT].' },
+    { name: 'Socratic Questioning', template: 'Act as a Socratic tutor. Help me understand [TOPIC] by asking guiding questions rather than giving direct answers.' },
+    { name: 'Code Review', template: 'Review the following code for [LANGUAGE]. Focus on [FOCUS_AREA] and suggest improvements:\n[CODE]' }
+  ],
+  image: [
+    { name: 'Cinematic Portrait', template: 'A cinematic portrait of [SUBJECT], [LIGHTING], [STYLE], shot on [CAMERA], [MOOD] mood, [RESOLUTION]' },
+    { name: 'Concept Art', template: 'Concept art of [ENVIRONMENT], featuring [SUBJECT], [COLOR] color palette, [STYLE], highly detailed' },
+    { name: 'Product Photography', template: 'Commercial product photography of [SUBJECT], [LIGHTING], clean background, [CAMERA], [RESOLUTION]' },
+    { name: 'Isometric 3D', template: 'Isometric 3D render of [SUBJECT] in a [ENVIRONMENT], [COLOR] color palette, soft lighting, highly detailed, trending on ArtStation' },
+    { name: 'Logo Design', template: 'Minimalist vector logo for a [INDUSTRY] company, featuring [SUBJECT], [COLOR] colors, flat design, white background' },
+    { name: 'Anime Style', template: 'Anime style illustration of [SUBJECT] doing [ACTION] in [ENVIRONMENT], Studio Ghibli style, [LIGHTING], vibrant colors' },
+    { name: 'Cyberpunk Street', template: 'Cyberpunk street scene at night, [ENVIRONMENT], featuring [SUBJECT], [LIGHTING], neon lights, reflections, [RESOLUTION]' },
+    { name: 'Watercolor Painting', template: 'Watercolor painting of [SUBJECT], [MOOD] mood, soft edges, [COLOR] pastel colors, dreamy atmosphere' }
+  ],
+  video: [
+    { name: 'Cinematic Drone', template: 'A cinematic drone shot flying over [ENVIRONMENT], [LIGHTING], [MOOD] atmosphere, [RESOLUTION]' },
+    { name: 'Action Sequence', template: 'Fast-paced action sequence of [SUBJECT] performing [ACTION], [CAMERA], [MOTION] motion, [STYLE]' },
+    { name: 'Time-lapse', template: 'Time-lapse video of [SUBJECT] transitioning from [START_STATE] to [END_STATE], [LIGHTING], [RESOLUTION]' },
+    { name: 'Product Showcase', template: 'Smooth 360-degree product showcase video of [SUBJECT], [LIGHTING], [CAMERA], [RESOLUTION], commercial style' },
+    { name: 'Character Animation', template: '3D animation of [SUBJECT] expressing [EMOTION], [STYLE], [LIGHTING], smooth movement, [RESOLUTION]' },
+    { name: 'Nature Documentary', template: 'Nature documentary style footage of [SUBJECT] in [ENVIRONMENT], [CAMERA], [MOTION], highly detailed, [RESOLUTION]' },
+    { name: 'Music Video', template: 'Stylized music video scene, [SUBJECT] performing, [LIGHTING], [MOTION], [STYLE], dynamic editing' },
+    { name: 'Vlog Style', template: 'Vlog style handheld footage of [SUBJECT] exploring [ENVIRONMENT], [CAMERA], casual [MOOD] atmosphere, [RESOLUTION]' }
+  ]
+};
 
 interface Props {
   promptType: PromptType;
@@ -42,10 +103,13 @@ export const ChatInterface: React.FC<Props> = ({
   const [copied, setCopied] = useState(false);
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string } | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
+  const [showFrameworks, setShowFrameworks] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textFileInputRef = useRef<HTMLInputElement>(null);
   const lastXRef = useRef<number | null>(null);
 
   // Handle dragging for resizable pane
@@ -191,12 +255,34 @@ export const ChatInterface: React.FC<Props> = ({
     }
   };
 
+  const handleTextFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachedFiles(prev => [...prev, { name: file.name, content: reader.result as string }]);
+      };
+      reader.readAsText(file);
+    });
+    
+    if (textFileInputRef.current) {
+      textFileInputRef.current.value = '';
+    }
+  };
+
   const handleSend = async () => {
-    if ((!input.trim() && !selectedImage) || isLoading) return;
+    if ((!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading) return;
 
     let userContent = input;
     if (selectedImage && !input.trim()) {
       userContent = "Analyze this image and generate a highly detailed prompt that would recreate it.";
+    }
+
+    let fullContentForAI = userContent;
+    if (attachedFiles.length > 0) {
+      fullContentForAI += '\n\nContext from attached files:\n' + attachedFiles.map(f => `--- ${f.name} ---\n${f.content}\n---`).join('\n\n');
     }
 
     const userMessage: Message = {
@@ -205,20 +291,28 @@ export const ChatInterface: React.FC<Props> = ({
       content: userContent,
       timestamp: Date.now(),
       imageUrl: selectedImage?.url,
+      attachedFiles: attachedFiles.length > 0 ? attachedFiles : undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     const imageToSend = selectedImage ? { data: selectedImage.data, mimeType: selectedImage.mimeType } : undefined;
     setSelectedImage(null);
+    setAttachedFiles([]);
     setIsLoading(true);
 
     try {
       const context = messages
-        .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .map(m => {
+          let msgContent = m.content;
+          if (m.attachedFiles && m.attachedFiles.length > 0) {
+            msgContent += '\n\nContext from attached files:\n' + m.attachedFiles.map(f => `--- ${f.name} ---\n${f.content}\n---`).join('\n\n');
+          }
+          return `${m.role === 'user' ? 'User' : 'Assistant'}: ${msgContent}`;
+        })
         .join('\n');
 
-      const result = await refinePrompt(userContent, promptType, context, imageToSend);
+      const result = await refinePrompt(fullContentForAI, promptType, context, imageToSend);
       const newHistory = [...resultHistory.slice(0, currentResultIndex + 1), result];
       const newIndex = newHistory.length - 1;
       
@@ -319,7 +413,7 @@ export const ChatInterface: React.FC<Props> = ({
       setShowSaveModal(false);
       if (!editingPrompt) setSaveData({ title: '', tags: '' });
       onSaveSuccess?.();
-      alert(editingPrompt ? 'Prompt updated successfully!' : 'Prompt saved successfully!');
+      // Visual feedback could be added here instead of alert
     } catch (error) {
       console.error('Error saving prompt:', error);
     }
@@ -339,10 +433,29 @@ export const ChatInterface: React.FC<Props> = ({
         })
       });
       setFeedbackData({ rating, comment: '' });
-      alert('Thank you for your feedback!');
+      // Visual feedback could be added here instead of alert
     } catch (error) {
       console.error('Error submitting feedback:', error);
     }
+  };
+
+  const exportToJSON = () => {
+    if (!lastResult) return;
+    const data = JSON.stringify({
+      title: saveData.title || 'Untitled Prompt',
+      prompt: getFinalPrompt(),
+      variables,
+      type: promptType,
+      originalIdea: messages.find(m => m.role === 'user')?.content || '',
+      tags: saveData.tags.split(',').map(t => t.trim()).filter(Boolean)
+    }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'architected_prompt.json';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const isExpired = currentSession && (Date.now() - currentSession.createdAt) > 3600000;
@@ -492,9 +605,21 @@ export const ChatInterface: React.FC<Props> = ({
                     {m.imageUrl && (
                       <img src={m.imageUrl} alt="Uploaded" className="max-w-full h-auto max-h-64 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
                     )}
-                    <div className={cn("markdown-body", m.role === 'user' ? "text-white" : "text-stone-800 dark:text-slate-200")}>
-                      <ReactMarkdown>{m.content}</ReactMarkdown>
-                    </div>
+                    {m.attachedFiles && m.attachedFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {m.attachedFiles.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5 bg-emerald-700/50 dark:bg-emerald-800/50 px-2.5 py-1.5 rounded-lg border border-emerald-500/30">
+                            <Paperclip size={12} className="text-emerald-100" />
+                            <span className="text-[11px] font-medium text-emerald-50 max-w-[120px] truncate">{file.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {m.content && (
+                      <div className={cn("markdown-body", m.role === 'user' ? "text-white" : "text-stone-800 dark:text-slate-200")}>
+                        <ReactMarkdown>{m.content}</ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -514,39 +639,98 @@ export const ChatInterface: React.FC<Props> = ({
             )}
           </div>
 
-          {/* Input Area */}
-          <div className="p-6 border-t border-stone-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col gap-3">
+            {/* Input Area */}
+          <div className="p-6 border-t border-stone-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col gap-3 relative">
+            
+            {/* Frameworks Dropdown */}
+            <AnimatePresence>
+              {showFrameworks && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute bottom-full left-6 mb-2 w-64 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden z-50"
+                >
+                  <div className="p-3 border-b border-stone-100 dark:border-slate-700">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Prompt Frameworks</span>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {(FRAMEWORKS[promptType] || FRAMEWORKS.text).map(fw => (
+                      <button
+                        key={fw.name}
+                        onClick={() => {
+                          setInput(fw.template);
+                          setShowFrameworks(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-stone-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors border-b border-stone-50 dark:border-slate-700/50 last:border-0"
+                      >
+                        <div className="font-bold mb-1">{fw.name}</div>
+                        <div className="text-xs text-stone-400 dark:text-slate-500 truncate">{fw.template.replace(/\n/g, ' ')}</div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Guidance Panel */}
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-500 mr-2">Quick Add:</span>
-              {promptType === 'image' && ['Cinematic', 'Photorealistic', 'Macro', 'Golden Hour', '8k Resolution', 'Masterpiece'].map(tag => (
-                <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                  + {tag}
-                </button>
-              ))}
-              {promptType === 'video' && ['Slow Motion', 'Drone Shot', 'Cinematic Pan', 'Hyperlapse', 'Moody Atmosphere', 'Seamless Transition'].map(tag => (
-                <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                  + {tag}
-                </button>
-              ))}
-              {promptType === 'text' && ['Professional Tone', 'Step-by-Step', 'Bullet Points', 'Creative Writing', 'JSON Format', 'Expert Persona'].map(tag => (
-                <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                  + {tag}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-500 mr-2">Quick Add:</span>
+                {promptType === 'image' && ['Cinematic', 'Photorealistic', 'Macro', 'Golden Hour', '8k Resolution', 'Masterpiece'].map(tag => (
+                  <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                    + {tag}
+                  </button>
+                ))}
+                {promptType === 'video' && ['Slow Motion', 'Drone Shot', 'Cinematic Pan', 'Hyperlapse', 'Moody Atmosphere', 'Seamless Transition'].map(tag => (
+                  <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                    + {tag}
+                  </button>
+                ))}
+                {promptType === 'text' && ['Professional Tone', 'Step-by-Step', 'Bullet Points', 'Creative Writing', 'JSON Format', 'Expert Persona'].map(tag => (
+                  <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+              <button 
+                onClick={() => setShowFrameworks(!showFrameworks)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+              >
+                <BookTemplate size={14} />
+                Frameworks
+              </button>
             </div>
 
-            {selectedImage && (
-              <div className="mb-2 relative inline-block">
-                <img src={selectedImage.url} alt="Selected" className="h-24 w-24 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" referrerPolicy="no-referrer" />
-                <button
-                  onClick={() => setSelectedImage(null)}
-                  className="absolute -top-2 -right-2 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-1 shadow-md hover:bg-pink-600 transition-colors"
-                >
-                  <X size={14} />
-                </button>
+            {/* Attachments Preview */}
+            {(selectedImage || attachedFiles.length > 0) && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {selectedImage && (
+                  <div className="relative inline-block">
+                    <img src={selectedImage.url} alt="Selected" className="h-16 w-16 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" referrerPolicy="no-referrer" />
+                    <button
+                      onClick={() => setSelectedImage(null)}
+                      className="absolute -top-2 -right-2 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-1 shadow-md hover:bg-pink-600 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+                {attachedFiles.map((file, idx) => (
+                  <div key={idx} className="relative flex items-center gap-2 bg-stone-100 dark:bg-slate-700 px-3 py-2 rounded-xl border border-stone-200 dark:border-slate-600">
+                    <Paperclip size={14} className="text-stone-500 dark:text-slate-400" />
+                    <span className="text-xs font-medium text-stone-700 dark:text-slate-300 max-w-[150px] truncate">{file.name}</span>
+                    <button
+                      onClick={() => setAttachedFiles(prev => prev.filter((_, i) => i !== idx))}
+                      className="ml-1 text-stone-400 hover:text-pink-600 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
+
             <div className="relative flex items-center group">
               <input
                 type="file"
@@ -555,25 +739,42 @@ export const ChatInterface: React.FC<Props> = ({
                 ref={fileInputRef}
                 onChange={handleImageUpload}
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute left-3 p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors z-10"
-                title="Upload image for reverse engineering"
-              >
-                <ImagePlus size={20} />
-              </button>
+              <input
+                type="file"
+                accept=".txt,.md,.csv,.json"
+                multiple
+                className="hidden"
+                ref={textFileInputRef}
+                onChange={handleTextFileUpload}
+              />
+              <div className="absolute left-2 flex items-center gap-1 z-10">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
+                  title="Upload image"
+                >
+                  <ImagePlus size={18} />
+                </button>
+                <button
+                  onClick={() => textFileInputRef.current?.click()}
+                  className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
+                  title="Attach text context (.txt, .md, .csv)"
+                >
+                  <Paperclip size={18} />
+                </button>
+              </div>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Describe your idea or upload an image..."
-                className="w-full pl-12 pr-16 py-5 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
+                placeholder="Describe your idea or attach context..."
+                className="w-full pl-24 pr-16 py-5 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
                 disabled={isLoading}
               />
               <button
                 onClick={handleSend}
-                disabled={(!input.trim() && !selectedImage) || isLoading}
+                disabled={(!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading}
                 className="absolute right-3 p-3 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95"
               >
                 <Send size={20} />
@@ -697,12 +898,20 @@ export const ChatInterface: React.FC<Props> = ({
                     onClick={() => {
                       const final = getFinalPrompt();
                       navigator.clipboard.writeText(`\`\`\`\n${final}\n\`\`\``);
-                      alert('Copied as Markdown block!');
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
                     }}
                     className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 text-stone-400 dark:text-slate-400 rounded-xl hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all border border-stone-100 dark:border-slate-700 shrink-0"
                     title="Copy as Markdown Block"
                   >
                     <MessageSquare size={16} />
+                  </button>
+                  <button
+                    onClick={exportToJSON}
+                    className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 text-stone-400 dark:text-slate-400 rounded-xl hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all border border-stone-100 dark:border-slate-700 shrink-0"
+                    title="Export to JSON"
+                  >
+                    <Download size={16} />
                   </button>
                 </div>
               </div>
@@ -714,18 +923,34 @@ export const ChatInterface: React.FC<Props> = ({
                     <Sparkles size={14} className="text-emerald-500 dark:text-emerald-400" />
                     <span className="text-[10px] font-black text-stone-400 dark:text-slate-400 uppercase tracking-widest">Variable Blueprints</span>
                   </div>
-                  {Object.entries(variables).map(([name, value]) => (
-                    <div key={name} className="space-y-1.5">
-                      <label className="block text-[10px] font-bold text-stone-500 dark:text-slate-400 uppercase tracking-wider ml-1">{name}</label>
-                      <input 
-                        type="text"
-                        value={value}
-                        onChange={e => setVariables(prev => ({ ...prev, [name]: e.target.value }))}
-                        placeholder={`Enter ${name.toLowerCase()}...`}
-                        className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-300 dark:placeholder:text-slate-500 text-stone-900 dark:text-slate-100"
-                      />
-                    </div>
-                  ))}
+                  {Object.entries(variables).map(([name, value]) => {
+                    const suggestions = VARIABLE_SUGGESTIONS[name.toUpperCase()] || [];
+                    return (
+                      <div key={name} className="space-y-1.5">
+                        <label className="block text-[10px] font-bold text-stone-500 dark:text-slate-400 uppercase tracking-wider ml-1">{name}</label>
+                        <input 
+                          type="text"
+                          value={value}
+                          onChange={e => setVariables(prev => ({ ...prev, [name]: e.target.value }))}
+                          placeholder={`Enter ${name.toLowerCase()}...`}
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-300 dark:placeholder:text-slate-500 text-stone-900 dark:text-slate-100"
+                        />
+                        {suggestions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {suggestions.map(suggestion => (
+                              <button
+                                key={suggestion}
+                                onClick={() => setVariables(prev => ({ ...prev, [name]: suggestion }))}
+                                className="px-2 py-1 text-[9px] font-bold bg-stone-100 dark:bg-slate-700/50 text-stone-500 dark:text-slate-400 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors whitespace-nowrap"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

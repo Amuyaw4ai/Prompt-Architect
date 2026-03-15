@@ -13,6 +13,7 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<PromptType | 'all' | 'favorites'>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const fetchPrompts = async () => {
     setIsLoading(true);
@@ -41,10 +42,15 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this prompt?')) return;
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDeletePrompt = async () => {
+    if (confirmDeleteId === null) return;
     try {
-      await fetch(`/api/prompts/${id}`, { method: 'DELETE' });
-      setPrompts(prev => prev.filter(p => p.id !== id));
+      await fetch(`/api/prompts/${confirmDeleteId}`, { method: 'DELETE' });
+      setPrompts(prev => prev.filter(p => p.id !== confirmDeleteId));
+      setConfirmDeleteId(null);
     } catch (error) {
       console.error('Error deleting prompt:', error);
     }
@@ -193,6 +199,42 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
           <p className="text-stone-400 dark:text-slate-500 font-medium">No saved prompts found.</p>
         </div>
       )}
+
+      <AnimatePresence>
+        {confirmDeleteId !== null && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-900/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-full max-w-sm text-center"
+            >
+              <h3 className="text-2xl font-black mb-2 text-stone-900 dark:text-slate-100">Are you sure?</h3>
+              <p className="text-stone-500 dark:text-slate-400 mb-8">
+                This will delete this saved prompt permanently.
+              </p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="flex-1 py-3 text-sm font-bold text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDeletePrompt}
+                  className="flex-1 py-3 bg-pink-600 text-white rounded-xl text-sm font-bold hover:bg-pink-700 transition-all shadow-lg shadow-pink-200 dark:shadow-none"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

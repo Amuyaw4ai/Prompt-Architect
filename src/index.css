@@ -42,3 +42,24 @@ body {
 .btn-primary {
   @apply bg-linear-to-r from-emerald-600 to-emerald-700 dark:from-emerald-500 dark:to-emerald-600 text-white shadow-lg shadow-emerald-200 dark:shadow-none hover:shadow-emerald-300 dark:hover:shadow-none transition-all active:scale-95;
 }
+
+/* Prismjs Custom Prompt Highlighting */
+.token.variable {
+  @apply text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-1 rounded;
+}
+
+.token.parameter {
+  @apply text-amber-600 dark:text-amber-400 font-medium;
+}
+
+.token.weight {
+  @apply text-pink-600 dark:text-pink-400 font-medium;
+}
+
+.token.keyword {
+  @apply text-indigo-600 dark:text-indigo-400 font-semibold;
+}
+
+.token.punctuation {
+  @apply text-stone-400 dark:text-slate-500;
+}

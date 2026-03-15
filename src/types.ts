@@ -6,6 +6,7 @@ export interface Message {
   content: string;
   timestamp: number;
   imageUrl?: string;
+  attachedFiles?: { name: string, content: string }[];
 }
 
 export interface PromptResult {
@@ -47,6 +48,7 @@ export interface Template {
   category: string;
   template: string; // e.g. "A [subject] in the style of [style]"
   placeholders: string[]; // ["subject", "style"]
+  suggestions?: Record<string, string[]>;
 }
 
 export interface Feedback {
