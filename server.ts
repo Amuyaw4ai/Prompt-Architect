@@ -14,6 +14,7 @@ const db = new Database("prompts.db");
 db.exec(`
   CREATE TABLE IF NOT EXISTS saved_prompts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parent_id INTEGER,
     title TEXT NOT NULL,
     original_idea TEXT NOT NULL,
     refined_prompt TEXT NOT NULL,
@@ -21,6 +22,7 @@ db.exec(`
     tags TEXT,
     messages TEXT,
     is_favorite INTEGER DEFAULT 0,
+    version_notes TEXT,
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 
@@ -54,6 +56,12 @@ try {
 } catch (e) {}
 try {
   db.exec("ALTER TABLE saved_prompts ADD COLUMN is_favorite INTEGER DEFAULT 0;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE saved_prompts ADD COLUMN parent_id INTEGER;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE saved_prompts ADD COLUMN version_notes TEXT;");
 } catch (e) {}
 
 async function startServer() {
@@ -94,6 +102,8 @@ async function startServer() {
       
       return {
         ...row,
+        parentId: row.parent_id,
+        versionNotes: row.version_notes,
         tags,
         messages,
         originalIdea: row.original_idea,
@@ -107,24 +117,24 @@ async function startServer() {
   });
 
   app.post("/api/prompts", (req, res) => {
-    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite } = req.body;
+    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, parentId, versionNotes } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages, is_favorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages, is_favorite, parent_id, version_notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0);
+    const info = stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, parentId || null, versionNotes || null);
     res.json({ id: info.lastInsertRowid });
   });
 
   app.put("/api/prompts/:id", (req, res) => {
     const { id } = req.params;
-    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite } = req.body;
+    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, versionNotes } = req.body;
     const stmt = db.prepare(`
       UPDATE saved_prompts 
-      SET title = ?, original_idea = ?, refined_prompt = ?, type = ?, tags = ?, messages = ?, is_favorite = ?
+      SET title = ?, original_idea = ?, refined_prompt = ?, type = ?, tags = ?, messages = ?, is_favorite = ?, version_notes = ?
       WHERE id = ?
     `);
-    stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, id);
+    stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, versionNotes || null, id);
     res.json({ success: true });
   });
 
@@ -247,7 +257,8 @@ async function startServer() {
           lighting: ["Rembrandt", "neon rim", "dramatic chiaroscuro", "soft golden hour"],
           camera: ["35mm lens", "85mm portrait lens", "medium format", "anamorphic lens"],
           mood: ["melancholic", "intense", "ethereal", "gritty"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "img-anime-1",
@@ -261,7 +272,8 @@ async function startServer() {
           subject: ["a young witch flying", "a giant fluffy spirit", "a brave knight", "a curious cat"],
           setting: ["a magical forest", "a floating island", "a bustling steampunk town", "a quiet seaside village"],
           time_of_day: ["golden hour", "starry night", "misty morning", "bright afternoon"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "img-cyber-1",
@@ -275,7 +287,8 @@ async function startServer() {
           time: ["midnight", "dusk", "dawn", "3 AM"],
           color_palette: ["neon pink and cyan", "acid green and purple", "deep blue and orange", "monochrome red"],
           atmosphere: ["gritty", "holographic", "dystopian", "rainy and melancholic"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1515630278258-407f66498911?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "img-macro-1",
@@ -290,7 +303,8 @@ async function startServer() {
           detail_focus: ["cellular structure", "crystalline patterns", "fine hairs", "iridescent scales"],
           lighting: ["soft diffused", "backlit", "dappled sunlight", "studio ring"],
           colors: ["emerald and gold", "sapphire blue", "vibrant magenta", "iridescent rainbow"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1500829243541-74b677fecc30?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "vid-cinematic-1",
@@ -305,7 +319,8 @@ async function startServer() {
           subject: ["a samurai drawing a sword", "a dancer leaping", "a sports car drifting", "a wizard casting a spell"],
           environment: ["a misty bamboo forest", "an abandoned warehouse", "a neon-lit street", "a grand cathedral"],
           lighting: ["volumetric rays", "strobe", "high contrast", "moonlight"]
-        }
+        },
+        image: "https://picsum.photos/seed/cinematic/800/600"
       },
       {
         id: "vid-drone-1",
@@ -319,7 +334,8 @@ async function startServer() {
           landscape: ["a jagged mountain range", "a dense rainforest", "a futuristic metropolis", "a winding canyon"],
           time_of_day: ["sunrise", "golden hour", "twilight", "high noon"],
           weather_condition: ["rolling fog", "clearing storm", "snow flurries", "clear skies"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "text-expert-1",
@@ -334,7 +350,8 @@ async function startServer() {
           specialty: ["React performance", "viral campaigns", "crypto investments", "hypertrophy training"],
           task: ["review my code", "create a 30-day plan", "analyze this trend", "optimize my workflow"],
           tone: ["professional and direct", "encouraging and supportive", "academic and rigorous", "casual and friendly"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "text-creative-1",
@@ -351,7 +368,8 @@ async function startServer() {
           mood: ["dark and suspenseful", "lighthearted and whimsical", "epic and grand", "melancholic"],
           setting: ["a sprawling space station", "a magical academy", "a dystopian megacity", "a quiet coastal town"],
           theme: ["the cost of ambition", "found family", "man vs machine", "the power of redemption"]
-        }
+        },
+        image: "https://picsum.photos/seed/storyteller/800/600"
       },
       {
         id: "text-eli5-1",
@@ -364,7 +382,8 @@ async function startServer() {
         suggestions: {
           topic: ["quantum computing", "black holes", "blockchain", "the immune system"],
           core_concept: ["superposition", "gravity", "decentralization", "antibodies"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "text-pros-cons-1",
@@ -378,7 +397,8 @@ async function startServer() {
           topic: ["remote work", "electric vehicles", "moving to a new city", "learning Python vs JavaScript"],
           format: ["bulleted list", "markdown table", "detailed paragraphs", "executive summary"],
           criteria: ["cost-effectiveness", "long-term sustainability", "career growth", "work-life balance"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "text-socratic-1",
@@ -391,7 +411,8 @@ async function startServer() {
         suggestions: {
           topic: ["the French Revolution", "object-oriented programming", "stoicism", "climate change"],
           subtopic: ["the causes of the revolution", "classes and objects", "the dichotomy of control", "greenhouse gases"]
-        }
+        },
+        image: "https://picsum.photos/seed/philosophy/800/600"
       },
       {
         id: "text-code-review-1",
@@ -406,7 +427,8 @@ async function startServer() {
           focus_area: ["performance optimization", "security vulnerabilities", "readability", "best practices"],
           format: ["inline comments", "a bulleted list", "a comprehensive report", "a refactored code block"],
           code: ["// Paste your code here", "function example() { ... }", "class MyClass { ... }", "def my_function(): ..."]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "img-iso-1",
@@ -420,7 +442,8 @@ async function startServer() {
           subject: ["a cozy coffee shop", "a futuristic server room", "a magical potion lab", "a retro arcade"],
           environment: ["a floating island", "a glass terrarium", "a cross-section room", "a miniature diorama"],
           color_palette: ["pastel", "neon cyberpunk", "earthy tones", "monochrome minimalist"]
-        }
+        },
+        image: "https://picsum.photos/seed/isometric/800/600"
       },
       {
         id: "img-logo-1",
@@ -434,7 +457,8 @@ async function startServer() {
           industry: ["tech startup", "eco-friendly brand", "luxury fashion", "specialty coffee"],
           subject: ["an abstract geometric shape", "a stylized leaf", "a sleek monogram", "a minimalist animal"],
           colors: ["black and white", "navy and gold", "vibrant gradient", "muted earth tones"]
-        }
+        },
+        image: "https://picsum.photos/seed/minimalistlogo/800/600"
       },
       {
         id: "img-watercolor-1",
@@ -448,7 +472,8 @@ async function startServer() {
           subject: ["a quaint cottage", "a blooming cherry tree", "a sleeping fox", "a bustling street market"],
           mood: ["serene", "melancholic", "joyful", "nostalgic"],
           colors: ["warm autumn", "cool winter", "vibrant spring", "muted vintage"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "img-product-1",
@@ -463,7 +488,8 @@ async function startServer() {
           lighting: ["dramatic studio", "soft window", "neon rim", "high-key"],
           camera: ["macro lens", "medium format", "85mm portrait", "tilt-shift"],
           resolution: ["8k highly detailed", "4k crisp", "photorealistic", "ultra-hd"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "vid-product-1",
@@ -478,7 +504,8 @@ async function startServer() {
           lighting: ["dynamic studio", "neon reflections", "soft cinematic", "high-contrast"],
           camera: ["slow pan", "dolly zoom", "orbiting", "macro tracking"],
           resolution: ["4k 60fps", "8k ultra-hd", "1080p slow motion", "cinematic 24fps"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "vid-anim-1",
@@ -494,7 +521,8 @@ async function startServer() {
           style: ["Pixar-like", "cel-shaded anime", "stop-motion clay", "hyper-realistic"],
           lighting: ["warm studio", "dramatic shadows", "colorful neon", "soft ambient"],
           resolution: ["4k 60fps", "1080p", "8k highly detailed", "cinematic 24fps"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "vid-nature-1",
@@ -510,7 +538,8 @@ async function startServer() {
           camera: ["telephoto lens", "macro close-up", "wide-angle", "drone aerial"],
           motion: ["slow tracking", "time-lapse", "smooth pan", "steady-cam"],
           resolution: ["8k ultra-hd", "4k 60fps", "cinematic 24fps", "IMAX quality"]
-        }
+        },
+        image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80"
       },
       {
         id: "vid-music-1",
@@ -525,7 +554,8 @@ async function startServer() {
           lighting: ["strobe lights", "neon lasers", "moody silhouettes", "vibrant colors"],
           motion: ["fast cuts", "handheld shaky", "smooth gimbal", "slow motion"],
           style: ["gritty vintage", "futuristic cyberpunk", "dreamy ethereal", "high-energy pop"]
-        }
+        },
+        image: "https://picsum.photos/seed/musicvideo/800/600"
       }
     ];
     res.json(templates);

@@ -30,6 +30,7 @@ export interface ChatSession {
 
 export interface SavedPrompt {
   id: number;
+  parentId?: number;
   title: string;
   originalIdea: string;
   refinedPrompt: string;
@@ -37,6 +38,7 @@ export interface SavedPrompt {
   tags: string[];
   messages: Message[];
   isFavorite?: boolean;
+  versionNotes?: string;
   createdAt: number;
 }
 
@@ -49,6 +51,7 @@ export interface Template {
   template: string; // e.g. "A [subject] in the style of [style]"
   placeholders: string[]; // ["subject", "style"]
   suggestions?: Record<string, string[]>;
+  image?: string;
 }
 
 export interface Feedback {

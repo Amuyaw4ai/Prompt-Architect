@@ -92,7 +92,7 @@ export const PromptEditor: React.FC<Props> = ({ value, onChange, variables, clas
             padding={0}
             className="font-mono text-sm text-stone-800 dark:text-slate-200 leading-relaxed outline-none"
             textareaClassName="outline-none"
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e: any) => handleKeyDown(e)}
             style={{
               fontFamily: 'var(--font-mono)',
               minHeight: '100px',

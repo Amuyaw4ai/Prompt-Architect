@@ -79,7 +79,7 @@ interface Props {
   currentSession?: ChatSession;
   onSessionUpdate?: (session: ChatSession) => void;
   onInputUsed?: () => void;
-  onSaveSuccess?: () => void;
+  onSaveSuccess?: (savedPrompt: SavedPrompt) => void;
 }
 
 export const ChatInterface: React.FC<Props> = ({ 
@@ -378,7 +378,8 @@ export const ChatInterface: React.FC<Props> = ({
   };
 
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [saveData, setSaveData] = useState({ title: '', tags: '' });
+  const [saveData, setSaveData] = useState({ title: '', tags: '', versionNotes: '' });
+  const [saveMode, setSaveMode] = useState<'update' | 'new_version' | 'new_prompt'>('new_prompt');
   const [feedbackData, setFeedbackData] = useState({ rating: 0, comment: '' });
   const [showScoreDetails, setShowScoreDetails] = useState(false);
 
@@ -386,20 +387,37 @@ export const ChatInterface: React.FC<Props> = ({
     if (editingPrompt) {
       setSaveData({
         title: editingPrompt.title,
-        tags: editingPrompt.tags.join(', ')
+        tags: editingPrompt.tags.join(', '),
+        versionNotes: ''
       });
+      setSaveMode('new_version');
     } else {
-      setSaveData({ title: '', tags: '' });
+      setSaveData({ title: '', tags: '', versionNotes: '' });
+      setSaveMode('new_prompt');
     }
   }, [editingPrompt]);
 
   const handleSave = async () => {
     if (!lastResult || !saveData.title) return;
     try {
-      const url = editingPrompt ? `/api/prompts/${editingPrompt.id}` : '/api/prompts';
-      const method = editingPrompt ? 'PUT' : 'POST';
+      let url = '/api/prompts';
+      let method = 'POST';
+      let parentId = null;
 
-      await fetch(url, {
+      if (editingPrompt) {
+        if (saveMode === 'update') {
+          url = `/api/prompts/${editingPrompt.id}`;
+          method = 'PUT';
+          parentId = editingPrompt.parentId; // Keep existing parent if updating
+        } else if (saveMode === 'new_version') {
+          // Saving as a new version means the current editing prompt becomes the parent
+          // OR if the editing prompt already has a parent, they share the same parent
+          parentId = editingPrompt.parentId || editingPrompt.id;
+        }
+        // If saveMode === 'new_prompt', it remains POST to /api/prompts with parentId = null
+      }
+
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -408,13 +426,31 @@ export const ChatInterface: React.FC<Props> = ({
           refinedPrompt: lastResult.refinedPrompt,
           type: promptType,
           tags: saveData.tags.split(',').map(t => t.trim()).filter(Boolean),
-          messages: messages
+          messages: messages,
+          parentId: parentId,
+          versionNotes: saveData.versionNotes
         })
       });
+      
+      const data = await res.json();
+      
+      const savedPrompt: SavedPrompt = {
+        id: method === 'POST' ? data.id : editingPrompt?.id,
+        title: saveData.title,
+        originalIdea: messages.find(m => m.role === 'user')?.content || '',
+        refinedPrompt: lastResult.refinedPrompt,
+        type: promptType,
+        tags: saveData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        messages: messages,
+        parentId: parentId,
+        versionNotes: saveData.versionNotes,
+        createdAt: method === 'POST' ? Date.now() : (editingPrompt?.createdAt || Date.now()),
+        isFavorite: method === 'POST' ? false : (editingPrompt?.isFavorite || false)
+      };
+
       setShowSaveModal(false);
-      if (!editingPrompt) setSaveData({ title: '', tags: '' });
-      onSaveSuccess?.();
-      // Visual feedback could be added here instead of alert
+      if (!editingPrompt) setSaveData({ title: '', tags: '', versionNotes: '' });
+      onSaveSuccess?.(savedPrompt);
     } catch (error) {
       console.error('Error saving prompt:', error);
     }
@@ -480,12 +516,41 @@ export const ChatInterface: React.FC<Props> = ({
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-full max-w-md"
+              className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
             >
-              <h3 className="text-3xl font-black mb-2 tracking-tight text-stone-900 dark:text-slate-100">{editingPrompt ? 'Update' : 'Save'} Prompt</h3>
-              <p className="text-stone-500 dark:text-slate-400 mb-8">{editingPrompt ? 'Modify your saved architecture.' : 'Add this masterpiece to your library.'}</p>
+              <h3 className="text-3xl font-black mb-2 tracking-tight text-stone-900 dark:text-slate-100">Save Prompt</h3>
+              <p className="text-stone-500 dark:text-slate-400 mb-8">Add this masterpiece to your library.</p>
               
               <div className="space-y-6">
+                {editingPrompt && (
+                  <div className="flex flex-col gap-2 mb-4">
+                    <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Save Mode</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'new_version' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
+                        <input type="radio" name="saveMode" value="new_version" checked={saveMode === 'new_version'} onChange={() => setSaveMode('new_version')} className="hidden" />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Save as New Version</span>
+                          <span className="text-xs text-stone-500 dark:text-slate-400">Keep history, create a variation</span>
+                        </div>
+                      </label>
+                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'update' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
+                        <input type="radio" name="saveMode" value="update" checked={saveMode === 'update'} onChange={() => setSaveMode('update')} className="hidden" />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Update Current</span>
+                          <span className="text-xs text-stone-500 dark:text-slate-400">Overwrite the existing prompt</span>
+                        </div>
+                      </label>
+                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'new_prompt' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
+                        <input type="radio" name="saveMode" value="new_prompt" checked={saveMode === 'new_prompt'} onChange={() => setSaveMode('new_prompt')} className="hidden" />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Save as New Prompt</span>
+                          <span className="text-xs text-stone-500 dark:text-slate-400">Completely separate entry</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Title</label>
                   <input 
@@ -496,6 +561,20 @@ export const ChatInterface: React.FC<Props> = ({
                     placeholder="e.g. Cyberpunk Portrait"
                   />
                 </div>
+                
+                {(saveMode === 'new_version' || saveMode === 'update') && (
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Version Notes (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={saveData.versionNotes}
+                      onChange={e => setSaveData(prev => ({ ...prev, versionNotes: e.target.value }))}
+                      className="w-full px-5 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
+                      placeholder="e.g. Adjusted lighting to be more cinematic"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Tags (comma separated)</label>
                   <input 
@@ -518,7 +597,7 @@ export const ChatInterface: React.FC<Props> = ({
                   onClick={handleSave}
                   className="flex-1 py-4 bg-stone-900 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl text-sm font-bold hover:bg-stone-800 dark:hover:bg-emerald-400 transition-all shadow-lg shadow-stone-200 dark:shadow-none"
                 >
-                  {editingPrompt ? 'Update' : 'Save'} Prompt
+                  {saveMode === 'update' ? 'Update' : 'Save'} Prompt
                 </button>
               </div>
             </motion.div>
@@ -913,7 +992,8 @@ export const ChatInterface: React.FC<Props> = ({
                       if (!editingPrompt && lastResult) {
                         setSaveData({
                           title: lastResult.suggestedTitle || '',
-                          tags: lastResult.suggestedTags ? lastResult.suggestedTags.join(', ') : ''
+                          tags: lastResult.suggestedTags ? lastResult.suggestedTags.join(', ') : '',
+                          versionNotes: ''
                         });
                       }
                       setShowSaveModal(true);

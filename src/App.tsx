@@ -167,7 +167,7 @@ export default function App() {
                   currentSession={currentSession}
                   onSessionUpdate={setCurrentSession}
                   onInputUsed={() => setPrefilledPrompt(null)}
-                  onSaveSuccess={() => {}}
+                  onSaveSuccess={(savedPrompt) => setEditingPrompt(savedPrompt)}
                 />
               </div>
               {isScratchpadOpen ? (
