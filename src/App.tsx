@@ -3,18 +3,19 @@ import { ChatInterface } from './components/ChatInterface';
 import { SavedPrompts } from './components/SavedPrompts';
 import { TemplatesGallery } from './components/TemplatesGallery';
 import { ChatHistory } from './components/ChatHistory';
+import { Home } from './components/Home';
 import { PromptType, SavedPrompt, ChatSession } from './types';
-import { Sparkles, Info, Bookmark, Layout, Terminal, History, PlusCircle, Moon, Sun, Edit3, X } from 'lucide-react';
+import { Sparkles, Info, Bookmark, Layout, Terminal, History, PlusCircle, Moon, Sun, Edit3, X, Home as HomeIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { NavigationMenu } from './components/NavigationMenu';
 import { Scratchpad } from './components/Scratchpad';
 
-type View = 'architect' | 'saved' | 'templates' | 'history';
+type View = 'home' | 'architect' | 'saved' | 'templates' | 'history';
 
 export default function App() {
   const [promptType, setPromptType] = useState<PromptType>('image');
-  const [currentView, setCurrentView] = useState<View>('architect');
+  const [currentView, setCurrentView] = useState<View>('home');
   const [prefilledPrompt, setPrefilledPrompt] = useState<{content: string, type: PromptType} | null>(null);
   const [editingPrompt, setEditingPrompt] = useState<SavedPrompt | undefined>(undefined);
   const [currentSession, setCurrentSession] = useState<ChatSession | undefined>(undefined);
@@ -78,7 +79,7 @@ export default function App() {
       <header className="border-b border-stone-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-auto py-3 sm:py-0 sm:h-16 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center justify-between w-full sm:w-auto">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleNewArchitect}>
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setCurrentView('home')}>
               <div className="w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 group-hover:scale-110 transition-transform">
                 <Sparkles size={20} className="text-white dark:text-slate-900" />
               </div>
@@ -128,6 +129,24 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
         <AnimatePresence mode="wait">
+          {currentView === 'home' && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Home 
+                onNavigate={setCurrentView}
+                onNewArchitect={(type) => {
+                  setPromptType(type);
+                  handleNewArchitect();
+                }}
+                onSelectTemplate={handleTemplateSelect}
+              />
+            </motion.div>
+          )}
+
           {currentView === 'architect' && (
             <motion.div
               key="architect"

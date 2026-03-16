@@ -380,6 +380,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveData, setSaveData] = useState({ title: '', tags: '' });
   const [feedbackData, setFeedbackData] = useState({ rating: 0, comment: '' });
+  const [showScoreDetails, setShowScoreDetails] = useState(false);
 
   useEffect(() => {
     if (editingPrompt) {
@@ -840,17 +841,41 @@ export const ChatInterface: React.FC<Props> = ({
                   <div className="flex items-center gap-2 px-2 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                     {getFinalPrompt().split(/\s+/).filter(Boolean).length} WORDS
                   </div>
-                  <div className={cn("flex items-center gap-2 px-2 py-1 rounded-md text-[10px] font-bold group relative cursor-help",
-                    calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? "bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" :
-                    calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? "bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" :
-                    "bg-pink-100/50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
-                  )}>
+                  <div 
+                    className={cn("flex items-center gap-2 px-2 py-1 rounded-md text-[10px] font-bold group relative cursor-help",
+                      calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? "bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" :
+                      calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? "bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" :
+                      "bg-pink-100/50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
+                    )}
+                    onClick={() => setShowScoreDetails(!showScoreDetails)}
+                    onMouseLeave={() => setShowScoreDetails(false)}
+                  >
                     SCORE: {calculatePromptScore(getFinalPrompt(), promptType).score}%
-                    <div className="absolute top-full left-0 mt-2 hidden group-hover:block w-72 p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]">
+                    <div 
+                      className={cn(
+                        "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:left-0 lg:right-auto lg:translate-y-0 lg:mt-2 lg:w-72 p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
+                        showScoreDetails ? "block" : "hidden lg:group-hover:block"
+                      )}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Mobile close button */}
+                      <div className="flex justify-between items-center mb-3 lg:hidden">
+                        <span className="font-bold text-slate-200 text-sm">Score Details</span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowScoreDetails(false);
+                          }}
+                          className="text-slate-400 hover:text-white p-1"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                      
                       {calculatePromptScore(getFinalPrompt(), promptType).strengths.length > 0 && (
                         <>
                           <div className="font-bold mb-2 text-emerald-400">Strengths:</div>
-                          <ul className="list-disc pl-4 space-y-1 mb-3 text-emerald-100/90">
+                          <ul className="list-disc pl-4 space-y-1 mb-3 text-emerald-100/90 whitespace-normal">
                             {calculatePromptScore(getFinalPrompt(), promptType).strengths.map((s, i) => (
                               <li key={i}>{s}</li>
                             ))}
@@ -860,7 +885,7 @@ export const ChatInterface: React.FC<Props> = ({
                       {calculatePromptScore(getFinalPrompt(), promptType).improvements.length > 0 && (
                         <>
                           <div className="font-bold mb-2 text-amber-400">Suggestions to Improve:</div>
-                          <ul className="list-disc pl-4 space-y-1 text-amber-100/90">
+                          <ul className="list-disc pl-4 space-y-1 text-amber-100/90 whitespace-normal">
                             {calculatePromptScore(getFinalPrompt(), promptType).improvements.map((s, i) => (
                               <li key={i}>{s}</li>
                             ))}
@@ -868,6 +893,17 @@ export const ChatInterface: React.FC<Props> = ({
                         </>
                       )}
                     </div>
+                    
+                    {/* Mobile overlay */}
+                    {showScoreDetails && (
+                      <div 
+                        className="fixed inset-0 bg-black/50 z-[90] lg:hidden"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowScoreDetails(false);
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
 
