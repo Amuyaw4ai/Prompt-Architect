@@ -24,6 +24,7 @@ export interface ChatSession {
   currentType: PromptType;
   resultHistory?: PromptResult[];
   currentResultIndex?: number;
+  editingPromptId?: number;
   updatedAt: number;
   createdAt: number;
 }
@@ -31,6 +32,7 @@ export interface ChatSession {
 export interface SavedPrompt {
   id: number;
   parentId?: number;
+  derivedFromId?: number;
   title: string;
   originalIdea: string;
   refinedPrompt: string;

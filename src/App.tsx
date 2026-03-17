@@ -64,12 +64,25 @@ export default function App() {
     setChatKey(prev => prev + 1);
   };
 
-  const handleSelectSession = (session: ChatSession) => {
+  const handleSelectSession = async (session: ChatSession) => {
     setCurrentSession(session);
     setPromptType(session.currentType);
-    setEditingPrompt(undefined);
     setPrefilledPrompt(null);
     setCurrentView('architect');
+    
+    if (session.editingPromptId) {
+      try {
+        const res = await fetch('/api/prompts');
+        const prompts = await res.json();
+        const prompt = prompts.find((p: SavedPrompt) => p.id === session.editingPromptId);
+        setEditingPrompt(prompt || undefined);
+      } catch (e) {
+        setEditingPrompt(undefined);
+      }
+    } else {
+      setEditingPrompt(undefined);
+    }
+    
     setChatKey(prev => prev + 1);
   };
 
@@ -168,6 +181,7 @@ export default function App() {
                   onSessionUpdate={setCurrentSession}
                   onInputUsed={() => setPrefilledPrompt(null)}
                   onSaveSuccess={(savedPrompt) => setEditingPrompt(savedPrompt)}
+                  onSwitchVersion={handleEditPrompt}
                 />
               </div>
               {isScratchpadOpen ? (

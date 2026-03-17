@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate } from 'lucide-react';
+import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown } from 'lucide-react';
 import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../types';
 import { refinePrompt } from '../services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -8,33 +8,119 @@ import { cn, calculatePromptScore } from '../utils';
 import { PromptTypeSelector } from './PromptTypeSelector';
 import { PromptEditor } from './PromptEditor';
 
-const VARIABLE_SUGGESTIONS: Record<string, string[]> = {
-  'SUBJECT': ['A cyberpunk hacker', 'A serene landscape', 'A futuristic car', 'A cute alien', 'A majestic dragon'],
-  'LIGHTING': ['Cinematic lighting', 'Golden hour', 'Volumetric fog', 'Neon glow', 'Harsh shadows', 'Soft studio lighting'],
-  'STYLE': ['Photorealistic', 'Oil painting', 'Anime', '3D render', 'Pencil sketch', 'Watercolor', 'Pixel art'],
-  'CAMERA': ['Wide angle', 'Macro', 'Drone shot', 'Low angle', 'Fisheye', 'Telephoto'],
-  'MOOD': ['Dark and gritty', 'Uplifting', 'Ethereal', 'Mysterious', 'Energetic', 'Melancholic'],
-  'ROLE': ['Expert Copywriter', 'Senior Developer', 'Helpful Assistant', 'Creative Director', 'Data Scientist'],
-  'TONE': ['Professional', 'Humorous', 'Empathetic', 'Authoritative', 'Casual', 'Persuasive'],
-  'FORMAT': ['Bullet points', 'JSON', 'Step-by-step guide', 'Essay', 'Table', 'Markdown'],
-  'AUDIENCE': ['Beginners', 'Executives', 'Children', 'Tech enthusiasts', 'General public'],
-  'PROBLEM': ['Low conversion rate', 'Slow performance', 'Lack of engagement', 'High churn rate'],
-  'TASK': ['Write a blog post', 'Debug this code', 'Create a marketing plan', 'Summarize this article'],
-  'CONTEXT': ['E-commerce website', 'Mobile app launch', 'B2B software', 'Social media campaign'],
-  'ENVIRONMENT': ['Sci-fi metropolis', 'Enchanted forest', 'Abandoned factory', 'Cozy cafe'],
-  'COLOR': ['Vibrant', 'Monochrome', 'Pastel', 'High contrast', 'Muted tones'],
-  'RESOLUTION': ['8k', '4k', 'Highly detailed', 'Masterpiece'],
-  'PRODUCT_SERVICE': ['SaaS platform', 'Fitness app', 'Eco-friendly water bottle', 'Online course'],
-  'ACTION': ['Running', 'Fighting', 'Flying', 'Dancing', 'Driving'],
-  'MOTION': ['Slow motion', 'Fast-paced', 'Smooth pan', 'Handheld', 'Hyperlapse'],
-  'START_STATE': ['Day', 'Seed', 'Empty', 'Ruins'],
-  'END_STATE': ['Night', 'Tree', 'Full', 'City'],
-  'TOPIC': ['Quantum computing', 'Machine learning', 'Climate change', 'Cryptocurrency', 'Healthy eating'],
-  'LANGUAGE': ['Python', 'JavaScript', 'TypeScript', 'Rust', 'Go', 'C++'],
-  'FOCUS_AREA': ['Performance', 'Security', 'Readability', 'Best practices'],
-  'INDUSTRY': ['Tech startup', 'Coffee shop', 'Fitness brand', 'Eco-friendly', 'Gaming'],
+const ALL_VARIABLE_SUGGESTIONS: Record<string, string[]> = {
+  'SUBJECT': [
+    'A cyberpunk hacker', 'A serene landscape', 'A futuristic car', 'A cute alien', 'A majestic dragon',
+    'A grizzled detective', 'An elven warrior', 'A wise old monk', 'A rogue AI', 'A time-traveling historian',
+    'A neon samurai', 'A space explorer', 'A mythical beast', 'A steampunk inventor', 'A wandering merchant'
+  ],
+  'LIGHTING': [
+    'Cinematic lighting', 'Golden hour', 'Volumetric fog', 'Neon glow', 'Harsh shadows', 'Soft studio lighting',
+    'Bioluminescent', 'Moonlight', 'Candlelight', 'Lens flare', 'Chiaroscuro', 'Rim lighting'
+  ],
+  'STYLE': [
+    'Photorealistic', 'Oil painting', 'Anime', '3D render', 'Pencil sketch', 'Watercolor', 'Pixel art',
+    'Cyberpunk', 'Steampunk', 'Art Deco', 'Minimalist', 'Surrealism', 'Pop Art', 'Gothic'
+  ],
+  'CAMERA': [
+    'Wide angle', 'Macro', 'Drone shot', 'Low angle', 'Fisheye', 'Telephoto',
+    'Dutch angle', 'Bird\'s eye view', 'Worm\'s eye view', 'Over the shoulder', 'Point of view', 'Isometric'
+  ],
+  'MOOD': [
+    'Dark and gritty', 'Uplifting', 'Ethereal', 'Mysterious', 'Energetic', 'Melancholic',
+    'Whimsical', 'Ominous', 'Peaceful', 'Chaotic', 'Nostalgic', 'Romantic'
+  ],
+  'ROLE': [
+    'Expert Copywriter', 'Senior Developer', 'Helpful Assistant', 'Creative Director', 'Data Scientist',
+    'Financial Analyst', 'Marketing Guru', 'UX Designer', 'Product Manager', 'SEO Specialist'
+  ],
+  'TONE': [
+    'Professional', 'Humorous', 'Empathetic', 'Authoritative', 'Casual', 'Persuasive',
+    'Academic', 'Conversational', 'Inspirational', 'Sarcastic', 'Urgent', 'Friendly'
+  ],
+  'FORMAT': [
+    'Bullet points', 'JSON', 'Step-by-step guide', 'Essay', 'Table', 'Markdown',
+    'Email', 'Blog post', 'Tweet thread', 'Presentation slides', 'Code snippet', 'Checklist'
+  ],
+  'AUDIENCE': [
+    'Beginners', 'Executives', 'Children', 'Tech enthusiasts', 'General public',
+    'Investors', 'Small business owners', 'Students', 'Gamers', 'Medical professionals'
+  ],
+  'PROBLEM': [
+    'Low conversion rate', 'Slow performance', 'Lack of engagement', 'High churn rate',
+    'Poor user retention', 'High bounce rate', 'Inefficient workflow', 'Communication breakdown'
+  ],
+  'TASK': [
+    'Write a blog post', 'Debug this code', 'Create a marketing plan', 'Summarize this article',
+    'Draft an email', 'Design a logo', 'Plan a workout', 'Write a script', 'Translate this text'
+  ],
+  'CONTEXT': [
+    'E-commerce website', 'Mobile app launch', 'B2B software', 'Social media campaign',
+    'Internal company newsletter', 'Job interview prep', 'Academic research', 'Personal blog'
+  ],
+  'ENVIRONMENT': [
+    'Sci-fi metropolis', 'Enchanted forest', 'Abandoned factory', 'Cozy cafe',
+    'Underwater city', 'Floating island', 'Desert wasteland', 'Space station', 'Medieval castle'
+  ],
+  'COLOR': [
+    'Vibrant', 'Monochrome', 'Pastel', 'High contrast', 'Muted tones',
+    'Neon cyberpunk', 'Earth tones', 'Black and white', 'Sepia', 'Iridescent'
+  ],
+  'RESOLUTION': [
+    '8k', '4k', 'Highly detailed', 'Masterpiece',
+    'Ultra-HD', 'Photorealistic', 'Crisp', 'Sharp focus'
+  ],
+  'PRODUCT_SERVICE': [
+    'SaaS platform', 'Fitness app', 'Eco-friendly water bottle', 'Online course',
+    'Smart home device', 'Subscription box', 'Consulting service', 'Mobile game'
+  ],
+  'ACTION': [
+    'Running', 'Fighting', 'Flying', 'Dancing', 'Driving',
+    'Jumping', 'Swimming', 'Climbing', 'Falling', 'Meditating'
+  ],
+  'MOTION': [
+    'Slow motion', 'Fast-paced', 'Smooth pan', 'Handheld', 'Hyperlapse',
+    'Time-lapse', 'Dolly zoom', 'Tracking shot', 'Whip pan', 'Static'
+  ],
+  'START_STATE': ['Day', 'Seed', 'Empty', 'Ruins', 'Chaos', 'Winter', 'Beginner'],
+  'END_STATE': ['Night', 'Tree', 'Full', 'City', 'Order', 'Summer', 'Expert'],
+  'TOPIC': ['Quantum computing', 'Machine learning', 'Climate change', 'Cryptocurrency', 'Healthy eating', 'Space exploration', 'Artificial Intelligence', 'Cybersecurity'],
+  'LANGUAGE': ['Python', 'JavaScript', 'TypeScript', 'Rust', 'Go', 'C++', 'Java', 'Ruby', 'Swift', 'Kotlin'],
+  'FOCUS_AREA': ['Performance', 'Security', 'Readability', 'Best practices', 'Scalability', 'Maintainability', 'Accessibility'],
+  'INDUSTRY': ['Tech startup', 'Coffee shop', 'Fitness brand', 'Eco-friendly', 'Gaming', 'Healthcare', 'Finance', 'Education', 'Real estate'],
   'EMOTION': ['Joy', 'Sadness', 'Surprise', 'Anger', 'Confusion', 'Excitement']
 };
+
+const getDailySuggestions = (suggestions: Record<string, string[]>, count: number = 5): Record<string, string[]> => {
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  
+  const random = (s: number) => {
+    let x = Math.sin(s++) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const result: Record<string, string[]> = {};
+  
+  for (const [key, values] of Object.entries(suggestions)) {
+    if (!values || values.length <= count) {
+      result[key] = values;
+      continue;
+    }
+    
+    const shuffled = [...values].sort((a, b) => {
+      const hashA = a.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const hashB = b.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      return random(seed + hashA) - random(seed + hashB);
+    });
+    
+    result[key] = shuffled.slice(0, count);
+  }
+  
+  return result;
+};
+
+const VARIABLE_SUGGESTIONS = getDailySuggestions(ALL_VARIABLE_SUGGESTIONS);
 
 const FRAMEWORKS = {
   text: [
@@ -80,6 +166,7 @@ interface Props {
   onSessionUpdate?: (session: ChatSession) => void;
   onInputUsed?: () => void;
   onSaveSuccess?: (savedPrompt: SavedPrompt) => void;
+  onSwitchVersion?: (prompt: SavedPrompt) => void;
 }
 
 export const ChatInterface: React.FC<Props> = ({ 
@@ -92,7 +179,8 @@ export const ChatInterface: React.FC<Props> = ({
   currentSession,
   onSessionUpdate,
   onInputUsed,
-  onSaveSuccess
+  onSaveSuccess,
+  onSwitchVersion
 }) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [input, setInput] = useState('');
@@ -107,10 +195,38 @@ export const ChatInterface: React.FC<Props> = ({
   const [showFrameworks, setShowFrameworks] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
+  const [promptVersions, setPromptVersions] = useState<SavedPrompt[]>([]);
+  const [showVersionsDropdown, setShowVersionsDropdown] = useState(false);
+  const versionsDropdownRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textFileInputRef = useRef<HTMLInputElement>(null);
   const lastXRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (editingPrompt) {
+      fetch(`/api/prompts/${editingPrompt.id}/versions`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setPromptVersions(data);
+          }
+        })
+        .catch(console.error);
+    } else {
+      setPromptVersions([]);
+    }
+  }, [editingPrompt]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (versionsDropdownRef.current && !versionsDropdownRef.current.contains(event.target as Node)) {
+        setShowVersionsDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Handle dragging for resizable pane
   useEffect(() => {
@@ -168,6 +284,7 @@ export const ChatInterface: React.FC<Props> = ({
       currentType: type,
       resultHistory: history || resultHistory,
       currentResultIndex: index !== undefined ? index : currentResultIndex,
+      editingPromptId: editingPrompt?.id
     };
 
     try {
@@ -224,6 +341,7 @@ export const ChatInterface: React.FC<Props> = ({
   useEffect(() => {
     if (initialInput) {
       setInput(initialInput);
+      handleSend(initialInput);
       onInputUsed?.();
     }
   }, [initialInput]);
@@ -272,11 +390,12 @@ export const ChatInterface: React.FC<Props> = ({
     }
   };
 
-  const handleSend = async () => {
-    if ((!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading) return;
+  const handleSend = async (overrideInput?: string) => {
+    const textToUse = overrideInput !== undefined ? overrideInput : input;
+    if ((!textToUse.trim() && !selectedImage && attachedFiles.length === 0) || isLoading) return;
 
-    let userContent = input;
-    if (selectedImage && !input.trim()) {
+    let userContent = textToUse;
+    if (selectedImage && !textToUse.trim()) {
       userContent = "Analyze this image and generate a highly detailed prompt that would recreate it.";
     }
 
@@ -428,7 +547,8 @@ export const ChatInterface: React.FC<Props> = ({
           tags: saveData.tags.split(',').map(t => t.trim()).filter(Boolean),
           messages: messages,
           parentId: parentId,
-          versionNotes: saveData.versionNotes
+          versionNotes: saveData.versionNotes,
+          derivedFromId: saveMode === 'new_version' ? editingPrompt?.id : undefined
         })
       });
       
@@ -444,6 +564,7 @@ export const ChatInterface: React.FC<Props> = ({
         messages: messages,
         parentId: parentId,
         versionNotes: saveData.versionNotes,
+        derivedFromId: saveMode === 'new_version' ? editingPrompt?.id : undefined,
         createdAt: method === 'POST' ? Date.now() : (editingPrompt?.createdAt || Date.now()),
         isFavorite: method === 'POST' ? false : (editingPrompt?.isFavorite || false)
       };
@@ -529,8 +650,8 @@ export const ChatInterface: React.FC<Props> = ({
                       <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'new_version' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
                         <input type="radio" name="saveMode" value="new_version" checked={saveMode === 'new_version'} onChange={() => setSaveMode('new_version')} className="hidden" />
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Save as New Version</span>
-                          <span className="text-xs text-stone-500 dark:text-slate-400">Keep history, create a variation</span>
+                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Branch Sub-version</span>
+                          <span className="text-xs text-stone-500 dark:text-slate-400">Creates a new version derived from the current one</span>
                         </div>
                       </label>
                       <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'update' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
@@ -624,8 +745,65 @@ export const ChatInterface: React.FC<Props> = ({
         </div>
         <div className="flex items-center gap-4">
           {editingPrompt && (
-             <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100 dark:border-amber-800/50">
-               Editing: {editingPrompt.title}
+             <div className="relative" ref={versionsDropdownRef}>
+               <button 
+                 onClick={() => setShowVersionsDropdown(!showVersionsDropdown)}
+                 className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+               >
+                 <span>Editing: {editingPrompt.title}</span>
+                 {promptVersions.length > 1 && <ChevronDown size={12} />}
+               </button>
+               
+               <AnimatePresence>
+                 {showVersionsDropdown && promptVersions.length > 1 && (
+                   <motion.div
+                     initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                     animate={{ opacity: 1, y: 0, scale: 1 }}
+                     exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                     className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-stone-200 dark:border-slate-700 overflow-hidden z-50"
+                   >
+                     <div className="p-2 border-b border-stone-100 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/50">
+                       <h3 className="text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-wider px-2">Versions</h3>
+                     </div>
+                     <div className="max-h-64 overflow-y-auto p-1">
+                       {promptVersions.map((version) => (
+                         <button
+                           key={version.id}
+                           onClick={() => {
+                             setShowVersionsDropdown(false);
+                             if (version.id !== editingPrompt.id) {
+                               onSwitchVersion?.(version);
+                             }
+                           }}
+                           className={cn(
+                             "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex flex-col gap-1",
+                             version.id === editingPrompt.id 
+                               ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400" 
+                               : "hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-300"
+                           )}
+                         >
+                           <div className="flex items-center justify-between">
+                             <span className="font-semibold truncate">{version.title}</span>
+                             <span className="text-[10px] opacity-60 shrink-0">
+                               {new Date(version.createdAt).toLocaleDateString()}
+                             </span>
+                           </div>
+                           {version.versionNotes && (
+                             <span className="text-xs opacity-70 truncate block">
+                               {version.versionNotes}
+                             </span>
+                           )}
+                           {version.derivedFromId && (
+                             <span className="text-[9px] text-amber-600/70 dark:text-amber-400/70 block mt-0.5">
+                               ↳ Branched from {promptVersions.find(p => p.id === version.derivedFromId)?.title || 'previous version'}
+                             </span>
+                           )}
+                         </button>
+                       ))}
+                     </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
              </div>
           )}
           {messages.length > 0 && (
@@ -849,16 +1027,35 @@ export const ChatInterface: React.FC<Props> = ({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Describe your idea or attach context..."
-                className="w-full pl-24 pr-16 py-5 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
+                className={cn(
+                  "w-full pl-24 py-5 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500",
+                  lastResult?.refinedPrompt ? "pr-28" : "pr-16"
+                )}
                 disabled={isLoading}
               />
-              <button
-                onClick={handleSend}
-                disabled={(!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading}
-                className="absolute right-3 p-3 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95"
-              >
-                <Send size={20} />
-              </button>
+              <div className="absolute right-3 flex gap-2">
+                {lastResult?.refinedPrompt && (
+                  <button
+                    onClick={() => {
+                      const final = getFinalPrompt();
+                      handleSend(`Please refine this prompt further:\n\n${final}`);
+                    }}
+                    disabled={isLoading}
+                    className="p-3 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-2xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-95"
+                    title="Refine Current Prompt"
+                  >
+                    <Sparkles size={20} />
+                  </button>
+                )}
+                <button
+                  onClick={() => handleSend()}
+                  disabled={(!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading}
+                  className="p-3 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95"
+                  title="Send Message"
+                >
+                  <Send size={20} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1081,6 +1278,10 @@ export const ChatInterface: React.FC<Props> = ({
                 }}
                 variables={variables}
                 className="mb-4"
+                onRefine={() => {
+                  const final = getFinalPrompt();
+                  handleSend(`Please refine this prompt further:\n\n${final}`);
+                }}
               />
               
               <div className="mt-4 flex items-center justify-between">

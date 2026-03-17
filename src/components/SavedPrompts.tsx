@@ -145,7 +145,8 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all group relative overflow-hidden flex flex-col"
+                onClick={() => onEdit(mainPrompt)}
+                className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all group relative overflow-hidden flex flex-col cursor-pointer"
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 dark:bg-emerald-500/10 blur-2xl rounded-full -mr-12 -mt-12 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/20 transition-colors" />
                 
@@ -176,7 +177,7 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
-                      onClick={() => toggleFavorite(mainPrompt.id, !!mainPrompt.isFavorite)}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(mainPrompt.id, !!mainPrompt.isFavorite); }}
                       className={cn(
                         "p-2 rounded-xl transition-all shadow-sm",
                         mainPrompt.isFavorite 
@@ -188,14 +189,14 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                       <Star size={16} className={mainPrompt.isFavorite ? "fill-current" : ""} />
                     </button>
                     <button 
-                      onClick={() => onEdit(mainPrompt)}
+                      onClick={(e) => { e.stopPropagation(); onEdit(mainPrompt); }}
                       className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm"
                       title="Edit/Reiterate"
                     >
                       <Edit3 size={16} />
                     </button>
                     <button 
-                      onClick={() => handleDelete(mainPrompt.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(mainPrompt.id); }}
                       className="p-2 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-600 dark:hover:bg-pink-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm"
                       title="Delete"
                     >
@@ -238,7 +239,7 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                 {hasVersions && (
                   <div className="mt-6 pt-4 border-t border-stone-100 dark:border-slate-700">
                     <button 
-                      onClick={() => toggleGroup(groupId)}
+                      onClick={(e) => { e.stopPropagation(); toggleGroup(groupId); }}
                       className="flex items-center justify-between w-full text-xs font-bold text-stone-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                     >
                       <span className="flex items-center gap-2">
@@ -258,21 +259,25 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                         >
                           <div className="mt-4 space-y-3 pl-4 border-l-2 border-stone-200 dark:border-slate-700">
                             {sortedVersions.slice(1).map((version, idx) => (
-                              <div key={version.id} className="p-3 bg-stone-50 dark:bg-slate-900/50 rounded-xl border border-stone-100 dark:border-slate-700/50 group/version relative">
+                              <div 
+                                key={version.id} 
+                                onClick={(e) => { e.stopPropagation(); onEdit(version); }}
+                                className="p-3 bg-stone-50 dark:bg-slate-900/50 rounded-xl border border-stone-100 dark:border-slate-700/50 group/version relative cursor-pointer hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-colors"
+                              >
                                 <div className="flex justify-between items-start mb-2">
                                   <div className="text-[10px] font-black text-stone-400 dark:text-slate-500 uppercase tracking-widest">
                                     Version {sortedVersions.length - idx - 1} • {new Date(version.createdAt).toLocaleDateString()}
                                   </div>
                                   <div className="flex gap-2 opacity-0 group-hover/version:opacity-100 transition-opacity">
                                     <button 
-                                      onClick={() => onEdit(version)}
+                                      onClick={(e) => { e.stopPropagation(); onEdit(version); }}
                                       className="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-slate-900 transition-all"
                                       title="Load this version"
                                     >
                                       <Edit3 size={12} />
                                     </button>
                                     <button 
-                                      onClick={() => handleDelete(version.id)}
+                                      onClick={(e) => { e.stopPropagation(); handleDelete(version.id); }}
                                       className="p-1.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-lg hover:bg-pink-600 dark:hover:bg-pink-500 hover:text-white dark:hover:text-slate-900 transition-all"
                                       title="Delete version"
                                     >

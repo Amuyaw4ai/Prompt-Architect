@@ -30,7 +30,7 @@ export const TemplatesGallery: React.FC<Props> = ({ onSelect }) => {
     if (!selectedTemplate) return;
     let result = selectedTemplate.template;
     Object.entries(formValues).forEach(([key, val]) => {
-      result = result.replace(`[${key}]`, val || `[${key}]`);
+      result = result.replaceAll(`[${key}]`, val || `[${key}]`);
     });
     onSelect(result, selectedTemplate.type);
     setSelectedTemplate(null);

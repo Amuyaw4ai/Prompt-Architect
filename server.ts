@@ -15,6 +15,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS saved_prompts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     parent_id INTEGER,
+    derived_from_id INTEGER,
     title TEXT NOT NULL,
     original_idea TEXT NOT NULL,
     refined_prompt TEXT NOT NULL,
@@ -43,16 +44,23 @@ db.exec(`
     current_type TEXT NOT NULL,
     result_history TEXT,
     current_result_index INTEGER,
+    editing_prompt_id INTEGER,
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 `);
 
 try {
+  db.exec("ALTER TABLE saved_prompts ADD COLUMN derived_from_id INTEGER;");
+} catch (e) {}
+try {
   db.exec("ALTER TABLE chat_sessions ADD COLUMN result_history TEXT;");
 } catch (e) {}
 try {
   db.exec("ALTER TABLE chat_sessions ADD COLUMN current_result_index INTEGER;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE chat_sessions ADD COLUMN editing_prompt_id INTEGER;");
 } catch (e) {}
 try {
   db.exec("ALTER TABLE saved_prompts ADD COLUMN is_favorite INTEGER DEFAULT 0;");
@@ -103,6 +111,7 @@ async function startServer() {
       return {
         ...row,
         parentId: row.parent_id,
+        derivedFromId: row.derived_from_id,
         versionNotes: row.version_notes,
         tags,
         messages,
@@ -116,13 +125,50 @@ async function startServer() {
     res.json(result);
   });
 
+  app.get("/api/prompts/:id/versions", (req, res) => {
+    const { id } = req.params;
+    
+    // First, find the root ID
+    const currentPrompt = db.prepare("SELECT id, parent_id FROM saved_prompts WHERE id = ?").get(id) as any;
+    if (!currentPrompt) return res.status(404).json({ error: "Prompt not found" });
+    
+    const rootId = currentPrompt.parent_id || currentPrompt.id;
+    
+    // Fetch all prompts in this family
+    const rows = db.prepare("SELECT * FROM saved_prompts WHERE id = ? OR parent_id = ? ORDER BY created_at DESC").all(rootId, rootId);
+    
+    const result = rows.map((row: any) => {
+      let tags = [];
+      let messages = [];
+      try { tags = row.tags ? JSON.parse(row.tags) : []; } catch (e) {}
+      try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
+      
+      return {
+        id: row.id,
+        parentId: row.parent_id,
+        derivedFromId: row.derived_from_id,
+        title: row.title,
+        originalIdea: row.original_idea,
+        refinedPrompt: row.refined_prompt,
+        type: row.type,
+        tags,
+        messages,
+        isFavorite: row.is_favorite === 1,
+        versionNotes: row.version_notes,
+        createdAt: row.created_at * 1000
+      };
+    });
+
+    res.json(result);
+  });
+
   app.post("/api/prompts", (req, res) => {
-    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, parentId, versionNotes } = req.body;
+    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, parentId, versionNotes, derivedFromId } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages, is_favorite, parent_id, version_notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages, is_favorite, parent_id, version_notes, derived_from_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, parentId || null, versionNotes || null);
+    const info = stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, parentId || null, versionNotes || null, derivedFromId || null);
     res.json({ id: info.lastInsertRowid });
   });
 
@@ -180,6 +226,7 @@ async function startServer() {
         currentType: row.current_type,
         resultHistory,
         currentResultIndex: row.current_result_index,
+        editingPromptId: row.editing_prompt_id,
         updatedAt: row.updated_at * 1000,
         createdAt: row.created_at * 1000
       };
@@ -209,24 +256,24 @@ async function startServer() {
   });
 
   app.post("/api/sessions", (req, res) => {
-    const { id, title, messages, currentType, resultHistory, currentResultIndex } = req.body;
+    const { id, title, messages, currentType, resultHistory, currentResultIndex, editingPromptId } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO chat_sessions (id, title, messages, current_type, result_history, current_result_index)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO chat_sessions (id, title, messages, current_type, result_history, current_result_index, editing_prompt_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0);
+    stmt.run(id, title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, editingPromptId || null);
     res.json({ success: true });
   });
 
   app.put("/api/sessions/:id", (req, res) => {
     const { id } = req.params;
-    const { title, messages, currentType, resultHistory, currentResultIndex } = req.body;
+    const { title, messages, currentType, resultHistory, currentResultIndex, editingPromptId } = req.body;
     const stmt = db.prepare(`
       UPDATE chat_sessions 
-      SET title = ?, messages = ?, current_type = ?, result_history = ?, current_result_index = ?, updated_at = strftime('%s', 'now')
+      SET title = ?, messages = ?, current_type = ?, result_history = ?, current_result_index = ?, editing_prompt_id = ?, updated_at = strftime('%s', 'now')
       WHERE id = ?
     `);
-    stmt.run(title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, id);
+    stmt.run(title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, editingPromptId || null, id);
     res.json({ success: true });
   });
 
@@ -241,6 +288,39 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // Helper function to get daily rotating suggestions
+  const getDailySuggestions = (suggestions: Record<string, string[]>, count: number = 4): Record<string, string[]> => {
+    const today = new Date();
+    // Seed changes every 24 hours
+    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    
+    // Simple seeded PRNG
+    const random = (s: number) => {
+      let x = Math.sin(s++) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const result: Record<string, string[]> = {};
+    
+    for (const [key, values] of Object.entries(suggestions)) {
+      if (!values || values.length <= count) {
+        result[key] = values;
+        continue;
+      }
+      
+      // Create a seeded copy of the array
+      const shuffled = [...values].sort((a, b) => {
+        const hashA = a.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hashB = b.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        return random(seed + hashA) - random(seed + hashB);
+      });
+      
+      result[key] = shuffled.slice(0, count);
+    }
+    
+    return result;
+  };
+
   // Hardcoded templates for now, could be in DB
   app.get("/api/templates", (req, res) => {
     const templates = [
@@ -253,10 +333,31 @@ async function startServer() {
         template: "A cinematic portrait of [subject], [lighting] lighting, shot on [camera], 8k resolution, highly detailed skin textures, [mood] atmosphere.",
         placeholders: ["subject", "lighting", "camera", "mood"],
         suggestions: {
-          subject: ["a grizzled detective", "an elven warrior", "a cyberpunk hacker", "a wise old monk"],
-          lighting: ["Rembrandt", "neon rim", "dramatic chiaroscuro", "soft golden hour"],
-          camera: ["35mm lens", "85mm portrait lens", "medium format", "anamorphic lens"],
-          mood: ["melancholic", "intense", "ethereal", "gritty"]
+          subject: [
+            "a grizzled detective", "an elven warrior", "a cyberpunk hacker", "a wise old monk",
+            "a rogue AI", "a time-traveling historian", "a neon samurai", "a space explorer",
+            "a mythical beast", "a steampunk inventor", "a wandering merchant", "a celestial being",
+            "a deep sea diver", "a haunted doll", "a feral druid", "a cosmic entity",
+            "a weary astronaut", "a royal knight", "a street urchin", "a mad scientist"
+          ],
+          lighting: [
+            "Rembrandt", "neon rim", "dramatic chiaroscuro", "soft golden hour",
+            "volumetric fog", "harsh shadows", "bioluminescent", "moonlight",
+            "candlelight", "lens flare", "dappled sunlight", "overcast diffused",
+            "strobe light", "underwater caustic", "firelight", "cyberpunk neon"
+          ],
+          camera: [
+            "35mm lens", "85mm portrait lens", "medium format", "anamorphic lens",
+            "wide angle", "macro", "drone shot", "low angle", "fisheye", "telephoto",
+            "Dutch angle", "bird's eye view", "worm's eye view", "over the shoulder",
+            "point of view", "isometric", "panoramic", "tilt-shift"
+          ],
+          mood: [
+            "melancholic", "intense", "ethereal", "gritty",
+            "dark and gritty", "uplifting", "mysterious", "energetic",
+            "whimsical", "ominous", "peaceful", "chaotic",
+            "nostalgic", "romantic", "tense", "dreamlike"
+          ]
         },
         image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80"
       },
@@ -269,9 +370,22 @@ async function startServer() {
         template: "An anime illustration of [subject] in the style of Studio Ghibli, [setting], lush landscapes, soft watercolor textures, [time_of_day] light.",
         placeholders: ["subject", "setting", "time_of_day"],
         suggestions: {
-          subject: ["a young witch flying", "a giant fluffy spirit", "a brave knight", "a curious cat"],
-          setting: ["a magical forest", "a floating island", "a bustling steampunk town", "a quiet seaside village"],
-          time_of_day: ["golden hour", "starry night", "misty morning", "bright afternoon"]
+          subject: [
+            "a young witch flying", "a giant fluffy spirit", "a brave knight", "a curious cat",
+            "a wandering musician", "a lost prince", "a mechanical golem", "a talking fox",
+            "a spirited princess", "a grumpy old wizard", "a sky pirate", "a gentle giant",
+            "a forest spirit", "a brave little girl", "a mysterious traveler", "a clockwork bird"
+          ],
+          setting: [
+            "a magical forest", "a floating island", "a bustling steampunk town", "a quiet seaside village",
+            "an ancient overgrown castle", "a hidden valley", "a skyship deck", "a glowing crystal cave",
+            "a cozy bakery", "a train traveling over water", "a bathhouse for spirits", "a windmill on a hill"
+          ],
+          time_of_day: [
+            "golden hour", "starry night", "misty morning", "bright afternoon",
+            "twilight", "moonlit night", "rainy afternoon", "sunrise",
+            "overcast day", "sunset", "dusk", "midnight"
+          ]
         },
         image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80"
       },
@@ -284,9 +398,21 @@ async function startServer() {
         template: "A sprawling cyberpunk city at [time], neon signs in [color_palette], rainy streets reflecting lights, [atmosphere] mood, high-tech low-life aesthetic.",
         placeholders: ["time", "color_palette", "atmosphere"],
         suggestions: {
-          time: ["midnight", "dusk", "dawn", "3 AM"],
-          color_palette: ["neon pink and cyan", "acid green and purple", "deep blue and orange", "monochrome red"],
-          atmosphere: ["gritty", "holographic", "dystopian", "rainy and melancholic"]
+          time: [
+            "midnight", "dusk", "dawn", "3 AM",
+            "high noon", "sunset", "early morning", "late night",
+            "twilight", "rush hour", "dead of night", "sunrise"
+          ],
+          color_palette: [
+            "neon pink and cyan", "acid green and purple", "deep blue and orange", "monochrome red",
+            "gold and black", "electric blue and silver", "toxic green and yellow", "crimson and chrome",
+            "holographic pastel", "stark black and white", "muted grey and neon yellow", "vibrant synthwave"
+          ],
+          atmosphere: [
+            "gritty", "holographic", "dystopian", "rainy and melancholic",
+            "chaotic and crowded", "sterile and corporate", "abandoned and decaying", "high-tech and sleek",
+            "smog-filled", "neon-drenched", "underground and secretive", "glitchy and surreal"
+          ]
         },
         image: "https://images.unsplash.com/photo-1515630278258-407f66498911?auto=format&fit=crop&w=800&q=80"
       },
@@ -558,7 +684,14 @@ async function startServer() {
         image: "https://picsum.photos/seed/musicvideo/800/600"
       }
     ];
-    res.json(templates);
+    
+    // Apply daily rotation to all templates
+    const templatesWithDailySuggestions = templates.map(t => ({
+      ...t,
+      suggestions: getDailySuggestions(t.suggestions)
+    }));
+    
+    res.json(templatesWithDailySuggestions);
   });
 
   // Vite middleware for development
