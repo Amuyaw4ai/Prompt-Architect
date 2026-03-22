@@ -682,6 +682,85 @@ async function startServer() {
           style: ["gritty vintage", "futuristic cyberpunk", "dreamy ethereal", "high-energy pop"]
         },
         image: "https://picsum.photos/seed/musicvideo/800/600"
+      },
+      {
+        id: "text-marketing-1",
+        title: "Social Media Campaign",
+        description: "Engaging posts for various platforms",
+        type: "text",
+        category: "Marketing",
+        template: "Create a [platform] post about [topic]. The target audience is [audience]. The tone should be [tone] and include a strong call to action.",
+        placeholders: ["platform", "topic", "audience", "tone"],
+        suggestions: {
+          platform: ["Twitter thread", "LinkedIn post", "Instagram caption", "Facebook ad"],
+          topic: ["a new product launch", "a company milestone", "industry insights", "a special discount"],
+          audience: ["young professionals", "tech enthusiasts", "small business owners", "fitness lovers"],
+          tone: ["enthusiastic", "professional", "humorous", "urgent"]
+        },
+        image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "img-fantasy-1",
+        title: "Epic Fantasy Landscape",
+        description: "Grand, sweeping magical vistas",
+        type: "image",
+        category: "Fantasy",
+        template: "An epic fantasy landscape featuring [landmark], surrounded by [environment], under a [sky_condition] sky, [lighting] lighting, highly detailed concept art.",
+        placeholders: ["landmark", "environment", "sky_condition", "lighting"],
+        suggestions: {
+          landmark: ["a towering crystal spire", "an ancient ruined castle", "a giant glowing tree", "a floating citadel"],
+          environment: ["a misty glowing swamp", "jagged volcanic mountains", "a lush enchanted forest", "a frozen tundra"],
+          sky_condition: ["star-filled nebula", "blood red sunset", "aurora borealis", "stormy lightning"],
+          lighting: ["dramatic god rays", "ethereal glow", "harsh contrast", "soft magical"]
+        },
+        image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "vid-timelapse-1",
+        title: "City Time-Lapse",
+        description: "Fast-paced urban transition",
+        type: "video",
+        category: "Cinematic",
+        template: "A dynamic time-lapse video of [city_element] transitioning from [start_state] to [end_state], [camera_motion], 4k resolution.",
+        placeholders: ["city_element", "start_state", "end_state", "camera_motion"],
+        suggestions: {
+          city_element: ["a busy intersection", "a city skyline", "a construction site", "a train station"],
+          start_state: ["day", "dusk", "empty", "still"],
+          end_state: ["night", "dawn", "crowded", "bustling"],
+          camera_motion: ["static wide shot", "slow pan", "tilt up", "dolly forward"]
+        },
+        image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "text-recipe-1",
+        title: "Gourmet Recipe Creator",
+        description: "Detailed culinary instructions",
+        type: "text",
+        category: "Lifestyle",
+        template: "Write a detailed recipe for a [cuisine] dish featuring [main_ingredient]. The difficulty level should be [difficulty], and the style should be [style]. Include prep time and nutritional info.",
+        placeholders: ["cuisine", "main_ingredient", "difficulty", "style"],
+        suggestions: {
+          cuisine: ["Italian", "Japanese", "Mexican", "French"],
+          main_ingredient: ["fresh salmon", "wild mushrooms", "wagyu beef", "tofu"],
+          difficulty: ["beginner", "intermediate", "advanced", "Michelin-star"],
+          style: ["quick and easy", "slow-cooked", "healthy and low-carb", "decadent comfort food"]
+        },
+        image: "https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "img-retro-1",
+        title: "Retro Synthwave",
+        description: "80s inspired neon aesthetics",
+        type: "image",
+        category: "Retro",
+        template: "A retro synthwave illustration of [subject], featuring a [background_element], neon [color_palette] colors, VHS glitch effect, 80s aesthetic.",
+        placeholders: ["subject", "background_element", "color_palette"],
+        suggestions: {
+          subject: ["a sleek sports car", "a futuristic grid", "a palm tree silhouette", "a robotic bust"],
+          background_element: ["a wireframe sun", "a glowing city skyline", "a starry space background", "geometric shapes"],
+          color_palette: ["magenta and cyan", "purple and orange", "neon green and pink", "electric blue"]
+        },
+        image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=800&q=80"
       }
     ];
     
@@ -691,7 +770,24 @@ async function startServer() {
       suggestions: getDailySuggestions(t.suggestions)
     }));
     
-    res.json(templatesWithDailySuggestions);
+    // Shuffle the templates array daily
+    const today = new Date();
+    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    
+    const random = (s: number) => {
+      let x = Math.sin(s++) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const shuffledTemplates = [...templatesWithDailySuggestions].sort((a, b) => {
+      const hashA = a.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const hashB = b.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      return random(seed + hashA) - random(seed + hashB);
+    });
+    
+    // Return all templates, but shuffled daily so the gallery looks fresh
+    // The frontend will handle showing a subset and a "View More" button
+    res.json(shuffledTemplates);
   });
 
   // Vite middleware for development

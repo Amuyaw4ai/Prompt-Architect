@@ -13,6 +13,12 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onNewArchitect, onSelect
   const [isFirstTime, setIsFirstTime] = useState(true);
   const [recentPrompts, setRecentPrompts] = useState<SavedPrompt[]>([]);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [inspirationItems, setInspirationItems] = useState<any[]>([
+    { img: 'https://picsum.photos/seed/cyber/800/1000', prompt: 'Cinematic wide shot of a cyberpunk street market, neon lights reflecting in puddles, volumetric fog, 8k resolution, unreal engine 5 render.', type: 'image' },
+    { img: 'https://picsum.photos/seed/fantasy/800/600', prompt: 'A majestic floating island with a glowing crystal castle, surrounded by waterfalls falling into the clouds, digital painting, fantasy art.', type: 'image' },
+    { text: 'Write a comprehensive guide on quantum computing for a 10-year-old, using analogies involving toys and playgrounds.', type: 'text' },
+    { img: 'https://picsum.photos/seed/portrait/800/800', prompt: 'Studio portrait of an elderly fisherman, deep wrinkles, dramatic rembrandt lighting, 85mm lens, highly detailed.', type: 'image' },
+  ]);
 
   useEffect(() => {
     // Check if first time
@@ -29,14 +35,23 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onNewArchitect, onSelect
       .then(res => res.json())
       .then(data => setRecentPrompts(data.slice(0, 4)))
       .catch(console.error);
-  }, []);
 
-  const inspirationItems = [
-    { img: 'https://picsum.photos/seed/cyber/800/1000', prompt: 'Cinematic wide shot of a cyberpunk street market, neon lights reflecting in puddles, volumetric fog, 8k resolution, unreal engine 5 render.', type: 'image' },
-    { img: 'https://picsum.photos/seed/fantasy/800/600', prompt: 'A majestic floating island with a glowing crystal castle, surrounded by waterfalls falling into the clouds, digital painting, fantasy art.', type: 'image' },
-    { text: 'Write a comprehensive guide on quantum computing for a 10-year-old, using analogies involving toys and playgrounds.', type: 'text' },
-    { img: 'https://picsum.photos/seed/portrait/800/800', prompt: 'Studio portrait of an elderly fisherman, deep wrinkles, dramatic rembrandt lighting, 85mm lens, highly detailed.', type: 'image' },
-  ];
+    // Fetch templates for inspiration gallery
+    fetch('/api/templates')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          const items = data.slice(0, 4).map((t: any) => ({
+            img: t.image,
+            text: t.type === 'text' ? t.template : undefined,
+            prompt: t.template,
+            type: t.type
+          }));
+          setInspirationItems(items);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const totalGenerated = recentPrompts.length * 3 + 12;
   const totalSaved = recentPrompts.length;
@@ -110,6 +125,12 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onNewArchitect, onSelect
                   <Star size={20} className="text-amber-500" />
                   Inspiration Gallery
                 </h2>
+                <button 
+                  onClick={() => onNavigate('templates')} 
+                  className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                >
+                  View more in templates <ArrowRight size={14} />
+                </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {inspirationItems.map((item, i) => (
