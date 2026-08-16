@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css'; // Or a custom theme
+import { Pencil, Eye } from 'lucide-react';
 import { cn } from '../utils';
 
 // Define custom grammar for Prompt Engineering
@@ -18,10 +19,9 @@ interface Props {
   onChange: (val: string) => void;
   variables: Record<string, string>;
   className?: string;
-  onRefine?: () => void;
 }
 
-export const PromptEditor: React.FC<Props> = ({ value, onChange, variables, className, onRefine }) => {
+export const PromptEditor: React.FC<Props> = ({ value, onChange, variables, className }) => {
   const [isPreview, setIsPreview] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [cursorPos, setCursorPos] = useState({ top: 0, left: 0 });
@@ -122,21 +122,22 @@ export const PromptEditor: React.FC<Props> = ({ value, onChange, variables, clas
           {isPreview ? 'Real-time Preview' : 'Editor'}
         </span>
         <div className="flex gap-2">
-          {onRefine && (
-            <button
-              onClick={onRefine}
-              className="text-[10px] font-bold px-2 py-1 rounded bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 hover:bg-stone-300 dark:hover:bg-slate-600 transition-colors flex items-center gap-1"
-              title="Refine this prompt with AI"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-              Refine with AI
-            </button>
-          )}
           <button
             onClick={() => setIsPreview(!isPreview)}
-            className="text-[10px] font-bold px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors"
+            className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors flex items-center gap-1.5"
+            title={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
           >
-            {isPreview ? 'Show Code' : 'Show Preview'}
+            {isPreview ? (
+              <>
+                <Pencil size={11} />
+                Edit
+              </>
+            ) : (
+              <>
+                <Eye size={11} />
+                Show Preview
+              </>
+            )}
           </button>
         </div>
       </div>

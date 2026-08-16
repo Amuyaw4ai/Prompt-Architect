@@ -545,6 +545,21 @@ export const ChatInterface: React.FC<Props> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleQuickAddTag = (tag: string) => {
+    if (!lastResult) return;
+    const currentPrompt = lastResult.refinedPrompt;
+    const separator = currentPrompt.trim() 
+      ? (currentPrompt.includes('\n') && (tag.startsWith('Format:') || tag.startsWith('Tone:') || tag.startsWith('Complexity:')) ? '\n\n' : ', ') 
+      : '';
+    const updatedPrompt = currentPrompt ? `${currentPrompt}${separator}${tag}` : tag;
+    
+    setResultHistory(prev => {
+      const newHistory = [...prev];
+      newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: updatedPrompt };
+      return newHistory;
+    });
+  };
+
   const clearChat = () => {
     setMessages([]);
     setResultHistory([]);
@@ -1081,29 +1096,7 @@ export const ChatInterface: React.FC<Props> = ({
             </AnimatePresence>
 
             {/* Guidance Panel */}
-            <div className="flex flex-wrap gap-2 items-center justify-between">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-500 mr-2">Quick Add:</span>
-                {promptType === 'image' && ['Cinematic', 'Photorealistic', 'Macro', 'Golden Hour', '8k Resolution', 'Masterpiece'].map(tag => (
-                  <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                    + {tag}
-                  </button>
-                ))}
-                {promptType === 'video' && ['Slow Motion', 'Drone Shot', 'Cinematic Pan', 'Hyperlapse', 'Moody Atmosphere', 'Seamless Transition'].map(tag => (
-                  <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                    + {tag}
-                  </button>
-                ))}
-                {promptType === 'text' && [
-                  'Format: Bullet Points', 'Format: Essay', 'Format: Code', 'Format: JSON',
-                  'Tone: Formal', 'Tone: Casual', 'Tone: Humorous',
-                  'Complexity: Beginner', 'Complexity: Intermediate', 'Complexity: Expert'
-                ].map(tag => (
-                  <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                    + {tag}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center justify-end">
               <button 
                 onClick={() => setShowFrameworks(!showFrameworks)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
@@ -1391,6 +1384,46 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
               </div>
 
+              {/* Quick Add Modifiers */}
+              <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400">Quick Add:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {promptType === 'image' && ['Cinematic', 'Photorealistic', 'Macro', 'Golden Hour', '8k Resolution', 'Masterpiece'].map(tag => (
+                    <button 
+                      key={tag} 
+                      onClick={() => handleQuickAddTag(tag)} 
+                      className="px-2.5 py-1 text-[10px] font-bold bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 rounded-lg border border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all shadow-2xs active:scale-95"
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+                  {promptType === 'video' && ['Slow Motion', 'Drone Shot', 'Cinematic Pan', 'Hyperlapse', 'Moody Atmosphere', 'Seamless Transition'].map(tag => (
+                    <button 
+                      key={tag} 
+                      onClick={() => handleQuickAddTag(tag)} 
+                      className="px-2.5 py-1 text-[10px] font-bold bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 rounded-lg border border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all shadow-2xs active:scale-95"
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+                  {promptType === 'text' && [
+                    'Format: Bullet Points', 'Format: Essay', 'Format: Code', 'Format: JSON',
+                    'Tone: Formal', 'Tone: Casual', 'Tone: Humorous',
+                    'Complexity: Beginner', 'Complexity: Intermediate', 'Complexity: Expert'
+                  ].map(tag => (
+                    <button 
+                      key={tag} 
+                      onClick={() => handleQuickAddTag(tag)} 
+                      className="px-2.5 py-1 text-[10px] font-bold bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 rounded-lg border border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all shadow-2xs active:scale-95"
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Variable Filler */}
               {Object.keys(variables).length > 0 && (
                 <div className="mb-6 p-4 bg-white/60 dark:bg-slate-800/60 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/30 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1440,10 +1473,6 @@ export const ChatInterface: React.FC<Props> = ({
                 }}
                 variables={variables}
                 className="mb-4"
-                onRefine={() => {
-                  const final = getFinalPrompt();
-                  handleSend(`Please refine this prompt further:\n\n${final}`);
-                }}
               />
               
               <div className="mt-4 flex items-center justify-between">
