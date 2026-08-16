@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown } from 'lucide-react';
+import { Send, Copy, Check, RefreshCw, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown } from 'lucide-react';
 import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../types';
 import { refinePrompt } from '../services/geminiService';
 import { refinePromptLocally } from '../services/localEngine';
@@ -503,7 +503,7 @@ export const ChatInterface: React.FC<Props> = ({
       if (isConversationalQuery) {
         assistantContent = result.refinedPrompt;
       } else {
-        assistantContent = `### 🚀 Architected Prompt\n\`\`\`\n${result.refinedPrompt}\n\`\`\`\n\n### 💡 Design Decisions\n${result.explanation}`;
+        assistantContent = result.explanation;
       }
 
       if (isFallback) {
@@ -947,21 +947,14 @@ export const ChatInterface: React.FC<Props> = ({
               {messages.map((m) => (
                 <motion.div
                   key={m.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className={`flex gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
+                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
+                  <div className={`w-full max-w-[94%] sm:max-w-[90%] p-5 sm:p-6 rounded-[1.75rem] shadow-sm ${
                     m.role === 'user' 
-                      ? 'bg-stone-800 dark:bg-emerald-500 text-white dark:text-slate-900' 
-                      : 'bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400'
-                  }`}>
-                    {m.role === 'user' ? <User size={20} /> : <Bot size={20} />}
-                  </div>
-                  <div className={`max-w-[85%] p-6 rounded-[2rem] shadow-sm ${
-                    m.role === 'user' 
-                      ? 'bg-emerald-600 dark:bg-emerald-600 text-white rounded-tr-none' 
-                      : 'bg-white dark:bg-slate-800 border border-stone-100 dark:border-slate-700 rounded-tl-none'
+                      ? 'bg-emerald-600 dark:bg-emerald-600 text-white rounded-br-md' 
+                      : 'bg-white dark:bg-slate-800 border border-stone-100 dark:border-slate-700/80 rounded-bl-md'
                   }`}>
                     {m.imageUrl && (
                       m.mediaType?.startsWith("video/") || m.imageUrl?.startsWith("data:video/") ? (
@@ -1043,11 +1036,8 @@ export const ChatInterface: React.FC<Props> = ({
             </AnimatePresence>
 
             {isLoading && (
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
-                  <Bot size={20} className="text-emerald-600 dark:text-emerald-400 animate-pulse" />
-                </div>
-                <div className="flex gap-1.5 items-center p-6 bg-white dark:bg-slate-800 rounded-[2rem] rounded-tl-none border border-stone-100 dark:border-slate-700">
+              <div className="flex justify-start">
+                <div className="flex gap-1.5 items-center px-6 py-4 bg-white dark:bg-slate-800 rounded-[1.75rem] rounded-bl-md border border-stone-100 dark:border-slate-700/80 shadow-sm">
                   <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
                   <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-bounce" />

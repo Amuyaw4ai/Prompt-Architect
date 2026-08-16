@@ -5,11 +5,10 @@ import { TemplatesGallery } from './components/TemplatesGallery';
 import { ChatHistory } from './components/ChatHistory';
 import { Home } from './components/Home';
 import { PromptType, SavedPrompt, ChatSession } from './types';
-import { Sparkles, Info, Bookmark, Layout, Terminal, History, PlusCircle, Moon, Sun, Edit3, X, Home as HomeIcon } from 'lucide-react';
+import { Sparkles, Info, Bookmark, Layout, Terminal, History, PlusCircle, Moon, Sun, Home as HomeIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { NavigationMenu } from './components/NavigationMenu';
-import { Scratchpad } from './components/Scratchpad';
 
 type View = 'home' | 'architect' | 'saved' | 'templates' | 'history';
 
@@ -27,7 +26,6 @@ export default function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   const [chatKey, setChatKey] = useState<number>(0);
-  const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -166,9 +164,9 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="w-full flex flex-col lg:flex-row gap-6"
+              className="w-full"
             >
-              <div className="flex-1 min-w-0">
+              <div className="w-full min-w-0">
                 <ChatInterface 
                   key={chatKey}
                   promptType={promptType} 
@@ -184,22 +182,6 @@ export default function App() {
                   onSwitchVersion={handleEditPrompt}
                 />
               </div>
-              {isScratchpadOpen ? (
-                <div className="w-full xl:w-80 2xl:w-96 shrink-0 h-[500px] xl:h-[750px] bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 overflow-hidden transition-colors duration-300 relative">
-                  <Scratchpad onClose={() => setIsScratchpadOpen(false)} />
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setIsScratchpadOpen(true)} 
-                  className="fixed bottom-6 right-6 xl:static xl:bottom-auto xl:right-auto xl:h-[750px] xl:w-16 shrink-0 bg-white dark:bg-slate-800 rounded-full xl:rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 flex items-center justify-center hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors z-50 p-4 xl:p-0 group"
-                  title="Open Scratchpad"
-                >
-                  <div className="flex xl:flex-col items-center gap-3 text-stone-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    <Edit3 size={20} />
-                    <span className="hidden xl:block text-xs font-bold tracking-widest" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>SCRATCHPAD</span>
-                  </div>
-                </button>
-              )}
             </motion.div>
           )}
 
