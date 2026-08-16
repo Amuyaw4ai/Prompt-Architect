@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, Copy, Check, RefreshCw, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown, Wand2, Layers, Cpu, Zap } from 'lucide-react';
+import { Send, Copy, Check, RefreshCw, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown, Wand2, Layers, Cpu, Zap, FileCode, Braces, FileJson } from 'lucide-react';
 import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../types';
 import { refinePrompt, transformPromptToFramework } from '../services/geminiService';
 import { refinePromptLocally, transformPromptToFrameworkLocally } from '../services/localEngine';
@@ -214,7 +214,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [resultHistory, setResultHistory] = useState<PromptResult[]>(currentSession?.resultHistory || (initialResult ? [initialResult] : []));
   const [currentResultIndex, setCurrentResultIndex] = useState<number>(currentSession?.currentResultIndex ?? (initialResult ? 0 : -1));
   const lastResult = currentResultIndex >= 0 ? resultHistory[currentResultIndex] : null;
-  const [copied, setCopied] = useState(false);
+  const [copiedType, setCopiedType] = useState<'text' | 'markdown' | 'json' | 'download' | null>(null);
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string, name?: string } | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
@@ -545,8 +545,35 @@ export const ChatInterface: React.FC<Props> = ({
   const copyToClipboard = () => {
     const finalPrompt = getFinalPrompt();
     navigator.clipboard.writeText(finalPrompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedType('text');
+    setTimeout(() => setCopiedType(null), 2000);
+  };
+
+  const copyAsMarkdownBlock = () => {
+    const final = getFinalPrompt();
+    navigator.clipboard.writeText(`\`\`\`markdown\n${final}\n\`\`\``);
+    setCopiedType('markdown');
+    setTimeout(() => setCopiedType(null), 2000);
+  };
+
+  const copyAsJSON = () => {
+    if (!lastResult) return;
+    const jsonPayload = JSON.stringify({
+      title: saveData.title || lastResult.suggestedTitle || 'Architected Prompt',
+      prompt: getFinalPrompt(),
+      type: promptType,
+      variables: variables,
+      tags: lastResult.suggestedTags || []
+    }, null, 2);
+    navigator.clipboard.writeText(jsonPayload);
+    setCopiedType('json');
+    setTimeout(() => setCopiedType(null), 2000);
+  };
+
+  const handleDownloadJSON = () => {
+    exportToJSON();
+    setCopiedType('download');
+    setTimeout(() => setCopiedType(null), 2000);
   };
 
   const contextualQuickAddSuggestions = useMemo(() => {
@@ -1379,7 +1406,8 @@ export const ChatInterface: React.FC<Props> = ({
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 w-full">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 w-full">
+                  {/* 1. SAVE */}
                   <button
                     onClick={() => {
                       if (!editingPrompt && lastResult) {
@@ -1391,36 +1419,96 @@ export const ChatInterface: React.FC<Props> = ({
                       }
                       setShowSaveModal(true);
                     }}
-                    className="flex-1 justify-center flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition-all border border-emerald-100 dark:border-emerald-800/50 min-w-[100px]"
+                    className="flex flex-col items-center justify-center py-2 px-2 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-800/50 shadow-2xs hover:shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group"
+                    title={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
                   >
-                    {editingPrompt ? <Save size={14} /> : <Plus size={14} />}
-                    {editingPrompt ? 'UPDATE' : 'SAVE'}
+                    <div className="flex items-center gap-1.5">
+                      {editingPrompt ? <Save size={13} /> : <Plus size={13} />}
+                      <span className="text-[11px] font-bold uppercase tracking-tight">{editingPrompt ? 'Update' : 'Save'}</span>
+                    </div>
+                    <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none">
+                      Library
+                    </span>
                   </button>
+
+                  {/* 2. COPY PROMPT */}
                   <button
                     onClick={copyToClipboard}
-                    className="flex-1 justify-center flex items-center gap-2 px-3 py-2.5 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl text-xs font-bold shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all min-w-[100px]"
+                    className={cn(
+                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl text-xs font-bold transition-all shadow-2xs group",
+                      copiedType === 'text'
+                        ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                        : "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-400"
+                    )}
+                    title="Copy prompt text to clipboard"
                   >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'COPIED!' : 'COPY'}
+                    <div className="flex items-center gap-1.5">
+                      {copiedType === 'text' ? <Check size={13} className="stroke-[3]" /> : <Copy size={13} />}
+                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'text' ? 'Copied!' : 'Copy'}</span>
+                    </div>
+                    <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none">
+                      Prompt
+                    </span>
                   </button>
+
+                  {/* 3. COPY AS MARKDOWN BLOCK */}
                   <button
-                    onClick={() => {
-                      const final = getFinalPrompt();
-                      navigator.clipboard.writeText(`\`\`\`\n${final}\n\`\`\``);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 text-stone-400 dark:text-slate-400 rounded-xl hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all border border-stone-100 dark:border-slate-700 shrink-0"
-                    title="Copy as Markdown Block"
+                    onClick={copyAsMarkdownBlock}
+                    className={cn(
+                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl border transition-all shadow-2xs group",
+                      copiedType === 'markdown'
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
+                        : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                    )}
+                    title="Copy formatted as Markdown code block (```)"
                   >
-                    <MessageSquare size={16} />
+                    <div className="flex items-center gap-1.5">
+                      {copiedType === 'markdown' ? <Check size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <FileCode size={13} className="text-emerald-500" />}
+                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'markdown' ? 'Copied' : 'Copy MD'}</span>
+                    </div>
+                    <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none">
+                      Markdown
+                    </span>
                   </button>
+
+                  {/* 4. COPY AS JSON */}
                   <button
-                    onClick={exportToJSON}
-                    className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 text-stone-400 dark:text-slate-400 rounded-xl hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all border border-stone-100 dark:border-slate-700 shrink-0"
-                    title="Export to JSON"
+                    onClick={copyAsJSON}
+                    className={cn(
+                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl border transition-all shadow-2xs group",
+                      copiedType === 'json'
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
+                        : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                    )}
+                    title="Copy prompt formatted as JSON payload"
                   >
-                    <Download size={16} />
+                    <div className="flex items-center gap-1.5">
+                      {copiedType === 'json' ? <Check size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Braces size={13} className="text-amber-500" />}
+                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'json' ? 'Copied' : 'Copy JSON'}</span>
+                    </div>
+                    <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none">
+                      JSON
+                    </span>
+                  </button>
+
+                  {/* 5. DOWNLOAD AS JSON */}
+                  <button
+                    onClick={handleDownloadJSON}
+                    className={cn(
+                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl border transition-all shadow-2xs group col-span-2 sm:col-span-1",
+                      copiedType === 'download'
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
+                        : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                    )}
+                    title="Download prompt and settings as .json file"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {copiedType === 'download' ? <Check size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Download size={13} className="text-blue-500" />}
+                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'download' ? 'Saved' : 'Download'}</span>
+                    </div>
+                    <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none">
+                      JSON
+                    </span>
                   </button>
                 </div>
               </div>
