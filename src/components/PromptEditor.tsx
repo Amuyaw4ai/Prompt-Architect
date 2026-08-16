@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
-import 'prismjs/themes/prism.css'; // Or a custom theme
-import { Pencil, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import 'prismjs/themes/prism.css';
+import { Pencil, Eye, ChevronLeft, ChevronRight, RefreshCw, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
 
 // Define custom grammar for Prompt Engineering
@@ -24,6 +25,8 @@ interface Props {
   onPreviousVersion?: () => void;
   onNextVersion?: () => void;
   isCompact?: boolean;
+  isTransforming?: boolean;
+  transformingName?: string;
 }
 
 export const PromptEditor: React.FC<Props> = ({
@@ -35,7 +38,9 @@ export const PromptEditor: React.FC<Props> = ({
   totalVersions = 1,
   onPreviousVersion,
   onNextVersion,
-  isCompact = false
+  isCompact = false,
+  isTransforming = false,
+  transformingName = ''
 }) => {
   const [isPreview, setIsPreview] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -68,21 +73,16 @@ export const PromptEditor: React.FC<Props> = ({
     }
   };
 
-  // Simple auto-complete logic for variables
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === '[') {
-      // Trigger autocomplete
       const target = e.target as HTMLTextAreaElement;
-      
-      // Calculate approximate cursor position
       const textBeforeCursor = target.value.substring(0, target.selectionStart);
       const lines = textBeforeCursor.split('\n');
       const currentLine = lines.length;
       const currentColumn = lines[lines.length - 1].length;
       
-      // Rough estimation of pixel position (assuming ~21px line height and ~8px char width)
-      const top = Math.min(currentLine * 21, 200); 
-      const left = Math.min(currentColumn * 8, 300);
+      const top = Math.min(currentLine * 21, 220); 
+      const left = Math.min(currentColumn * 8, 260);
 
       setCursorPos({ top, left });
       setShowAutocomplete(true);
@@ -131,17 +131,67 @@ export const PromptEditor: React.FC<Props> = ({
   };
 
   return (
-    <div className={cn("relative flex flex-col rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-white dark:bg-slate-800 shadow-inner overflow-hidden", className)}>
+    <div className={cn("relative flex flex-col h-full w-full rounded-2xl border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden", className)}>
+      
+      {/* Transformation Overlay */}
+      <AnimatePresence>
+        {isTransforming && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 z-30 bg-stone-950/80 dark:bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center overflow-hidden border border-emerald-500/40 shadow-2xl"
+          >
+            {/* Animated Cybernetic Scan Line */}
+            <motion.div
+              className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981]"
+              animate={{ top: ["0%", "100%", "0%"] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            <div className="relative z-10 flex flex-col items-center gap-2">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-400 shadow-md shadow-emerald-950/50"
+              >
+                <RefreshCw size={18} className="animate-spin text-emerald-400" />
+              </motion.div>
+
+              <div className="space-y-0.5">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <h4 className="text-xs font-black text-white tracking-wide">
+                    Transforming into {transformingName}
+                  </h4>
+                </div>
+                <p className="text-[10px] text-stone-300 dark:text-slate-400 max-w-xs leading-tight">
+                  Restructuring prompt parameters into the {transformingName} framework schema...
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Editor Header */}
       <div className={cn(
-        "flex justify-between items-center bg-stone-50 dark:bg-slate-900 border-b border-stone-100 dark:border-slate-700 transition-all",
-        isCompact ? "px-3 py-1.5 gap-1.5" : "px-4 py-2 gap-2"
+        "flex justify-between items-center bg-stone-50/90 dark:bg-slate-900/90 border-b border-stone-100 dark:border-slate-700/80 shrink-0 transition-all",
+        isCompact ? "px-3 py-2 gap-1.5" : "px-4 py-2.5 gap-2"
       )}>
-        <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest truncate">
-          {isPreview ? (isCompact ? 'Preview' : 'Real-time Preview') : 'Editor'}
-        </span>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest truncate">
+            {isPreview ? 'Real-time Preview' : 'Prompt Editor'}
+          </span>
+          <span className="text-[10px] text-stone-400 dark:text-slate-500 font-mono hidden sm:inline">
+            [{value ? value.length : 0} chars]
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
           {totalVersions > 1 && (
-            <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-800/50 shadow-2xs">
+            <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-stone-200 dark:border-slate-700 shadow-2xs">
               <button 
                 type="button"
                 onClick={onPreviousVersion}
@@ -151,11 +201,9 @@ export const PromptEditor: React.FC<Props> = ({
               >
                 <ChevronLeft size={13} />
               </button>
-              {!isCompact && (
-                <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1 select-none">
-                  {currentVersionIndex + 1} / {totalVersions}
-                </span>
-              )}
+              <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1 select-none">
+                {currentVersionIndex + 1} / {totalVersions}
+              </span>
               <button 
                 type="button"
                 onClick={onNextVersion}
@@ -167,10 +215,11 @@ export const PromptEditor: React.FC<Props> = ({
               </button>
             </div>
           )}
+
           <button
             onClick={() => setIsPreview(!isPreview)}
             className={cn(
-              "font-bold rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors flex items-center justify-center gap-1.5",
+              "font-bold rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/50 dark:border-emerald-800/40 transition-colors flex items-center justify-center gap-1.5",
               isCompact ? "p-1.5 text-xs" : "text-[10px] px-2.5 py-1"
             )}
             title={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
@@ -178,53 +227,69 @@ export const PromptEditor: React.FC<Props> = ({
           >
             {isPreview ? (
               <>
-                <Pencil size={isCompact ? 13 : 11} />
-                {!isCompact && <span>Edit</span>}
+                <Pencil size={12} />
+                <span className="hidden sm:inline">Edit</span>
               </>
             ) : (
               <>
-                <Eye size={isCompact ? 13 : 11} />
-                {!isCompact && <span>Show Preview</span>}
+                <Eye size={12} />
+                <span className="hidden sm:inline">Preview</span>
               </>
             )}
           </button>
         </div>
       </div>
       
-      <div className="relative p-4 max-h-60 overflow-y-auto">
+      {/* Editor Body - Scrollable content */}
+      <div className="relative p-4 flex-1 min-h-0 overflow-y-auto no-scrollbar">
         {isPreview ? (
           <div className="font-mono text-sm text-stone-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
-            {getFinalPrompt()}
+            {getFinalPrompt() || (
+              <span className="text-stone-400 dark:text-slate-500 italic">No prompt generated yet. Type your idea in the chat below.</span>
+            )}
           </div>
         ) : (
-          <Editor
-            value={value}
-            onValueChange={handleValueChange}
-            highlight={code => Prism.highlight(code, Prism.languages.prompt, 'prompt')}
-            padding={0}
-            className="font-mono text-sm text-stone-800 dark:text-slate-200 leading-relaxed outline-none"
-            textareaClassName="outline-none"
-            onKeyDown={(e: any) => handleKeyDown(e)}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              minHeight: '100px',
-            }}
-          />
+          <div className="relative min-h-full">
+            {!value && (
+              <div className="absolute inset-0 pointer-events-none text-stone-300 dark:text-slate-600 font-mono text-sm leading-relaxed select-none">
+                // Prompt Architect Editor
+                <br />
+                // Type your prompt here or start a conversation in the chat...
+              </div>
+            )}
+            <Editor
+              value={value}
+              onValueChange={handleValueChange}
+              highlight={code => Prism.highlight(code || '', Prism.languages.prompt, 'prompt')}
+              padding={0}
+              className="font-mono text-sm text-stone-800 dark:text-slate-200 leading-relaxed outline-none min-h-[140px]"
+              textareaClassName="outline-none"
+              onKeyDown={(e: any) => handleKeyDown(e)}
+              style={{
+                fontFamily: 'var(--font-mono)',
+                minHeight: '100%',
+              }}
+            />
+          </div>
         )}
 
+        {/* Bracket Variable Autocomplete Dropdown */}
         {showAutocomplete && !isPreview && filteredSuggestions.length > 0 && (
           <div 
             className="absolute z-50 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-xl shadow-xl p-2 flex flex-col gap-1 max-h-48 overflow-y-auto"
             style={{ top: cursorPos.top, left: cursorPos.left }}
           >
-            <div className="text-[10px] font-bold text-stone-400 uppercase px-2 mb-1">Suggestions</div>
+            <div className="text-[10px] font-bold text-stone-400 uppercase px-2 mb-1 flex items-center gap-1">
+              <Sparkles size={10} className="text-emerald-500" />
+              <span>Variables</span>
+            </div>
             {filteredSuggestions.map(s => (
               <button
                 key={s}
                 onClick={() => insertSuggestion(s)}
                 className="text-left px-3 py-1.5 text-xs font-mono text-stone-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
-                {s}
+                [{s}]
               </button>
             ))}
           </div>
