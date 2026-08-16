@@ -1,9 +1,11 @@
+import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,9 +78,162 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Set up body parser with higher limit for media upload base64 strings
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Routes
+  app.post("/api/refine", async (req, res) => {
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "GEMINI_API_KEY environment variable is not configured." });
+      }
+
+      const { initialPrompt, type, previousContext, media } = req.body;
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
+      const SYSTEM_INSTRUCTIONS = `You are a world-class Prompt Architect. Your goal is to transform user ideas and uploaded media (images, videos, documents, audio) into detailed, high-performance prompts for AI models (like Imagen, Veo, Gemini, Claude, GPT-4, etc.).
+
+CRITICAL ARCHITECTURAL RULES:
+1. **INFORMATIONAL / CONVERSATIONAL QUERIES**: If the user's input consists purely of general questions, advice, clarifications (e.g. "what is Midjourney?", "explain negative prompts", general greetings, etc.), act as a helpful AI assistant and provide a clear, direct explanation in the \`refinedPrompt\` field itself using Markdown.
+2. **GENERAL LLM (TEXT) PROMPT REQUESTS**:
+   - When a user requests a general LLM prompt (or when the target modality is 'text' / LLM instruction):
+     a. **CLARIFYING QUESTIONS**: In the \`questions\` array, ALWAYS ask the user about:
+        1. Preferred output format (e.g., bullet points, essay, step-by-step code, Markdown tables, JSON schema).
+        2. Desired tone (e.g., formal, casual, humorous, authoritative, concise).
+        3. Level of complexity for the response (e.g., beginner-friendly/ELI5, intermediate, advanced technical expert, executive summary).
+     b. **INTEGRATION INTO WELL-DEFINED LLM PROMPT**: Synthesize a comprehensive, production-ready master prompt in \`refinedPrompt\` that explicitly integrates and structures:
+        - **Specialist Role & Persona**
+        - **Core Objective & Tasks**
+        - **Preferred Output Format** (incorporate user choices if provided in the prompt/context, or provide structured customizable specs)
+        - **Desired Tone & Voice** (incorporate user choices if provided in the prompt/context, or provide structured customizable specs)
+        - **Complexity & Depth Level** (incorporate user choices if provided in the prompt/context, or provide structured customizable specs)
+        - **Strict Negative Constraints & Execution Rules**
+3. **IMAGE & VIDEO PROMPT REQUESTS**:
+   - For images, synthesize a rich prompt covering camera optics, lighting, composition, mood, and color palette.
+   - For videos, synthesize high-temporal prompts detailing camera locomotion, fps/pacing, transitions, and environmental dynamics.
+4. **INTEGRATING USER FEEDBACK**: When the user specifies their preferred format, tone, or complexity in subsequent turns or within the initial prompt, immediately weave those exact preferences into the updated \`refinedPrompt\`.`;
+
+      const contents: any[] = [];
+      let textPrompt = `
+        Prompt Type: ${type ? type.toUpperCase() : "DETECT"}
+        User's Initial Idea: "${initialPrompt || ""}"
+        ${previousContext ? `Previous Context/Answers: ${previousContext}` : ""}
+        
+        Please refine this prompt or ask clarifying questions.
+      `;
+
+      if (media && media.data && media.mimeType) {
+        let mediaTypeLabel = "media";
+        if (media.mimeType.startsWith("image/")) {
+          mediaTypeLabel = "image";
+        } else if (media.mimeType.startsWith("video/")) {
+          mediaTypeLabel = "video";
+        } else if (media.mimeType.startsWith("audio/")) {
+          mediaTypeLabel = "audio";
+        } else {
+          mediaTypeLabel = "file";
+        }
+
+        let mediaInstructions = "";
+        if (type === "image") {
+          mediaInstructions = `Analyze this ${mediaTypeLabel} and generate a highly detailed IMAGE generation prompt (style, lighting, framing, subject focus, atmosphere) that would recreate or match this content.`;
+        } else if (type === "video") {
+          mediaInstructions = `Analyze this ${mediaTypeLabel} and generate a highly detailed VIDEO generation prompt focusing on pacing, camera work, motions, transitions, and temporal lighting changes.`;
+        } else if (type === "text") {
+          mediaInstructions = `Analyze this ${mediaTypeLabel} and generate an advanced, powerful LLM master instruction prompt to analyze, interpret, expand, or summarize this media.`;
+        } else {
+          mediaInstructions = `Analyze this ${mediaTypeLabel} thoroughly. Infer if the user would benefit most from an 'image' recreation prompt, a 'video' scene prompt, or a 'text' analysis prompt. Generate a highly detailed, world-class prompt for the optimal modality.`;
+        }
+
+        textPrompt = `
+          Prompt Type: ${type ? type.toUpperCase() : "DETECT"}
+          User's Initial Idea: "${initialPrompt || "Analyze this media."}"
+          ${previousContext ? `Previous Context/Answers: ${previousContext}` : ""}
+          
+          ${mediaInstructions}
+        `;
+
+        contents.push({
+          inlineData: {
+            data: media.data,
+            mimeType: media.mimeType
+          }
+        });
+      }
+
+      contents.push({ text: textPrompt });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: { parts: contents },
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTIONS,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              refinedPrompt: {
+                type: Type.STRING,
+                description: "The full, expanded prompt for the target AI model. MUST NOT BE EMPTY.",
+              },
+              explanation: {
+                type: Type.STRING,
+                description: "A brief explanation of why you designed or reverse engineered the prompt this way.",
+              },
+              questions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.STRING,
+                },
+                description: "Only include 2-3 clarifying questions if more details are needed for absolute perfection.",
+              },
+              suggestedTitle: {
+                type: Type.STRING,
+                description: "A short catchy title (max 5 words).",
+              },
+              suggestedTags: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.STRING,
+                },
+                description: "3-5 relevant descriptive tags.",
+              },
+              detectedType: {
+                type: Type.STRING,
+                description: "The best fitting prompt type for the media/input. Must be 'image', 'video', or 'text'.",
+              }
+            },
+            required: ["refinedPrompt", "explanation", "suggestedTitle", "suggestedTags"],
+          },
+        },
+      });
+
+      const text = response.text || "{}";
+      const result = JSON.parse(text);
+      
+      res.json({
+        refinedPrompt: result.refinedPrompt || "",
+        explanation: result.explanation || "",
+        questions: result.questions || [],
+        suggestedTitle: result.suggestedTitle || "Untitled Prompt",
+        suggestedTags: result.suggestedTags || [],
+        detectedType: result.detectedType || type || "image"
+      });
+    } catch (error: any) {
+      console.error("Gemini Refine Error:", error);
+      res.status(500).json({ error: error.message || "Failed to process the prompt generation." });
+    }
+  });
+
   app.get("/api/prompts", (req, res) => {
     const { search, type } = req.query;
     let query = "SELECT * FROM saved_prompts";

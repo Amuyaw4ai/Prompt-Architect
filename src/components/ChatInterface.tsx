@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Copy, Check, RefreshCw, User, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown } from 'lucide-react';
 import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../types';
 import { refinePrompt } from '../services/geminiService';
+import { refinePromptLocally } from '../services/localEngine';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { cn, calculatePromptScore } from '../utils';
@@ -35,12 +36,26 @@ const ALL_VARIABLE_SUGGESTIONS: Record<string, string[]> = {
     'Financial Analyst', 'Marketing Guru', 'UX Designer', 'Product Manager', 'SEO Specialist'
   ],
   'TONE': [
-    'Professional', 'Humorous', 'Empathetic', 'Authoritative', 'Casual', 'Persuasive',
-    'Academic', 'Conversational', 'Inspirational', 'Sarcastic', 'Urgent', 'Friendly'
+    'Formal & Professional', 'Casual & Friendly', 'Humorous & Witty', 'Authoritative & Concise',
+    'Empathetic & Warm', 'Persuasive', 'Academic & Rigorous', 'Inspirational'
+  ],
+  'DESIRED_TONE': [
+    'Formal & Professional', 'Casual & Conversational', 'Humorous & Witty', 'Authoritative & Concise',
+    'Empathetic & Supportive', 'Academic & Objective'
   ],
   'FORMAT': [
-    'Bullet points', 'JSON', 'Step-by-step guide', 'Essay', 'Table', 'Markdown',
-    'Email', 'Blog post', 'Tweet thread', 'Presentation slides', 'Code snippet', 'Checklist'
+    'Bullet points', 'Structured Essay', 'Step-by-step code walkthrough', 'Markdown table', 'JSON schema',
+    'Executive Summary', 'Email draft', 'Checklist'
+  ],
+  'OUTPUT_FORMAT': [
+    'Bullet points', 'Detailed essay', 'Clean executable code', 'Markdown comparison table',
+    'Strict JSON schema', 'Numbered step-by-step guide'
+  ],
+  'COMPLEXITY': [
+    'Beginner-friendly (ELI5)', 'Intermediate practical', 'Advanced technical expert', 'Executive summary'
+  ],
+  'COMPLEXITY_LEVEL': [
+    'Beginner-friendly (ELI5)', 'Intermediate practical', 'Advanced technical expert', 'Executive briefing'
   ],
   'AUDIENCE': [
     'Beginners', 'Executives', 'Children', 'Tech enthusiasts', 'General public',
@@ -124,6 +139,7 @@ const VARIABLE_SUGGESTIONS = getDailySuggestions(ALL_VARIABLE_SUGGESTIONS);
 
 const FRAMEWORKS = {
   text: [
+    { name: 'Calibrated Master Prompt', template: 'Act as an expert [ROLE].\nTask: [TASK]\nOutput Format: [OUTPUT_FORMAT]\nTone: [DESIRED_TONE]\nComplexity: [COMPLEXITY_LEVEL]\nContext: [CONTEXT]' },
     { name: 'Chain of Thought', template: 'Think step-by-step to solve this:\n[PROBLEM]' },
     { name: 'Roleplay', template: 'Act as an expert [ROLE]. Your task is to [TASK]. Here is the context:\n[CONTEXT]' },
     { name: 'Few-Shot', template: 'Here are some examples:\nInput: [EXAMPLE_1_INPUT]\nOutput: [EXAMPLE_1_OUTPUT]\n\nNow process this:\nInput: [ACTUAL_INPUT]' },
@@ -182,6 +198,15 @@ export const ChatInterface: React.FC<Props> = ({
   onSaveSuccess,
   onSwitchVersion
 }) => {
+  const [isLocalMode, setIsLocalMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('prompt_architect_engine_mode');
+    return saved ? saved === 'local' : true; // Default is Local mode (Local Studio)
+  });
+
+  useEffect(() => {
+    localStorage.setItem('prompt_architect_engine_mode', isLocalMode ? 'local' : 'live');
+  }, [isLocalMode]);
+
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -190,7 +215,7 @@ export const ChatInterface: React.FC<Props> = ({
   const lastResult = currentResultIndex >= 0 ? resultHistory[currentResultIndex] : null;
   const [copied, setCopied] = useState(false);
   const [variables, setVariables] = useState<Record<string, string>>({});
-  const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string } | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string, name?: string } | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
   const [showFrameworks, setShowFrameworks] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
@@ -364,7 +389,8 @@ export const ChatInterface: React.FC<Props> = ({
       setSelectedImage({
         data: base64Data,
         mimeType: file.type,
-        url: base64String // Store full base64 for persistence
+        url: base64String, // Store full base64 for persistence & preview
+        name: file.name
       });
     };
     reader.readAsDataURL(file);
@@ -396,7 +422,15 @@ export const ChatInterface: React.FC<Props> = ({
 
     let userContent = textToUse;
     if (selectedImage && !textToUse.trim()) {
-      userContent = "Analyze this image and generate a highly detailed prompt that would recreate it.";
+      if (selectedImage.mimeType.startsWith("image/")) {
+        userContent = "Analyze this image and generate a highly detailed prompt that would recreate its style and details.";
+      } else if (selectedImage.mimeType.startsWith("video/")) {
+        userContent = "Analyze this video and generate a highly detailed video generation prompt detailing the actions, camera motion, and cinematic composition.";
+      } else if (selectedImage.mimeType.startsWith("audio/")) {
+        userContent = "Analyze this audio and generate a highly detailed descriptive summary and transcript-based prompt.";
+      } else {
+        userContent = "Analyze this media file and generate a high-end detailed prompt based on its context and instructions.";
+      }
     }
 
     let fullContentForAI = userContent;
@@ -410,19 +444,24 @@ export const ChatInterface: React.FC<Props> = ({
       content: userContent,
       timestamp: Date.now(),
       imageUrl: selectedImage?.url,
+      mediaType: selectedImage?.mimeType,
       attachedFiles: attachedFiles.length > 0 ? attachedFiles : undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
-    const imageToSend = selectedImage ? { data: selectedImage.data, mimeType: selectedImage.mimeType } : undefined;
-    setSelectedImage(null);
-    setAttachedFiles([]);
-    setIsLoading(true);
+
+    let result: PromptResult;
+    let isFallback = false;
 
     try {
+      const imageToSend = selectedImage ? { data: selectedImage.data, mimeType: selectedImage.mimeType, url: selectedImage.url, name: selectedImage.name } : undefined;
+      setSelectedImage(null);
+      setAttachedFiles([]);
+      setIsLoading(true);
+
       const context = messages
-        .map(m => {
+         .map(m => {
           let msgContent = m.content;
           if (m.attachedFiles && m.attachedFiles.length > 0) {
             msgContent += '\n\nContext from attached files:\n' + m.attachedFiles.map(f => `--- ${f.name} ---\n${f.content}\n---`).join('\n\n');
@@ -431,14 +470,45 @@ export const ChatInterface: React.FC<Props> = ({
         })
         .join('\n');
 
-      const result = await refinePrompt(fullContentForAI, promptType, context, imageToSend);
+      if (isLocalMode) {
+        // Run completely local offline builder
+        result = refinePromptLocally(fullContentForAI, promptType, imageToSend);
+      } else {
+        try {
+          result = await refinePrompt(fullContentForAI, promptType, context, imageToSend);
+        } catch (apiError) {
+          console.error("Live AI mode error, falling back to local studio:", apiError);
+          result = refinePromptLocally(fullContentForAI, promptType, imageToSend);
+          isFallback = true;
+        }
+      }
+      
+      // Auto-switch modality tab if the system detected a different, more appropriate target type!
+      if (result.detectedType && result.detectedType !== promptType) {
+        onTypeChange(result.detectedType);
+      }
+
       const newHistory = [...resultHistory.slice(0, currentResultIndex + 1), result];
       const newIndex = newHistory.length - 1;
       
       setResultHistory(newHistory);
       setCurrentResultIndex(newIndex);
 
-      let assistantContent = result.explanation;
+      let assistantContent = "";
+      const lowerUserQuery = fullContentForAI.trim().toLowerCase();
+      const isConversationalQuery =
+        lowerUserQuery.endsWith("?") ||
+        /^(hello|hi|hey|greetings|yo|how|why|what|who|where|explain|describe|tell|show|can you|could you|is there|are there|tips|help|support|tutorial|instructions|how to|what is)/i.test(lowerUserQuery);
+
+      if (isConversationalQuery) {
+        assistantContent = result.refinedPrompt;
+      } else {
+        assistantContent = `### 🚀 Architected Prompt\n\`\`\`\n${result.refinedPrompt}\n\`\`\`\n\n### 💡 Design Decisions\n${result.explanation}`;
+      }
+
+      if (isFallback) {
+        assistantContent = "⚠️ **Live Google AI is currently unconfigured or unavailable.** I have automatically processed your prompt instantly using our high-precision **Local Studio Engine** to prevent session breakages!\n\n" + assistantContent;
+      }
       if (result.questions && result.questions.length > 0) {
         assistantContent += "\n\n**To make this even better, could you tell me:**\n" + 
           result.questions.map(q => `- ${q}`).join('\n');
@@ -727,18 +797,51 @@ export const ChatInterface: React.FC<Props> = ({
       </AnimatePresence>
 
       {/* Header with Model Selector */}
-      <div className="px-8 py-4 border-b border-stone-100 dark:border-slate-700 flex items-center justify-between bg-stone-50/30 dark:bg-slate-800/50">
-        <div className="flex items-center gap-4">
+      <div className="px-8 py-4 border-b border-stone-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50/30 dark:bg-slate-800/50">
+        <div className="flex flex-wrap items-center gap-4">
           <PromptTypeSelector selected={promptType} onChange={handleTypeChange} />
-          <div className="hidden sm:flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black text-stone-400 dark:text-slate-500 uppercase tracking-widest">AI Architect Active</span>
+          
+          {/* Active Mode selector */}
+          <div className="flex items-center bg-stone-100 dark:bg-slate-700 p-1 rounded-2xl border border-stone-200 dark:border-slate-600 shadow-sm">
+            <button
+              onClick={() => setIsLocalMode(true)}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2",
+                isLocalMode 
+                  ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                  : "text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-slate-200"
+              )}
+              title="Completely private offline heuristic-based compiler"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Local Studio
+            </button>
+            <button
+              onClick={() => setIsLocalMode(false)}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2",
+                !isLocalMode 
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-slate-200"
+              )}
+              title="Remote live Google Gemini-3.5-flash agent"
+            >
+              <span className={cn("w-1.5 h-1.5 rounded-full", !isLocalMode ? "bg-blue-500 animate-pulse" : "bg-stone-300 dark:bg-slate-500")} />
+              Live Google AI
+            </button>
           </div>
+
+          <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-white dark:bg-slate-700 border border-stone-100 dark:border-slate-600 rounded-full shadow-sm">
+            <span className="text-[9px] font-bold text-stone-500 dark:text-slate-300 uppercase tracking-widest">
+              Engine: {isLocalMode ? "Offline-Heuristic" : "Live-Gemini"}
+            </span>
+          </div>
+
           {currentSession && (
             <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white dark:bg-slate-700 border border-stone-100 dark:border-slate-600 rounded-full shadow-sm">
               <Clock size={12} className="text-stone-400 dark:text-slate-400" />
               <span className="text-[10px] font-bold text-stone-500 dark:text-slate-300">
-                SESSION: {new Date(currentSession.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                ACTIVE
               </span>
             </div>
           )}
@@ -861,7 +964,16 @@ export const ChatInterface: React.FC<Props> = ({
                       : 'bg-white dark:bg-slate-800 border border-stone-100 dark:border-slate-700 rounded-tl-none'
                   }`}>
                     {m.imageUrl && (
-                      <img src={m.imageUrl} alt="Uploaded" className="max-w-full h-auto max-h-64 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
+                      m.mediaType?.startsWith("video/") || m.imageUrl?.startsWith("data:video/") ? (
+                        <video src={m.imageUrl} controls className="max-w-full h-auto max-h-64 rounded-xl mb-3 border border-emerald-500/30" />
+                      ) : m.mediaType?.startsWith("image/") || m.imageUrl?.startsWith("data:image/") || !m.mediaType ? (
+                        <img src={m.imageUrl} alt="Uploaded media" className="max-w-full h-auto max-h-64 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="inline-flex items-center gap-2 bg-stone-50 dark:bg-slate-900 border border-emerald-500/20 p-3 rounded-xl mb-3">
+                          <Paperclip size={16} className="text-emerald-500" />
+                          <span className="text-xs font-semibold text-stone-700 dark:text-slate-300">Attached Media file</span>
+                        </div>
+                      )
                     )}
                     {m.attachedFiles && m.attachedFiles.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -876,6 +988,53 @@ export const ChatInterface: React.FC<Props> = ({
                     {m.content && (
                       <div className={cn("markdown-body", m.role === 'user' ? "text-white" : "text-stone-800 dark:text-slate-200")}>
                         <ReactMarkdown>{m.content}</ReactMarkdown>
+                      </div>
+                    )}
+                    {m.role === 'assistant' && (promptType === 'text' || m.content.toLowerCase().includes('format') || m.content.toLowerCase().includes('tone') || m.content.toLowerCase().includes('complexity')) && (
+                      <div className="mt-4 pt-3 border-t border-stone-100 dark:border-slate-700/80 space-y-2.5">
+                        <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
+                          <Sparkles size={12} />
+                          <span>Quick Answer / Calibrate LLM Prompt:</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Format:</span>
+                          {['Bullet Points', 'Essay', 'Step-by-Step Code', 'JSON Schema', 'Markdown Table'].map((fmt) => (
+                            <button
+                              key={fmt}
+                              onClick={() => handleSend(`Set preferred format to: "${fmt}"`)}
+                              disabled={isLoading}
+                              className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-800/50 rounded-md border border-emerald-200/50 dark:border-emerald-700/50 transition-colors disabled:opacity-50"
+                            >
+                              {fmt}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Tone:</span>
+                          {['Formal & Professional', 'Casual & Friendly', 'Humorous & Witty', 'Authoritative & Concise'].map((tn) => (
+                            <button
+                              key={tn}
+                              onClick={() => handleSend(`Set desired tone to: "${tn}"`)}
+                              disabled={isLoading}
+                              className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/50 rounded-md border border-amber-200/50 dark:border-amber-700/50 transition-colors disabled:opacity-50"
+                            >
+                              {tn}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Complexity:</span>
+                          {['Beginner (ELI5)', 'Intermediate', 'Advanced Expert', 'Executive Summary'].map((cplx) => (
+                            <button
+                              key={cplx}
+                              onClick={() => handleSend(`Set response complexity to: "${cplx}"`)}
+                              disabled={isLoading}
+                              className="px-2 py-0.5 text-[10px] font-semibold bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-800/50 rounded-md border border-purple-200/50 dark:border-purple-700/50 transition-colors disabled:opacity-50"
+                            >
+                              {cplx}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -945,7 +1104,11 @@ export const ChatInterface: React.FC<Props> = ({
                     + {tag}
                   </button>
                 ))}
-                {promptType === 'text' && ['Professional Tone', 'Step-by-Step', 'Bullet Points', 'Creative Writing', 'JSON Format', 'Expert Persona'].map(tag => (
+                {promptType === 'text' && [
+                  'Format: Bullet Points', 'Format: Essay', 'Format: Code', 'Format: JSON',
+                  'Tone: Formal', 'Tone: Casual', 'Tone: Humorous',
+                  'Complexity: Beginner', 'Complexity: Intermediate', 'Complexity: Expert'
+                ].map(tag => (
                   <button key={tag} onClick={() => setInput(prev => prev + (prev ? ', ' : '') + tag)} className="px-2 py-1 text-[10px] font-bold bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
                     + {tag}
                   </button>
@@ -965,7 +1128,16 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="flex flex-wrap gap-2 mb-2">
                 {selectedImage && (
                   <div className="relative inline-block">
-                    <img src={selectedImage.url} alt="Selected" className="h-16 w-16 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" referrerPolicy="no-referrer" />
+                    {selectedImage.mimeType?.startsWith("image/") ? (
+                      <img src={selectedImage.url} alt="Selected" className="h-16 w-16 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" referrerPolicy="no-referrer" />
+                    ) : selectedImage.mimeType?.startsWith("video/") ? (
+                      <video src={selectedImage.url} className="h-16 w-16 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" muted playsInline autoPlay loop />
+                    ) : (
+                      <div className="h-16 w-16 bg-stone-100 dark:bg-slate-700 border-2 border-emerald-500 rounded-xl flex flex-col items-center justify-center p-1 text-center shadow-sm">
+                        <Paperclip size={16} className="text-emerald-500" />
+                        <span className="text-[8px] font-black text-stone-500 dark:text-slate-400 truncate w-full">{selectedImage.name || 'File'}</span>
+                      </div>
+                    )}
                     <button
                       onClick={() => setSelectedImage(null)}
                       className="absolute -top-2 -right-2 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-1 shadow-md hover:bg-pink-600 transition-colors"
@@ -992,7 +1164,7 @@ export const ChatInterface: React.FC<Props> = ({
             <div className="relative flex items-center group">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
                 className="hidden"
                 ref={fileInputRef}
                 onChange={handleImageUpload}

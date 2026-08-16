@@ -63,3 +63,73 @@ body {
 .token.punctuation {
   @apply text-stone-400 dark:text-slate-500;
 }
+
+/* ==========================================================================
+   Aesthetic Scrollbars - Seamlessly Blends with App UI
+   ========================================================================== */
+
+/* Universal thin, translucent, rounded scrollbars for WebKit & Blink */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(168, 162, 158, 0.25);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(16, 185, 129, 0.45);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(16, 185, 129, 0.65);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark Mode Scrollbars */
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.22);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(52, 211, 153, 0.45);
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background-color: rgba(52, 211, 153, 0.7);
+}
+
+/* Firefox standards-compliant scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 162, 158, 0.25) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(148, 163, 184, 0.22) transparent;
+}
+
+/* Utilities for hiding scrollbars completely on horizontal chips/carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+

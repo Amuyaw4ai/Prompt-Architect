@@ -6,6 +6,7 @@ export interface Message {
   content: string;
   timestamp: number;
   imageUrl?: string;
+  mediaType?: string;
   attachedFiles?: { name: string, content: string }[];
 }
 
@@ -15,6 +16,7 @@ export interface PromptResult {
   questions?: string[];
   suggestedTitle?: string;
   suggestedTags?: string[];
+  detectedType?: PromptType;
 }
 
 export interface ChatSession {
