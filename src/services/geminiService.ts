@@ -34,3 +34,39 @@ export async function refinePrompt(
     detectedType: result.detectedType
   };
 }
+
+export async function transformPromptToFramework(
+  currentPrompt: string,
+  frameworkName: string,
+  frameworkTemplate: string,
+  promptType: PromptType
+): Promise<PromptResult> {
+  const response = await fetch("/api/transform-framework", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      currentPrompt,
+      frameworkName,
+      frameworkTemplate,
+      promptType
+    })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.error || "Failed to transform prompt with AI framework engine.");
+  }
+
+  const result = await response.json();
+  return {
+    refinedPrompt: result.refinedPrompt || currentPrompt,
+    explanation: result.explanation || `Re-architected prompt into the ${frameworkName} framework.`,
+    questions: [],
+    suggestedTitle: result.suggestedTitle || `${frameworkName} Architecture`,
+    suggestedTags: result.suggestedTags || [frameworkName, promptType],
+    detectedType: result.detectedType || promptType
+  };
+}
+

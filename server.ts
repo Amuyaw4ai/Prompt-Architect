@@ -234,6 +234,102 @@ CRITICAL ARCHITECTURAL RULES:
     }
   });
 
+  app.post("/api/transform-framework", async (req, res) => {
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "GEMINI_API_KEY environment variable is not configured." });
+      }
+
+      const { currentPrompt, frameworkName, frameworkTemplate, promptType } = req.body;
+      if (!currentPrompt || !frameworkName) {
+        return res.status(400).json({ error: "Missing required fields: currentPrompt or frameworkName." });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
+      const SYSTEM_INSTRUCTION = `You are a master Prompt Architect specializing in formal prompt engineering frameworks (e.g., Product Showcase, AIDA Copywriting, Chain of Thought, Calibrated Master Prompt, Few-Shot, Isometric 3D, Cinematic Drone, Socratic Questioning, Code Review).
+
+Your mission is to transform and re-architect the provided prompt into the target framework schema.
+CRITICAL INSTRUCTIONS:
+1. Preserve all core subjects, specific details, technical nuances, constraints, and intent from the input prompt.
+2. Restructure and translate those exact ideas so that they strictly follow the structure, tone, and methodology of the target framework "${frameworkName}".
+3. If the framework uses blueprint variables (like [SUBJECT], [ROLE], [CAMERA], [LIGHTING], [RESOLUTION], [TASK], [CONTEXT]), populate them with rich, calibrated values derived from the prompt, or retain bracketed placeholders where dynamic parametrization is helpful.
+4. Provide a refined, production-ready master prompt in \`refinedPrompt\` formatted in clean, professional Markdown or target prompt notation.
+5. Provide a brief explanation of how the prompt was adapted to the framework in \`explanation\`.`;
+
+      const promptText = `
+Target Framework: ${frameworkName}
+Framework Reference Template:
+${frameworkTemplate || "Standard industry framework specification"}
+
+Target Modality: ${promptType || "detect"}
+
+Original Prompt to Transform:
+"""
+${currentPrompt}
+"""
+
+Please re-architect this prompt into the ${frameworkName} framework now.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: promptText,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              refinedPrompt: {
+                type: Type.STRING,
+                description: "The complete prompt restructured and written in the target framework format.",
+              },
+              explanation: {
+                type: Type.STRING,
+                description: "A brief, elegant design summary of how the prompt was adapted to the target framework.",
+              },
+              suggestedTitle: {
+                type: Type.STRING,
+                description: "A concise title reflecting the framework-adapted prompt.",
+              },
+              suggestedTags: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.STRING,
+                },
+                description: "Tags including the framework name and modality.",
+              }
+            },
+            required: ["refinedPrompt", "explanation", "suggestedTitle", "suggestedTags"],
+          },
+        },
+      });
+
+      const text = response.text || "{}";
+      const result = JSON.parse(text);
+
+      res.json({
+        refinedPrompt: result.refinedPrompt || currentPrompt,
+        explanation: result.explanation || `Successfully transformed prompt into the ${frameworkName} framework.`,
+        suggestedTitle: result.suggestedTitle || `${frameworkName} Architecture`,
+        suggestedTags: result.suggestedTags || [frameworkName, promptType || "prompt"],
+        detectedType: promptType || "text"
+      });
+    } catch (error: any) {
+      console.error("Gemini Framework Transform Error:", error);
+      res.status(500).json({ error: error.message || "Failed to transform prompt to target framework." });
+    }
+  });
+
   app.get("/api/prompts", (req, res) => {
     const { search, type } = req.query;
     let query = "SELECT * FROM saved_prompts";

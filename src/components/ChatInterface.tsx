@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Copy, Check, RefreshCw, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Send, Copy, Check, RefreshCw, Bot, Plus, Sparkles, Save, MessageSquare, Clock, ImagePlus, X, ChevronLeft, ChevronRight, Paperclip, Download, BookTemplate, ChevronDown, Wand2, Layers, Cpu, Zap } from 'lucide-react';
 import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../types';
-import { refinePrompt } from '../services/geminiService';
-import { refinePromptLocally } from '../services/localEngine';
+import { refinePrompt, transformPromptToFramework } from '../services/geminiService';
+import { refinePromptLocally, transformPromptToFrameworkLocally } from '../services/localEngine';
+import { getContextualSuggestions, toggleSuggestionInPrompt, QuickAddSuggestion } from '../utils/quickAdd';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { cn, calculatePromptScore } from '../utils';
@@ -218,6 +219,9 @@ export const ChatInterface: React.FC<Props> = ({
   const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string, name?: string } | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
   const [showFrameworks, setShowFrameworks] = useState(false);
+  const [isTransformingFramework, setIsTransformingFramework] = useState(false);
+  const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
+  const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video'>('current');
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
   const [promptVersions, setPromptVersions] = useState<SavedPrompt[]>([]);
@@ -545,19 +549,79 @@ export const ChatInterface: React.FC<Props> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleQuickAddTag = (tag: string) => {
+  const contextualQuickAddSuggestions = useMemo(() => {
+    if (!lastResult?.refinedPrompt) return [];
+    return getContextualSuggestions(lastResult.refinedPrompt, promptType);
+  }, [lastResult?.refinedPrompt, promptType]);
+
+  const handleToggleQuickAddSuggestion = (suggestion: QuickAddSuggestion) => {
     if (!lastResult) return;
     const currentPrompt = lastResult.refinedPrompt;
-    const separator = currentPrompt.trim() 
-      ? (currentPrompt.includes('\n') && (tag.startsWith('Format:') || tag.startsWith('Tone:') || tag.startsWith('Complexity:')) ? '\n\n' : ', ') 
-      : '';
-    const updatedPrompt = currentPrompt ? `${currentPrompt}${separator}${tag}` : tag;
+    const updatedPrompt = toggleSuggestionInPrompt(currentPrompt, suggestion, promptType);
     
     setResultHistory(prev => {
       const newHistory = [...prev];
       newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: updatedPrompt };
       return newHistory;
     });
+  };
+
+  const handleApplyFramework = async (fw: { name: string; template: string }) => {
+    if (!lastResult || isTransformingFramework) return;
+    const currentPrompt = lastResult.refinedPrompt;
+    if (!currentPrompt || !currentPrompt.trim()) return;
+
+    setIsTransformingFramework(true);
+    setTransformingFrameworkName(fw.name);
+
+    try {
+      let transformedResult: PromptResult;
+      if (!isLocalMode) {
+        try {
+          transformedResult = await transformPromptToFramework(
+            currentPrompt,
+            fw.name,
+            fw.template,
+            promptType
+          );
+        } catch (err) {
+          console.warn('Live AI framework transformation failed, falling back to local studio heuristics:', err);
+          transformedResult = transformPromptToFrameworkLocally(
+            currentPrompt,
+            fw.name,
+            fw.template,
+            promptType
+          );
+        }
+      } else {
+        // Subtle delay so cinematic scanning experience is clearly observable
+        await new Promise(res => setTimeout(res, 550));
+        transformedResult = transformPromptToFrameworkLocally(
+          currentPrompt,
+          fw.name,
+          fw.template,
+          promptType
+        );
+      }
+
+      // Smooth completion buffer for cinematic feel
+      await new Promise(res => setTimeout(res, 450));
+
+      setResultHistory(prev => {
+        const newHistory = [...prev, transformedResult];
+        const newIndex = newHistory.length - 1;
+        setCurrentResultIndex(newIndex);
+        if (messages.length > 0) {
+          saveSession(messages, promptType, newHistory, newIndex);
+        }
+        return newHistory;
+      });
+    } catch (error) {
+      console.error('Error applying framework:', error);
+    } finally {
+      setIsTransformingFramework(false);
+      setTransformingFrameworkName('');
+    }
   };
 
   const clearChat = () => {
@@ -1384,43 +1448,102 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Quick Add Modifiers */}
+              {/* Frameworks Bar */}
               <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400">Quick Add:</span>
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <BookTemplate size={13} className="text-emerald-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400">
+                      Frameworks:
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-stone-100/80 dark:bg-slate-900/60 p-0.5 rounded-lg border border-stone-200/50 dark:border-slate-700/50">
+                    {(['text', 'image', 'video'] as const).map(cat => {
+                      const isActive = (activeFrameworkCategory === 'current' ? promptType === cat : activeFrameworkCategory === cat);
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setActiveFrameworkCategory(cat)}
+                          className={cn(
+                            "text-[9px] font-bold uppercase px-2 py-0.5 rounded-md transition-all",
+                            isActive
+                              ? "bg-emerald-600 dark:bg-emerald-500 text-white shadow-2xs"
+                              : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
+                          )}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+
                 <div className="flex flex-wrap gap-1.5">
-                  {promptType === 'image' && ['Cinematic', 'Photorealistic', 'Macro', 'Golden Hour', '8k Resolution', 'Masterpiece'].map(tag => (
-                    <button 
-                      key={tag} 
-                      onClick={() => handleQuickAddTag(tag)} 
-                      className="px-2.5 py-1 text-[10px] font-bold bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 rounded-lg border border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all shadow-2xs active:scale-95"
-                    >
-                      + {tag}
-                    </button>
-                  ))}
-                  {promptType === 'video' && ['Slow Motion', 'Drone Shot', 'Cinematic Pan', 'Hyperlapse', 'Moody Atmosphere', 'Seamless Transition'].map(tag => (
-                    <button 
-                      key={tag} 
-                      onClick={() => handleQuickAddTag(tag)} 
-                      className="px-2.5 py-1 text-[10px] font-bold bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 rounded-lg border border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all shadow-2xs active:scale-95"
-                    >
-                      + {tag}
-                    </button>
-                  ))}
-                  {promptType === 'text' && [
-                    'Format: Bullet Points', 'Format: Essay', 'Format: Code', 'Format: JSON',
-                    'Tone: Formal', 'Tone: Casual', 'Tone: Humorous',
-                    'Complexity: Beginner', 'Complexity: Intermediate', 'Complexity: Expert'
-                  ].map(tag => (
-                    <button 
-                      key={tag} 
-                      onClick={() => handleQuickAddTag(tag)} 
-                      className="px-2.5 py-1 text-[10px] font-bold bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 rounded-lg border border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all shadow-2xs active:scale-95"
-                    >
-                      + {tag}
-                    </button>
-                  ))}
+                  {(FRAMEWORKS[activeFrameworkCategory === 'current' ? promptType : activeFrameworkCategory] || FRAMEWORKS[promptType] || FRAMEWORKS.text).map(fw => {
+                    const isTransformingThis = isTransformingFramework && transformingFrameworkName === fw.name;
+                    return (
+                      <button 
+                        key={fw.name} 
+                        disabled={isTransformingFramework}
+                        onClick={() => handleApplyFramework(fw)} 
+                        title={`Transform prompt to ${fw.name} format`}
+                        className={cn(
+                          "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5",
+                          isTransformingThis
+                            ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
+                            : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700 disabled:opacity-50 disabled:pointer-events-none"
+                        )}
+                      >
+                        <Sparkles size={10} className={isTransformingThis ? "text-white animate-spin" : "text-emerald-500 shrink-0"} />
+                        <span>{fw.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Contextual Suggestive Quick Add */}
+              <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <Zap size={13} className="text-amber-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400">
+                      Contextual Quick Add:
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-medium text-stone-400 dark:text-slate-500">
+                    Click to insert • Click active to remove
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {contextualQuickAddSuggestions.map(sug => {
+                    return (
+                      <button 
+                        key={sug.id} 
+                        onClick={() => handleToggleQuickAddSuggestion(sug)} 
+                        title={sug.active ? `Remove "${sug.label}" from prompt` : `Insert "${sug.label}" into prompt`}
+                        className={cn(
+                          "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5",
+                          sug.active
+                            ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500 shadow-xs shadow-emerald-600/30 hover:bg-emerald-700 dark:hover:bg-emerald-600"
+                            : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                        )}
+                      >
+                        {sug.active ? (
+                          <>
+                            <Check size={11} className="text-white stroke-[3]" />
+                            <span>{sug.label}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-emerald-500 font-bold">+</span>
+                            <span>{sug.label}</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1462,18 +1585,69 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
               )}
 
-              <PromptEditor
-                value={lastResult.refinedPrompt}
-                onChange={(newVal) => {
-                  setResultHistory(prev => {
-                    const newHistory = [...prev];
-                    newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: newVal };
-                    return newHistory;
-                  });
-                }}
-                variables={variables}
-                className="mb-4"
-              />
+              {/* Prompt Editor with Cinematic Loading State */}
+              <div className="relative mb-4">
+                <AnimatePresence>
+                  {isTransformingFramework && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="absolute inset-0 z-30 rounded-2xl bg-stone-950/80 dark:bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center overflow-hidden border border-emerald-500/40 shadow-2xl"
+                    >
+                      {/* Animated Cybernetic Scan Line */}
+                      <motion.div
+                        className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981]"
+                        animate={{ top: ["0%", "100%", "0%"] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      />
+
+                      {/* Ambient Neural Matrix Glow */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.15),transparent_70%)]" />
+
+                      <div className="relative z-10 flex flex-col items-center gap-3">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                          className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-950/50"
+                        >
+                          <RefreshCw size={22} className="animate-spin text-emerald-400" />
+                        </motion.div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                            <h4 className="text-sm font-black text-white tracking-wide">
+                              Transforming into {transformingFrameworkName}
+                            </h4>
+                          </div>
+                          <p className="text-[11px] text-stone-300 dark:text-slate-400 max-w-xs leading-relaxed">
+                            Restructuring prompt parameters into the {transformingFrameworkName} framework schema...
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-full bg-emerald-900/50 border border-emerald-500/30 text-[10px] font-mono text-emerald-300">
+                          <Sparkles size={11} className="text-emerald-400" />
+                          <span>Framework Synthesizer Active</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <PromptEditor
+                  value={lastResult.refinedPrompt}
+                  onChange={(newVal) => {
+                    setResultHistory(prev => {
+                      const newHistory = [...prev];
+                      newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: newVal };
+                      return newHistory;
+                    });
+                  }}
+                  variables={variables}
+                />
+              </div>
               
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-[10px] font-black text-emerald-400 dark:text-emerald-500 uppercase tracking-widest">Rate this architecture</span>
