@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css'; // Or a custom theme
-import { Pencil, Eye } from 'lucide-react';
+import { Pencil, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../utils';
 
 // Define custom grammar for Prompt Engineering
@@ -19,9 +19,22 @@ interface Props {
   onChange: (val: string) => void;
   variables: Record<string, string>;
   className?: string;
+  currentVersionIndex?: number;
+  totalVersions?: number;
+  onPreviousVersion?: () => void;
+  onNextVersion?: () => void;
 }
 
-export const PromptEditor: React.FC<Props> = ({ value, onChange, variables, className }) => {
+export const PromptEditor: React.FC<Props> = ({
+  value,
+  onChange,
+  variables,
+  className,
+  currentVersionIndex = 0,
+  totalVersions = 1,
+  onPreviousVersion,
+  onNextVersion
+}) => {
   const [isPreview, setIsPreview] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [cursorPos, setCursorPos] = useState({ top: 0, left: 0 });
@@ -121,7 +134,32 @@ export const PromptEditor: React.FC<Props> = ({ value, onChange, variables, clas
         <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
           {isPreview ? 'Real-time Preview' : 'Editor'}
         </span>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {totalVersions > 1 && (
+            <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-800/50 shadow-2xs">
+              <button 
+                type="button"
+                onClick={onPreviousVersion}
+                disabled={currentVersionIndex === 0}
+                className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
+                title="Previous Version"
+              >
+                <ChevronLeft size={13} />
+              </button>
+              <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1 select-none">
+                {currentVersionIndex + 1} / {totalVersions}
+              </span>
+              <button 
+                type="button"
+                onClick={onNextVersion}
+                disabled={currentVersionIndex === totalVersions - 1}
+                className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
+                title="Next Version"
+              >
+                <ChevronRight size={13} />
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setIsPreview(!isPreview)}
             className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors flex items-center gap-1.5"

@@ -169,35 +169,50 @@ export function isTagInPrompt(promptText: string, tag: string, label: string): b
 
 /**
  * Dynamically computes contextual suggestions tailored to the current prompt in the editor.
+ * Constrained strictly to 6-8 (max 10) high-impact suggestions to prevent decision fatigue.
  */
 export function getContextualSuggestions(promptText: string, promptType: PromptType): QuickAddSuggestion[] {
-  const suggestionsMap = new Map<string, QuickAddSuggestion>();
   const raw = promptText.trim();
+  const MAX_SUGGESTIONS = 8; // Strictly between 6 and 10
+  const suggestionsMap = new Map<string, QuickAddSuggestion>();
 
-  // 1. Scan against domain rules
-  for (const rule of DOMAIN_RULES) {
-    const matches = rule.keywords.some(rx => rx.test(raw));
-    if (matches) {
-      for (const item of rule.suggestions) {
-        if (!suggestionsMap.has(item.label)) {
-          const active = isTagInPrompt(raw, item.tag, item.label);
-          suggestionsMap.set(item.label, {
-            id: `sug-${item.label.toLowerCase().replace(/\s+/g, '-')}`,
-            label: item.label,
-            tag: item.tag,
-            category: item.category,
-            categoryName: item.categoryName,
-            active
-          });
-        }
+  // Rank domain rules by keyword relevance match count
+  const scoredRules = DOMAIN_RULES.map(rule => {
+    let score = 0;
+    for (const rx of rule.keywords) {
+      if (rx.test(raw)) {
+        score += 1;
       }
     }
+    return { rule, score };
+  })
+  .filter(r => r.score > 0)
+  .sort((a, b) => b.score - a.score);
+
+  // 1. Fill from highest scoring domain rules
+  for (const { rule } of scoredRules) {
+    for (const item of rule.suggestions) {
+      if (suggestionsMap.size >= MAX_SUGGESTIONS) break;
+      if (!suggestionsMap.has(item.label)) {
+        const active = isTagInPrompt(raw, item.tag, item.label);
+        suggestionsMap.set(item.label, {
+          id: `sug-${item.label.toLowerCase().replace(/\s+/g, '-')}`,
+          label: item.label,
+          tag: item.tag,
+          category: item.category,
+          categoryName: item.categoryName,
+          active
+        });
+      }
+    }
+    if (suggestionsMap.size >= MAX_SUGGESTIONS) break;
   }
 
-  // 2. Add modality fallbacks if we have fewer than 6 suggestions
+  // 2. Add modality fallbacks if we have fewer than 6 suggestions to guarantee at least 6
   if (suggestionsMap.size < 6) {
     const fallbacks = MODALITY_FALLBACKS[promptType] || MODALITY_FALLBACKS.text;
     for (const item of fallbacks) {
+      if (suggestionsMap.size >= MAX_SUGGESTIONS) break;
       if (!suggestionsMap.has(item.label)) {
         const active = isTagInPrompt(raw, item.tag, item.label);
         suggestionsMap.set(item.label, {
@@ -212,7 +227,7 @@ export function getContextualSuggestions(promptText: string, promptType: PromptT
     }
   }
 
-  return Array.from(suggestionsMap.values());
+  return Array.from(suggestionsMap.values()).slice(0, MAX_SUGGESTIONS);
 }
 
 /**

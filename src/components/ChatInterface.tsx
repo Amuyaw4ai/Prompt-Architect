@@ -1307,29 +1307,6 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="flex flex-col gap-4 mb-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Architectural Output</span>
-                  {resultHistory.length > 1 && (
-                    <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-800/50">
-                      <button 
-                        onClick={() => handleResultIndexChange(Math.max(0, currentResultIndex - 1))}
-                        disabled={currentResultIndex === 0}
-                        className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
-                        title="Previous Version"
-                      >
-                        <ChevronLeft size={14} />
-                      </button>
-                      <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1">
-                        {currentResultIndex + 1} / {resultHistory.length}
-                      </span>
-                      <button 
-                        onClick={() => handleResultIndexChange(Math.min(resultHistory.length - 1, currentResultIndex + 1))}
-                        disabled={currentResultIndex === resultHistory.length - 1}
-                        className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
-                        title="Next Version"
-                      >
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2">
@@ -1646,6 +1623,10 @@ export const ChatInterface: React.FC<Props> = ({
                     });
                   }}
                   variables={variables}
+                  currentVersionIndex={currentResultIndex}
+                  totalVersions={resultHistory.length}
+                  onPreviousVersion={() => handleResultIndexChange(Math.max(0, currentResultIndex - 1))}
+                  onNextVersion={() => handleResultIndexChange(Math.min(resultHistory.length - 1, currentResultIndex + 1))}
                 />
               </div>
               
