@@ -351,10 +351,126 @@ export function transformPromptToFrameworkLocally(
   // Modality & Subject specific fills
   const fwLower = frameworkName.toLowerCase();
 
-  if (fwLower.includes('product showcase')) {
-    transformed = `Smooth 360-degree commercial product showcase video of ${subject}, studio softbox rim lighting, cinematic macro slider camera motion, 4k 60fps resolution, ultra-clean aesthetic presentation.`;
-  } else if (fwLower.includes('cinematic drone')) {
-    transformed = `A sweeping cinematic drone shot flying majestically over ${subject}, warm golden hour lighting, peaceful atmospheric mood, ultra-high-definition 4k resolution with gentle forward acceleration.`;
+  if (fwLower.includes('avatar') || fwLower.includes('speech') || fwLower.includes('spokesperson')) {
+    transformed = `Cinematic video of ${subject} delivering a compelling, expressive speech to the camera.
+- Subject: ${subject}, photorealistic facial details, subtle natural micro-expressions, lifelike eye darts and blink cadence.
+- Performance & Lipsync: Flawless speech synchronization, natural head movements, engaging spoken cadence and hand gestures.
+- Camera Framing: 85mm prime lens portrait framing, slow subtle dolly push-in, shallow depth of field with creamy bokeh.
+- Studio Lighting: Three-point softbox key light, subtle warm hair rim light separation, catchlights in the eyes.
+- Output Specs: 4K 60fps, high temporal consistency, crystal-clear audio-visual alignment.`;
+  } else if (fwLower.includes('close-up') || fwLower.includes('facial close-up') || fwLower.includes('portraiture')) {
+    transformed = `Hero cinematic close-up shot of ${subject}.
+- Framing & Optics: Tight close-up on ${subject}'s face, 85mm f/1.2 lens, ultra-shallow depth of field focusing sharply on the eyes.
+- Physical Details: Micro-pores, lifelike skin subsurface scattering, realistic ocular reflections, subtle breathing and gentle blinking.
+- Lighting: Chiaroscuro high-contrast rim lighting, soft diffuse fill, dramatic atmospheric color temperature.
+- Motion: Slow-motion 60fps subtle head turn and gaze shift towards the camera lens, raw emotional intensity.`;
+  } else if (fwLower.includes('drone flyover') || fwLower.includes('cinematic drone')) {
+    transformed = `A sweeping cinematic drone shot flying majestically over ${subject}.
+- Flight Path: Forward descending sweep transitioning into a panoramic horizon tilt-up reveal.
+- Optics & Elevation: Ultra-wide 18mm cinema lens, smooth 3-axis gimbal stabilization, zero micro-jitter.
+- Atmosphere & Lighting: Volumetric golden hour rays piercing through morning mist, rich atmospheric perspective.
+- Environmental Scale: Vast geographic depth, natural wind ripples across the landscape, ultra-detailed 8K terrain textures.`;
+  } else if (fwLower.includes('fpv') || fwLower.includes('proximity')) {
+    transformed = `High-velocity acrobatic FPV drone flight diving through ${subject}.
+- Flight Dynamics: Steep 90-degree vertical dive alongside ${subject}, sharp bank turns, razor-thin proximity clearance.
+- Motion Feel: Intense kinetic velocity, slight motion blur on foreground edges, wide 150-degree field of view.
+- Sound & Lighting: Dynamic exposure shifting as the drone breaches shadows into bright sunlight.`;
+  } else if (fwLower.includes('product') || fwLower.includes('turntable') || fwLower.includes('showcase')) {
+    transformed = `Commercial product showcase video of ${subject}.
+- Rig & Motion: Smooth motorized 360-degree turntable rotation paired with a floating camera slider tracking across key branding elements.
+- Lighting Setup: Dark studio aesthetic, dual softbox rim lights carving out clean reflections, subtle gradient backdrop glow.
+- Focus & Optics: 100mm macro probe lens highlighting premium surface textures, brushed metals, and embossed typography.`;
+  } else if (fwLower.includes('exploded') || fwLower.includes('breakdown')) {
+    transformed = `High-tech 3D exploded view animation of ${subject}.
+- Assembly Motion: Clean pneumatic separation where each internal layer, microchip, and housing element floats outward in symmetrical alignment.
+- Visual Style: Crisp CAD / Octane render, subtle glowing circuit traces, precision laser dimension indicators.
+- Camera Movement: Orbital camera glide around the suspended components before snapping back together in seamless unison.`;
+  } else if (fwLower.includes('hollywood') || fwLower.includes('dramatic dialogue')) {
+    transformed = `Cinematic narrative film scene featuring ${subject}.
+- Direction Style: David Fincher / Roger Deakins measured pacing, slow creeping dolly push-in building psychological tension.
+- Lighting Scheme: Low-key chiaroscuro lighting, practical lamps providing warm motivated pools of light amidst deep moody shadows.
+- Composition: Precise 50mm framing, dirty single over-the-shoulder perspective, balanced negative space.`;
+  } else if (fwLower.includes('steadicam') || fwLower.includes('one-shot') || fwLower.includes('long take')) {
+    transformed = `A seamless, unbroken 60-second steadicam sequence following ${subject}.
+- Camera Choreography: Glides from leading the subject from the front, revolving smoothly around them to reveal the grand environment, then settling into an over-the-shoulder tracking perspective.
+- Environment & Ambient Life: Background extras actively reacting, seamless transition from interior lighting to outdoor daylight without visible cuts.`;
+  } else if (fwLower.includes('cyberpunk')) {
+    transformed = `Cinematic cyberpunk sequence featuring ${subject} at night during heavy rainfall.
+- Visual Elements: Towering holographic advertisements, neon signage glowing in electric cyan and magenta reflecting off wet asphalt.
+- Lens & Aesthetics: Anamorphic lens with horizontal blue streak flares, oval bokeh, volumetric steam rising from street vents.
+- Camera Locomotion: Slow low-angle tracking glide following the subject moving through crowded futuristic alleyways.`;
+  } else if (fwLower.includes('space') || fwLower.includes('celestial') || fwLower.includes('interstellar')) {
+    transformed = `Hard sci-fi cinematic sequence of ${subject}.
+- Scale & Physics: Immense astronomical scale, silent vacuum drifting motion, pitch-black void contrasted against brilliant planetary rings.
+- Lighting: Harsh, unfiltered single-point sunlight producing stark highlights and crisp geometric cast shadows.
+- Optics: 70mm IMAX composition, ultra-sharp detail on hull plating, solar panels, and thermal blankets.`;
+  } else if (fwLower.includes('ghibli') || fwLower.includes('pastoral')) {
+    transformed = `Studio Ghibli style masterwork illustration of ${subject}.
+- Artistic Style: Hand-painted gouache background, soft cell-shaded characters, gentle naturalistic color palette.
+- Atmosphere: Golden afternoon sunlight piercing through lush tree canopies, massive blooming cumulus clouds in a cerulean sky.
+- Emotional Tone: Nostalgic, peaceful, overflowing with wonder and organic warmth.`;
+  } else if (fwLower.includes('clean architecture') || fwLower.includes('solid')) {
+    transformed = `You are a Principal Software Architect. Design a production-grade implementation for:
+${subject}
+
+### Requirements & Principles:
+1. **Clean Architecture Separation**: Strictly isolate Domain Entities, Use Cases / Interactors, Repositories, and Presentation layers.
+2. **SOLID Principles**: Adhere to Single Responsibility, Open/Closed, and Dependency Inversion patterns.
+3. **Type Safety & Validation**: Provide complete, strict TypeScript interfaces with runtime schema validation (e.g. Zod).
+4. **Error Handling & Resilience**: Implement defensive boundary guards, typed error hierarchies, and graceful degradation.
+5. **Executable Code**: Provide clean, modular, self-contained code snippets without placeholder comments.
+
+Context:
+${raw}`;
+  } else if (fwLower.includes('security') || fwLower.includes('defensive')) {
+    transformed = `Act as a Senior Application Security Engineer. Conduct a rigorous defensive security audit and hardened implementation for:
+${subject}
+
+### Required Security Checklist:
+1. **Input Sanitization & Injection Prevention**: SQL, XSS, Command Injection, and Path Traversal guards.
+2. **Authentication & Authorization**: Strict token verification, role-based permissions (RBAC), and session expiration.
+3. **Rate Limiting & DoS Protection**: Request throttling and payload size boundaries.
+4. **Comprehensive Error Masking**: Ensure zero internal stack traces or database schema disclosures to clients.
+5. **Audited Before vs. Hardened After Code Comparison**.`;
+  } else if (fwLower.includes('tdd') || fwLower.includes('test-driven')) {
+    transformed = `You are a QA & Test Engineering Lead. Create a comprehensive Test-Driven Development (TDD) suite for:
+${subject}
+
+### Required Test Suite:
+1. **Happy Path Specifications**: Clear assertions validating expected core inputs and state transitions.
+2. **Edge Case & Boundary Matrix**: Null/undefined inputs, boundary integer thresholds, network latency timeouts, corrupt payloads.
+3. **Mocking & Isolation**: Self-contained mock factories and spies without external dependency coupling.
+4. **Executable Test Code**: Formatted in standard Vitest / Jest with descriptive 'describe' / 'it' blocks.`;
+  } else if (fwLower.includes('pas') || fwLower.includes('problem-agitate')) {
+    transformed = `Craft persuasive copy using the Problem-Agitate-Solve (PAS) methodology for:
+${subject}
+
+1. **Problem**: Pinpoint the exact, frustrating roadblock your audience faces right now with ${subject}.
+2. **Agitate**: Deepen the emotional and financial cost of leaving this problem unsolved; make the status quo unacceptable.
+3. **Solve**: Introduce the solution as the definitive, frictionless antidote that permanently fixes the issue.
+
+Context:
+${raw}`;
+  } else if (fwLower.includes('storybrand') || fwLower.includes('hero')) {
+    transformed = `Architect brand messaging using the Donald Miller StoryBrand 7-Part framework for:
+${subject}
+
+1. **The Hero (Customer)**: What does the customer want regarding ${subject}?
+2. **The Problem**: What external, internal, and philosophical villains are blocking them?
+3. **The Guide (Your Brand)**: How do you demonstrate genuine empathy and established authority?
+4. **The Plan**: What simple 3-step path makes working with you effortless?
+5. **Call to Action**: What direct action must they take today?
+6. **Failure Staved Off**: What disaster or regret do they avoid?
+7. **Success Realized**: What does life look like when they succeed?`;
+  } else if (fwLower.includes('executive') || fwLower.includes('bluf')) {
+    transformed = `Provide an Executive Strategy Brief for:
+${subject}
+
+### Required Format:
+1. **Bottom Line Up Front (BLUF)**: 2-sentence summary of the core finding and direct recommendation regarding ${subject}.
+2. **Strategic Context & Key Drivers**: Why this initiative matters right now.
+3. **Comparative Decision Matrix**: Markdown table comparing Option A vs. Option B vs. Status Quo across Cost, Time to Value, and Risk.
+4. **Resource Allocation & Immediate Next Steps** for executive sign-off.`;
   } else if (fwLower.includes('action sequence')) {
     transformed = `Fast-paced dynamic action sequence of ${subject} in rapid motion, handheld tracking camera with kinetic blur, cinematic action style, vibrant grading and high frame rate.`;
   } else if (fwLower.includes('time-lapse')) {

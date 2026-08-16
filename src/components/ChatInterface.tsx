@@ -4,6 +4,7 @@ import { Message, PromptType, PromptResult, SavedPrompt, ChatSession } from '../
 import { refinePrompt, transformPromptToFramework } from '../services/geminiService';
 import { refinePromptLocally, transformPromptToFrameworkLocally } from '../services/localEngine';
 import { getContextualSuggestions, toggleSuggestionInPrompt, QuickAddSuggestion } from '../utils/quickAdd';
+import { getContextualFrameworks, ContextualFramework, ALL_FRAMEWORKS } from '../utils/contextualFrameworks';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { cn, calculatePromptScore } from '../utils';
@@ -138,40 +139,6 @@ const getDailySuggestions = (suggestions: Record<string, string[]>, count: numbe
 
 const VARIABLE_SUGGESTIONS = getDailySuggestions(ALL_VARIABLE_SUGGESTIONS);
 
-const FRAMEWORKS = {
-  text: [
-    { name: 'Calibrated Master Prompt', template: 'Act as an expert [ROLE].\nTask: [TASK]\nOutput Format: [OUTPUT_FORMAT]\nTone: [DESIRED_TONE]\nComplexity: [COMPLEXITY_LEVEL]\nContext: [CONTEXT]' },
-    { name: 'Chain of Thought', template: 'Think step-by-step to solve this:\n[PROBLEM]' },
-    { name: 'Roleplay', template: 'Act as an expert [ROLE]. Your task is to [TASK]. Here is the context:\n[CONTEXT]' },
-    { name: 'Few-Shot', template: 'Here are some examples:\nInput: [EXAMPLE_1_INPUT]\nOutput: [EXAMPLE_1_OUTPUT]\n\nNow process this:\nInput: [ACTUAL_INPUT]' },
-    { name: 'AIDA Copywriting', template: 'Write copy using the AIDA framework (Attention, Interest, Desire, Action) for:\n[PRODUCT_SERVICE]' },
-    { name: 'ELI5 Explanation', template: 'Explain [TOPIC] to me like I am a 5-year-old. Use simple analogies and avoid jargon.' },
-    { name: 'Pros & Cons Analysis', template: 'Provide a detailed pros and cons analysis of [TOPIC]. Format the output as a [FORMAT].' },
-    { name: 'Socratic Questioning', template: 'Act as a Socratic tutor. Help me understand [TOPIC] by asking guiding questions rather than giving direct answers.' },
-    { name: 'Code Review', template: 'Review the following code for [LANGUAGE]. Focus on [FOCUS_AREA] and suggest improvements:\n[CODE]' }
-  ],
-  image: [
-    { name: 'Cinematic Portrait', template: 'A cinematic portrait of [SUBJECT], [LIGHTING], [STYLE], shot on [CAMERA], [MOOD] mood, [RESOLUTION]' },
-    { name: 'Concept Art', template: 'Concept art of [ENVIRONMENT], featuring [SUBJECT], [COLOR] color palette, [STYLE], highly detailed' },
-    { name: 'Product Photography', template: 'Commercial product photography of [SUBJECT], [LIGHTING], clean background, [CAMERA], [RESOLUTION]' },
-    { name: 'Isometric 3D', template: 'Isometric 3D render of [SUBJECT] in a [ENVIRONMENT], [COLOR] color palette, soft lighting, highly detailed, trending on ArtStation' },
-    { name: 'Logo Design', template: 'Minimalist vector logo for a [INDUSTRY] company, featuring [SUBJECT], [COLOR] colors, flat design, white background' },
-    { name: 'Anime Style', template: 'Anime style illustration of [SUBJECT] doing [ACTION] in [ENVIRONMENT], Studio Ghibli style, [LIGHTING], vibrant colors' },
-    { name: 'Cyberpunk Street', template: 'Cyberpunk street scene at night, [ENVIRONMENT], featuring [SUBJECT], [LIGHTING], neon lights, reflections, [RESOLUTION]' },
-    { name: 'Watercolor Painting', template: 'Watercolor painting of [SUBJECT], [MOOD] mood, soft edges, [COLOR] pastel colors, dreamy atmosphere' }
-  ],
-  video: [
-    { name: 'Cinematic Drone', template: 'A cinematic drone shot flying over [ENVIRONMENT], [LIGHTING], [MOOD] atmosphere, [RESOLUTION]' },
-    { name: 'Action Sequence', template: 'Fast-paced action sequence of [SUBJECT] performing [ACTION], [CAMERA], [MOTION] motion, [STYLE]' },
-    { name: 'Time-lapse', template: 'Time-lapse video of [SUBJECT] transitioning from [START_STATE] to [END_STATE], [LIGHTING], [RESOLUTION]' },
-    { name: 'Product Showcase', template: 'Smooth 360-degree product showcase video of [SUBJECT], [LIGHTING], [CAMERA], [RESOLUTION], commercial style' },
-    { name: 'Character Animation', template: '3D animation of [SUBJECT] expressing [EMOTION], [STYLE], [LIGHTING], smooth movement, [RESOLUTION]' },
-    { name: 'Nature Documentary', template: 'Nature documentary style footage of [SUBJECT] in [ENVIRONMENT], [CAMERA], [MOTION], highly detailed, [RESOLUTION]' },
-    { name: 'Music Video', template: 'Stylized music video scene, [SUBJECT] performing, [LIGHTING], [MOTION], [STYLE], dynamic editing' },
-    { name: 'Vlog Style', template: 'Vlog style handheld footage of [SUBJECT] exploring [ENVIRONMENT], [CAMERA], casual [MOOD] atmosphere, [RESOLUTION]' }
-  ]
-};
-
 interface Props {
   promptType: PromptType;
   onTypeChange: (type: PromptType) => void;
@@ -221,7 +188,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [showFrameworks, setShowFrameworks] = useState(false);
   const [isTransformingFramework, setIsTransformingFramework] = useState(false);
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
-  const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video'>('current');
+  const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video' | 'all'>('current');
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
   const [promptVersions, setPromptVersions] = useState<SavedPrompt[]>([]);
@@ -580,6 +547,11 @@ export const ChatInterface: React.FC<Props> = ({
     if (!lastResult?.refinedPrompt) return [];
     return getContextualSuggestions(lastResult.refinedPrompt, promptType);
   }, [lastResult?.refinedPrompt, promptType]);
+
+  const contextualFrameworksData = useMemo(() => {
+    const currentPrompt = lastResult?.refinedPrompt || '';
+    return getContextualFrameworks(currentPrompt, promptType, activeFrameworkCategory);
+  }, [lastResult?.refinedPrompt, promptType, activeFrameworkCategory]);
 
   const handleToggleQuickAddSuggestion = (suggestion: QuickAddSuggestion) => {
     if (!lastResult) return;
@@ -1165,20 +1137,23 @@ export const ChatInterface: React.FC<Props> = ({
                   className="absolute bottom-full left-6 mb-2 w-64 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden z-50"
                 >
                   <div className="p-3 border-b border-stone-100 dark:border-slate-700">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Prompt Frameworks</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Starter Prompt Frameworks</span>
                   </div>
                   <div className="max-h-60 overflow-y-auto">
-                    {(FRAMEWORKS[promptType] || FRAMEWORKS.text).map(fw => (
+                    {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
                       <button
-                        key={fw.name}
+                        key={fw.id}
                         onClick={() => {
                           setInput(fw.template);
                           setShowFrameworks(false);
                         }}
                         className="w-full text-left px-4 py-3 text-sm text-stone-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors border-b border-stone-50 dark:border-slate-700/50 last:border-0"
                       >
-                        <div className="font-bold mb-1">{fw.name}</div>
-                        <div className="text-xs text-stone-400 dark:text-slate-500 truncate">{fw.template.replace(/\n/g, ' ')}</div>
+                        <div className="font-bold mb-1 flex items-center justify-between">
+                          <span>{fw.name}</span>
+                          <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.5 rounded">{fw.domainName}</span>
+                        </div>
+                        <div className="text-xs text-stone-400 dark:text-slate-500 truncate">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
                       </button>
                     ))}
                   </div>
@@ -1513,22 +1488,33 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Frameworks Bar */}
+              {/* Contextual Suggestive Frameworks Bar */}
               <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
-                <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
                   <div className="flex items-center gap-1.5">
                     <BookTemplate size={13} className="text-emerald-500" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400">
-                      Frameworks:
+                      Contextual Frameworks:
                     </span>
+                    {contextualFrameworksData.suggested.some(f => (f.score || 0) > 2) && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+                        Prompt Matched
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 bg-stone-100/80 dark:bg-slate-900/60 p-0.5 rounded-lg border border-stone-200/50 dark:border-slate-700/50">
-                    {(['text', 'image', 'video'] as const).map(cat => {
-                      const isActive = (activeFrameworkCategory === 'current' ? promptType === cat : activeFrameworkCategory === cat);
+                    {[
+                      { id: 'current', label: 'Suggested' },
+                      { id: 'video', label: 'Video' },
+                      { id: 'image', label: 'Image' },
+                      { id: 'text', label: 'Text/Code' },
+                      { id: 'all', label: 'All' },
+                    ].map(tab => {
+                      const isActive = activeFrameworkCategory === tab.id;
                       return (
                         <button
-                          key={cat}
-                          onClick={() => setActiveFrameworkCategory(cat)}
+                          key={tab.id}
+                          onClick={() => setActiveFrameworkCategory(tab.id as any)}
                           className={cn(
                             "text-[9px] font-bold uppercase px-2 py-0.5 rounded-md transition-all",
                             isActive
@@ -1536,7 +1522,7 @@ export const ChatInterface: React.FC<Props> = ({
                               : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
                           )}
                         >
-                          {cat}
+                          {tab.label}
                         </button>
                       );
                     })}
@@ -1544,23 +1530,39 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
-                  {(FRAMEWORKS[activeFrameworkCategory === 'current' ? promptType : activeFrameworkCategory] || FRAMEWORKS[promptType] || FRAMEWORKS.text).map(fw => {
+                  {contextualFrameworksData.suggested.map((fw: ContextualFramework) => {
                     const isTransformingThis = isTransformingFramework && transformingFrameworkName === fw.name;
+                    const isContextMatch = (fw.score || 0) > 2;
+
                     return (
                       <button 
-                        key={fw.name} 
+                        key={fw.id} 
                         disabled={isTransformingFramework}
                         onClick={() => handleApplyFramework(fw)} 
-                        title={`Transform prompt to ${fw.name} format`}
+                        title={`${fw.name} — ${fw.description}`}
                         className={cn(
-                          "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5",
+                          "px-2.5 py-1.5 text-[10px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left",
                           isTransformingThis
                             ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
-                            : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700 disabled:opacity-50 disabled:pointer-events-none"
+                            : isContextMatch
+                              ? "bg-emerald-50/70 dark:bg-emerald-950/30 text-stone-800 dark:text-slate-100 border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/50 hover:border-emerald-400"
+                              : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700 disabled:opacity-50 disabled:pointer-events-none"
                         )}
                       >
-                        <Sparkles size={10} className={isTransformingThis ? "text-white animate-spin" : "text-emerald-500 shrink-0"} />
-                        <span>{fw.name}</span>
+                        <Sparkles size={10} className={cn("shrink-0", isTransformingThis ? "text-white animate-spin" : isContextMatch ? "text-emerald-500" : "text-stone-400 dark:text-slate-400 group-hover:text-emerald-500")} />
+                        <span className="font-semibold">{fw.name}</span>
+                        {fw.domainName && (
+                          <span className={cn(
+                            "text-[8px] font-semibold px-1 py-0.2 rounded uppercase tracking-tighter shrink-0",
+                            isTransformingThis
+                              ? "bg-emerald-700/50 text-emerald-100"
+                              : isContextMatch
+                                ? "bg-emerald-200/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200"
+                                : "bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400"
+                          )}>
+                            {fw.domainName}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
