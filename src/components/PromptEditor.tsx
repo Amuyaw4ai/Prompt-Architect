@@ -23,6 +23,7 @@ interface Props {
   totalVersions?: number;
   onPreviousVersion?: () => void;
   onNextVersion?: () => void;
+  isCompact?: boolean;
 }
 
 export const PromptEditor: React.FC<Props> = ({
@@ -33,7 +34,8 @@ export const PromptEditor: React.FC<Props> = ({
   currentVersionIndex = 0,
   totalVersions = 1,
   onPreviousVersion,
-  onNextVersion
+  onNextVersion,
+  isCompact = false
 }) => {
   const [isPreview, setIsPreview] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -130,31 +132,36 @@ export const PromptEditor: React.FC<Props> = ({
 
   return (
     <div className={cn("relative flex flex-col rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-white dark:bg-slate-800 shadow-inner overflow-hidden", className)}>
-      <div className="flex justify-between items-center px-4 py-2 bg-stone-50 dark:bg-slate-900 border-b border-stone-100 dark:border-slate-700">
-        <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
-          {isPreview ? 'Real-time Preview' : 'Editor'}
+      <div className={cn(
+        "flex justify-between items-center bg-stone-50 dark:bg-slate-900 border-b border-stone-100 dark:border-slate-700 transition-all",
+        isCompact ? "px-3 py-1.5 gap-1.5" : "px-4 py-2 gap-2"
+      )}>
+        <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest truncate">
+          {isPreview ? (isCompact ? 'Preview' : 'Real-time Preview') : 'Editor'}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {totalVersions > 1 && (
-            <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-800/50 shadow-2xs">
+            <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-800/50 shadow-2xs">
               <button 
                 type="button"
                 onClick={onPreviousVersion}
                 disabled={currentVersionIndex === 0}
                 className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
-                title="Previous Version"
+                title={`Previous Version (${currentVersionIndex > 0 ? currentVersionIndex : 1}/${totalVersions})`}
               >
                 <ChevronLeft size={13} />
               </button>
-              <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1 select-none">
-                {currentVersionIndex + 1} / {totalVersions}
-              </span>
+              {!isCompact && (
+                <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1 select-none">
+                  {currentVersionIndex + 1} / {totalVersions}
+                </span>
+              )}
               <button 
                 type="button"
                 onClick={onNextVersion}
                 disabled={currentVersionIndex === totalVersions - 1}
                 className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
-                title="Next Version"
+                title={`Next Version (${currentVersionIndex + 2 <= totalVersions ? currentVersionIndex + 2 : totalVersions}/${totalVersions})`}
               >
                 <ChevronRight size={13} />
               </button>
@@ -162,18 +169,22 @@ export const PromptEditor: React.FC<Props> = ({
           )}
           <button
             onClick={() => setIsPreview(!isPreview)}
-            className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors flex items-center gap-1.5"
+            className={cn(
+              "font-bold rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors flex items-center justify-center gap-1.5",
+              isCompact ? "p-1.5 text-xs" : "text-[10px] px-2.5 py-1"
+            )}
             title={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
+            aria-label={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
           >
             {isPreview ? (
               <>
-                <Pencil size={11} />
-                Edit
+                <Pencil size={isCompact ? 13 : 11} />
+                {!isCompact && <span>Edit</span>}
               </>
             ) : (
               <>
-                <Eye size={11} />
-                Show Preview
+                <Eye size={isCompact ? 13 : 11} />
+                {!isCompact && <span>Show Preview</span>}
               </>
             )}
           </button>

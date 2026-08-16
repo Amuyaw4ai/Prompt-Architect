@@ -190,6 +190,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
   const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video' | 'all'>('current');
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
+  const isRightPanelCompact = rightPanelWidth <= 380;
   const [isDragging, setIsDragging] = useState(false);
   const [promptVersions, setPromptVersions] = useState<SavedPrompt[]>([]);
   const [showVersionsDropdown, setShowVersionsDropdown] = useState(false);
@@ -235,7 +236,7 @@ export const ChatInterface: React.FC<Props> = ({
         const deltaX = currentX - lastXRef.current;
         setRightPanelWidth(prev => {
           const newWidth = prev - deltaX;
-          return Math.min(Math.max(newWidth, 320), 800);
+          return Math.min(Math.max(newWidth, 280), 850);
         });
       }
       lastXRef.current = currentX;
@@ -1124,6 +1125,109 @@ export const ChatInterface: React.FC<Props> = ({
             )}
           </div>
 
+            {/* Fixed Persistent Prompt Editor Area */}
+            {lastResult?.refinedPrompt && (
+              <div className="border-t border-emerald-100/60 dark:border-slate-700 bg-emerald-50/20 dark:bg-slate-900/40 p-4 shrink-0 flex flex-col gap-3 max-h-[46vh] overflow-y-auto">
+                {/* Variable Blueprints (if any variables detected) */}
+                {Object.keys(variables).length > 0 && (
+                  <div className="p-3 bg-white/80 dark:bg-slate-800/80 rounded-2xl border border-emerald-100 dark:border-emerald-800/30 grid grid-cols-1 sm:grid-cols-2 gap-2.5 shadow-xs">
+                    <div className="col-span-full flex items-center gap-1.5 mb-0.5">
+                      <Sparkles size={13} className="text-emerald-500 dark:text-emerald-400" />
+                      <span className="text-[10px] font-black text-stone-500 dark:text-slate-400 uppercase tracking-widest">Variable Blueprints</span>
+                    </div>
+                    {Object.entries(variables).map(([name, value]) => {
+                      const suggestions = VARIABLE_SUGGESTIONS[name.toUpperCase()] || [];
+                      return (
+                        <div key={name} className="space-y-1">
+                          <label className="block text-[9px] font-bold text-stone-500 dark:text-slate-400 uppercase tracking-wider ml-1">{name}</label>
+                          <input 
+                            type="text"
+                            value={value}
+                            onChange={e => setVariables(prev => ({ ...prev, [name]: e.target.value }))}
+                            placeholder={`Enter ${name.toLowerCase()}...`}
+                            className="w-full px-3 py-1 bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-300 dark:placeholder:text-slate-500 text-stone-900 dark:text-slate-100"
+                          />
+                          {suggestions.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {suggestions.map(suggestion => (
+                                <button
+                                  key={suggestion}
+                                  onClick={() => setVariables(prev => ({ ...prev, [name]: suggestion }))}
+                                  className="px-1.5 py-0.5 text-[8px] font-bold bg-stone-100 dark:bg-slate-700/50 text-stone-500 dark:text-slate-400 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors whitespace-nowrap"
+                                >
+                                  {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Prompt Editor with Live Framework Synthesizer Overlay */}
+                <div className="relative">
+                  <AnimatePresence>
+                    {isTransformingFramework && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="absolute inset-0 z-30 rounded-2xl bg-stone-950/80 dark:bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center overflow-hidden border border-emerald-500/40 shadow-2xl"
+                      >
+                        {/* Animated Cybernetic Scan Line */}
+                        <motion.div
+                          className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981]"
+                          animate={{ top: ["0%", "100%", "0%"] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        />
+
+                        <div className="relative z-10 flex flex-col items-center gap-2">
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                            className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-400 shadow-md shadow-emerald-950/50"
+                          >
+                            <RefreshCw size={18} className="animate-spin text-emerald-400" />
+                          </motion.div>
+
+                          <div className="space-y-0.5">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                              <h4 className="text-xs font-black text-white tracking-wide">
+                                Transforming into {transformingFrameworkName}
+                              </h4>
+                            </div>
+                            <p className="text-[10px] text-stone-300 dark:text-slate-400 max-w-xs leading-tight">
+                              Restructuring prompt parameters into the {transformingFrameworkName} framework schema...
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <PromptEditor
+                    value={lastResult.refinedPrompt}
+                    onChange={(newVal) => {
+                      setResultHistory(prev => {
+                        const newHistory = [...prev];
+                        newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: newVal };
+                        return newHistory;
+                      });
+                    }}
+                    variables={variables}
+                    currentVersionIndex={currentResultIndex}
+                    totalVersions={resultHistory.length}
+                    onPreviousVersion={() => handleResultIndexChange(Math.max(0, currentResultIndex - 1))}
+                    onNextVersion={() => handleResultIndexChange(Math.min(resultHistory.length - 1, currentResultIndex + 1))}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Input Area */}
           <div className="p-6 border-t border-stone-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col gap-3 relative">
             
@@ -1298,90 +1402,98 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="h-8 w-0.5 bg-stone-400 dark:bg-slate-500 rounded-full group-hover:bg-white" />
             </div>
             <div 
-              className="w-full lg:w-[var(--right-panel-width)] flex flex-col bg-emerald-50/50 dark:bg-emerald-900/10 border-t lg:border-t-0 border-emerald-100 dark:border-emerald-900/30 overflow-y-auto shrink-0"
+              className="w-full lg:w-[var(--right-panel-width)] flex flex-col bg-emerald-50/50 dark:bg-emerald-900/10 border-t lg:border-t-0 border-emerald-100 dark:border-emerald-900/30 overflow-y-auto shrink-0 min-w-[280px]"
               style={{ '--right-panel-width': `${rightPanelWidth}px` } as React.CSSProperties}
             >
               <motion.div 
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-6 lg:p-8"
+                className={cn("transition-all", isRightPanelCompact ? "p-3.5 sm:p-4" : "p-6 lg:p-8")}
               >
-              <div className="flex flex-col gap-4 mb-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Architectural Output</span>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-2 px-2 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    {getFinalPrompt().split(/\s+/).filter(Boolean).length} WORDS
-                  </div>
-                  <div 
-                    className={cn("flex items-center gap-2 px-2 py-1 rounded-md text-[10px] font-bold group relative cursor-help",
-                      calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? "bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" :
-                      calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? "bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" :
-                      "bg-pink-100/50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
-                    )}
-                    onClick={() => setShowScoreDetails(!showScoreDetails)}
-                    onMouseLeave={() => setShowScoreDetails(false)}
-                  >
-                    SCORE: {calculatePromptScore(getFinalPrompt(), promptType).score}%
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <span className={cn(
+                    "font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 truncate",
+                    isRightPanelCompact ? "text-[11px]" : "text-xs"
+                  )}>
+                    Architectural Output
+                  </span>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      {getFinalPrompt().split(/\s+/).filter(Boolean).length} {isRightPanelCompact ? 'W' : 'WORDS'}
+                    </div>
                     <div 
-                      className={cn(
-                        "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:left-0 lg:right-auto lg:translate-y-0 lg:mt-2 lg:w-72 p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
-                        showScoreDetails ? "block" : "hidden lg:group-hover:block"
+                      className={cn("flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold group relative cursor-help",
+                        calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? "bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" :
+                        calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? "bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" :
+                        "bg-pink-100/50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
                       )}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={() => setShowScoreDetails(!showScoreDetails)}
+                      onMouseLeave={() => setShowScoreDetails(false)}
                     >
-                      {/* Mobile close button */}
-                      <div className="flex justify-between items-center mb-3 lg:hidden">
-                        <span className="font-bold text-slate-200 text-sm">Score Details</span>
-                        <button 
+                      SCORE: {calculatePromptScore(getFinalPrompt(), promptType).score}%
+                      <div 
+                        className={cn(
+                          "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:left-0 lg:right-auto lg:translate-y-0 lg:mt-2 lg:w-72 p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
+                          showScoreDetails ? "block" : "hidden lg:group-hover:block"
+                        )}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Mobile close button */}
+                        <div className="flex justify-between items-center mb-3 lg:hidden">
+                          <span className="font-bold text-slate-200 text-sm">Score Details</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowScoreDetails(false);
+                            }}
+                            className="text-slate-400 hover:text-white p-1"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        
+                        {calculatePromptScore(getFinalPrompt(), promptType).strengths.length > 0 && (
+                          <>
+                            <div className="font-bold mb-2 text-emerald-400">Strengths:</div>
+                            <ul className="list-disc pl-4 space-y-1 mb-3 text-emerald-100/90 whitespace-normal">
+                              {calculatePromptScore(getFinalPrompt(), promptType).strengths.map((s, i) => (
+                                <li key={i}>{s}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                        {calculatePromptScore(getFinalPrompt(), promptType).improvements.length > 0 && (
+                          <>
+                            <div className="font-bold mb-2 text-amber-400">Suggestions to Improve:</div>
+                            <ul className="list-disc pl-4 space-y-1 text-amber-100/90 whitespace-normal">
+                              {calculatePromptScore(getFinalPrompt(), promptType).improvements.map((s, i) => (
+                                <li key={i}>{s}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </div>
+                      
+                      {/* Mobile overlay */}
+                      {showScoreDetails && (
+                        <div 
+                          className="fixed inset-0 bg-black/50 z-[90] lg:hidden"
                           onClick={(e) => {
                             e.stopPropagation();
                             setShowScoreDetails(false);
                           }}
-                          className="text-slate-400 hover:text-white p-1"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      
-                      {calculatePromptScore(getFinalPrompt(), promptType).strengths.length > 0 && (
-                        <>
-                          <div className="font-bold mb-2 text-emerald-400">Strengths:</div>
-                          <ul className="list-disc pl-4 space-y-1 mb-3 text-emerald-100/90 whitespace-normal">
-                            {calculatePromptScore(getFinalPrompt(), promptType).strengths.map((s, i) => (
-                              <li key={i}>{s}</li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
-                      {calculatePromptScore(getFinalPrompt(), promptType).improvements.length > 0 && (
-                        <>
-                          <div className="font-bold mb-2 text-amber-400">Suggestions to Improve:</div>
-                          <ul className="list-disc pl-4 space-y-1 text-amber-100/90 whitespace-normal">
-                            {calculatePromptScore(getFinalPrompt(), promptType).improvements.map((s, i) => (
-                              <li key={i}>{s}</li>
-                            ))}
-                          </ul>
-                        </>
+                        />
                       )}
                     </div>
-                    
-                    {/* Mobile overlay */}
-                    {showScoreDetails && (
-                      <div 
-                        className="fixed inset-0 bg-black/50 z-[90] lg:hidden"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowScoreDetails(false);
-                        }}
-                      />
-                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 w-full">
+                <div className={cn(
+                  "grid gap-1.5 w-full",
+                  isRightPanelCompact ? "grid-cols-5" : "grid-cols-2 sm:grid-cols-5"
+                )}>
                   {/* 1. SAVE */}
                   <button
                     onClick={() => {
@@ -1394,120 +1506,142 @@ export const ChatInterface: React.FC<Props> = ({
                       }
                       setShowSaveModal(true);
                     }}
-                    className="flex flex-col items-center justify-center py-2 px-2 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-800/50 shadow-2xs hover:shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group"
+                    className={cn(
+                      "flex flex-col items-center justify-center bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-800/50 shadow-2xs hover:shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group",
+                      isRightPanelCompact ? "h-9 p-0" : "py-2 px-2"
+                    )}
                     title={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
+                    aria-label={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
                   >
-                    <div className="flex items-center gap-1.5">
-                      {editingPrompt ? <Save size={13} /> : <Plus size={13} />}
-                      <span className="text-[11px] font-bold uppercase tracking-tight">{editingPrompt ? 'Update' : 'Save'}</span>
+                    <div className="flex items-center justify-center gap-1.5">
+                      {editingPrompt ? <Save size={isRightPanelCompact ? 15 : 13} /> : <Plus size={isRightPanelCompact ? 15 : 13} />}
+                      {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{editingPrompt ? 'Update' : 'Save'}</span>}
                     </div>
-                    <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none">
-                      Library
-                    </span>
+                    {!isRightPanelCompact && (
+                      <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none">
+                        Library
+                      </span>
+                    )}
                   </button>
 
                   {/* 2. COPY PROMPT */}
                   <button
                     onClick={copyToClipboard}
                     className={cn(
-                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl text-xs font-bold transition-all shadow-2xs group",
+                      "flex flex-col items-center justify-center rounded-xl text-xs font-bold transition-all shadow-2xs group",
+                      isRightPanelCompact ? "h-9 p-0" : "py-2 px-2",
                       copiedType === 'text'
                         ? "bg-emerald-600 dark:bg-emerald-500 text-white"
                         : "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-400"
                     )}
-                    title="Copy prompt text to clipboard"
+                    title={copiedType === 'text' ? "Copied prompt to clipboard!" : "Copy prompt text to clipboard"}
+                    aria-label="Copy prompt"
                   >
-                    <div className="flex items-center gap-1.5">
-                      {copiedType === 'text' ? <Check size={13} className="stroke-[3]" /> : <Copy size={13} />}
-                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'text' ? 'Copied!' : 'Copy'}</span>
+                    <div className="flex items-center justify-center gap-1.5">
+                      {copiedType === 'text' ? <Check size={isRightPanelCompact ? 15 : 13} className="stroke-[3]" /> : <Copy size={isRightPanelCompact ? 15 : 13} />}
+                      {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'text' ? 'Copied!' : 'Copy'}</span>}
                     </div>
-                    <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none">
-                      Prompt
-                    </span>
+                    {!isRightPanelCompact && (
+                      <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none">
+                        Prompt
+                      </span>
+                    )}
                   </button>
 
                   {/* 3. COPY AS MARKDOWN BLOCK */}
                   <button
                     onClick={copyAsMarkdownBlock}
                     className={cn(
-                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl border transition-all shadow-2xs group",
+                      "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group",
+                      isRightPanelCompact ? "h-9 p-0" : "py-2 px-2",
                       copiedType === 'markdown'
                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                         : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                     )}
-                    title="Copy formatted as Markdown code block (```)"
+                    title={copiedType === 'markdown' ? "Copied Markdown code block!" : "Copy formatted as Markdown code block (```)"}
+                    aria-label="Copy formatted as Markdown"
                   >
-                    <div className="flex items-center gap-1.5">
-                      {copiedType === 'markdown' ? <Check size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <FileCode size={13} className="text-emerald-500" />}
-                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'markdown' ? 'Copied' : 'Copy MD'}</span>
+                    <div className="flex items-center justify-center gap-1.5">
+                      {copiedType === 'markdown' ? <Check size={isRightPanelCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <FileCode size={isRightPanelCompact ? 15 : 13} className="text-emerald-500" />}
+                      {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'markdown' ? 'Copied' : 'Copy MD'}</span>}
                     </div>
-                    <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none">
-                      Markdown
-                    </span>
+                    {!isRightPanelCompact && (
+                      <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none">
+                        Markdown
+                      </span>
+                    )}
                   </button>
 
                   {/* 4. COPY AS JSON */}
                   <button
                     onClick={copyAsJSON}
                     className={cn(
-                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl border transition-all shadow-2xs group",
+                      "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group",
+                      isRightPanelCompact ? "h-9 p-0" : "py-2 px-2",
                       copiedType === 'json'
                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                         : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                     )}
-                    title="Copy prompt formatted as JSON payload"
+                    title={copiedType === 'json' ? "Copied JSON payload!" : "Copy prompt formatted as JSON payload"}
+                    aria-label="Copy JSON payload"
                   >
-                    <div className="flex items-center gap-1.5">
-                      {copiedType === 'json' ? <Check size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Braces size={13} className="text-amber-500" />}
-                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'json' ? 'Copied' : 'Copy JSON'}</span>
+                    <div className="flex items-center justify-center gap-1.5">
+                      {copiedType === 'json' ? <Check size={isRightPanelCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Braces size={isRightPanelCompact ? 15 : 13} className="text-amber-500" />}
+                      {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'json' ? 'Copied' : 'Copy JSON'}</span>}
                     </div>
-                    <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none">
-                      JSON
-                    </span>
+                    {!isRightPanelCompact && (
+                      <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none">
+                        JSON
+                      </span>
+                    )}
                   </button>
 
                   {/* 5. DOWNLOAD AS JSON */}
                   <button
                     onClick={handleDownloadJSON}
                     className={cn(
-                      "flex flex-col items-center justify-center py-2 px-2 rounded-xl border transition-all shadow-2xs group col-span-2 sm:col-span-1",
+                      "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group",
+                      isRightPanelCompact ? "h-9 p-0 col-span-1" : "py-2 px-2 col-span-2 sm:col-span-1",
                       copiedType === 'download'
                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                         : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                     )}
-                    title="Download prompt and settings as .json file"
+                    title={copiedType === 'download' ? "Saved JSON file!" : "Download prompt and settings as .json file"}
+                    aria-label="Download JSON file"
                   >
-                    <div className="flex items-center gap-1.5">
-                      {copiedType === 'download' ? <Check size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Download size={13} className="text-blue-500" />}
-                      <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'download' ? 'Saved' : 'Download'}</span>
+                    <div className="flex items-center justify-center gap-1.5">
+                      {copiedType === 'download' ? <Check size={isRightPanelCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Download size={isRightPanelCompact ? 15 : 13} className="text-blue-500" />}
+                      {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'download' ? 'Saved' : 'Download'}</span>}
                     </div>
-                    <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none">
-                      JSON
-                    </span>
+                    {!isRightPanelCompact && (
+                      <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none">
+                        JSON
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
 
               {/* Contextual Suggestive Frameworks Bar */}
-              <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
+              <div className="mb-4 p-3 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
                 <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
-                  <div className="flex items-center gap-1.5">
-                    <BookTemplate size={13} className="text-emerald-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400">
-                      Contextual Frameworks:
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <BookTemplate size={13} className="text-emerald-500 shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400 truncate">
+                      {isRightPanelCompact ? 'Frameworks:' : 'Contextual Frameworks:'}
                     </span>
                     {contextualFrameworksData.suggested.some(f => (f.score || 0) > 2) && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
-                        Prompt Matched
+                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 shrink-0">
+                        {isRightPanelCompact ? 'Matched' : 'Prompt Matched'}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 bg-stone-100/80 dark:bg-slate-900/60 p-0.5 rounded-lg border border-stone-200/50 dark:border-slate-700/50">
+                  <div className="flex items-center gap-0.5 bg-stone-100/80 dark:bg-slate-900/60 p-0.5 rounded-lg border border-stone-200/50 dark:border-slate-700/50">
                     {[
-                      { id: 'current', label: 'Suggested' },
-                      { id: 'video', label: 'Video' },
-                      { id: 'image', label: 'Image' },
-                      { id: 'text', label: 'Text/Code' },
+                      { id: 'current', label: isRightPanelCompact ? 'Top' : 'Suggested' },
+                      { id: 'video', label: isRightPanelCompact ? 'Vid' : 'Video' },
+                      { id: 'image', label: isRightPanelCompact ? 'Img' : 'Image' },
+                      { id: 'text', label: isRightPanelCompact ? 'Txt' : 'Text/Code' },
                       { id: 'all', label: 'All' },
                     ].map(tab => {
                       const isActive = activeFrameworkCategory === tab.id;
@@ -1516,7 +1650,7 @@ export const ChatInterface: React.FC<Props> = ({
                           key={tab.id}
                           onClick={() => setActiveFrameworkCategory(tab.id as any)}
                           className={cn(
-                            "text-[9px] font-bold uppercase px-2 py-0.5 rounded-md transition-all",
+                            "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md transition-all",
                             isActive
                               ? "bg-emerald-600 dark:bg-emerald-500 text-white shadow-2xs"
                               : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
@@ -1541,7 +1675,8 @@ export const ChatInterface: React.FC<Props> = ({
                         onClick={() => handleApplyFramework(fw)} 
                         title={`${fw.name} — ${fw.description}`}
                         className={cn(
-                          "px-2.5 py-1.5 text-[10px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left",
+                          "text-[10px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left",
+                          isRightPanelCompact ? "px-2 py-1" : "px-2.5 py-1.5",
                           isTransformingThis
                             ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
                             : isContextMatch
@@ -1551,7 +1686,7 @@ export const ChatInterface: React.FC<Props> = ({
                       >
                         <Sparkles size={10} className={cn("shrink-0", isTransformingThis ? "text-white animate-spin" : isContextMatch ? "text-emerald-500" : "text-stone-400 dark:text-slate-400 group-hover:text-emerald-500")} />
                         <span className="font-semibold">{fw.name}</span>
-                        {fw.domainName && (
+                        {fw.domainName && !isRightPanelCompact && (
                           <span className={cn(
                             "text-[8px] font-semibold px-1 py-0.2 rounded uppercase tracking-tighter shrink-0",
                             isTransformingThis
@@ -1570,17 +1705,19 @@ export const ChatInterface: React.FC<Props> = ({
               </div>
 
               {/* Contextual Suggestive Quick Add */}
-              <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
+              <div className="mb-4 p-3 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
                 <div className="flex items-center justify-between gap-2 mb-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <Zap size={13} className="text-amber-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400">
-                      Contextual Quick Add:
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Zap size={13} className="text-amber-500 shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400 truncate">
+                      {isRightPanelCompact ? 'Quick Add:' : 'Contextual Quick Add:'}
                     </span>
                   </div>
-                  <span className="text-[9px] font-medium text-stone-400 dark:text-slate-500">
-                    Click to insert • Click active to remove
-                  </span>
+                  {!isRightPanelCompact && (
+                    <span className="text-[9px] font-medium text-stone-400 dark:text-slate-500 truncate">
+                      Click to insert • Click active to remove
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
@@ -1591,7 +1728,8 @@ export const ChatInterface: React.FC<Props> = ({
                         onClick={() => handleToggleQuickAddSuggestion(sug)} 
                         title={sug.active ? `Remove "${sug.label}" from prompt` : `Insert "${sug.label}" into prompt`}
                         className={cn(
-                          "px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5",
+                          "text-[10px] font-bold rounded-lg border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5",
+                          isRightPanelCompact ? "px-2 py-0.5" : "px-2.5 py-1",
                           sug.active
                             ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500 shadow-xs shadow-emerald-600/30 hover:bg-emerald-700 dark:hover:bg-emerald-600"
                             : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
@@ -1611,130 +1749,6 @@ export const ChatInterface: React.FC<Props> = ({
                       </button>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Variable Filler */}
-              {Object.keys(variables).length > 0 && (
-                <div className="mb-6 p-4 bg-white/60 dark:bg-slate-800/60 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/30 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="col-span-full flex items-center gap-2 mb-1">
-                    <Sparkles size={14} className="text-emerald-500 dark:text-emerald-400" />
-                    <span className="text-[10px] font-black text-stone-400 dark:text-slate-400 uppercase tracking-widest">Variable Blueprints</span>
-                  </div>
-                  {Object.entries(variables).map(([name, value]) => {
-                    const suggestions = VARIABLE_SUGGESTIONS[name.toUpperCase()] || [];
-                    return (
-                      <div key={name} className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-stone-500 dark:text-slate-400 uppercase tracking-wider ml-1">{name}</label>
-                        <input 
-                          type="text"
-                          value={value}
-                          onChange={e => setVariables(prev => ({ ...prev, [name]: e.target.value }))}
-                          placeholder={`Enter ${name.toLowerCase()}...`}
-                          className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-300 dark:placeholder:text-slate-500 text-stone-900 dark:text-slate-100"
-                        />
-                        {suggestions.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {suggestions.map(suggestion => (
-                              <button
-                                key={suggestion}
-                                onClick={() => setVariables(prev => ({ ...prev, [name]: suggestion }))}
-                                className="px-2 py-1 text-[9px] font-bold bg-stone-100 dark:bg-slate-700/50 text-stone-500 dark:text-slate-400 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors whitespace-nowrap"
-                              >
-                                {suggestion}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Prompt Editor with Cinematic Loading State */}
-              <div className="relative mb-4">
-                <AnimatePresence>
-                  {isTransformingFramework && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="absolute inset-0 z-30 rounded-2xl bg-stone-950/80 dark:bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center overflow-hidden border border-emerald-500/40 shadow-2xl"
-                    >
-                      {/* Animated Cybernetic Scan Line */}
-                      <motion.div
-                        className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981]"
-                        animate={{ top: ["0%", "100%", "0%"] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      />
-
-                      {/* Ambient Neural Matrix Glow */}
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.15),transparent_70%)]" />
-
-                      <div className="relative z-10 flex flex-col items-center gap-3">
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                          className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-950/50"
-                        >
-                          <RefreshCw size={22} className="animate-spin text-emerald-400" />
-                        </motion.div>
-
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                            <h4 className="text-sm font-black text-white tracking-wide">
-                              Transforming into {transformingFrameworkName}
-                            </h4>
-                          </div>
-                          <p className="text-[11px] text-stone-300 dark:text-slate-400 max-w-xs leading-relaxed">
-                            Restructuring prompt parameters into the {transformingFrameworkName} framework schema...
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-full bg-emerald-900/50 border border-emerald-500/30 text-[10px] font-mono text-emerald-300">
-                          <Sparkles size={11} className="text-emerald-400" />
-                          <span>Framework Synthesizer Active</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <PromptEditor
-                  value={lastResult.refinedPrompt}
-                  onChange={(newVal) => {
-                    setResultHistory(prev => {
-                      const newHistory = [...prev];
-                      newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: newVal };
-                      return newHistory;
-                    });
-                  }}
-                  variables={variables}
-                  currentVersionIndex={currentResultIndex}
-                  totalVersions={resultHistory.length}
-                  onPreviousVersion={() => handleResultIndexChange(Math.max(0, currentResultIndex - 1))}
-                  onNextVersion={() => handleResultIndexChange(Math.min(resultHistory.length - 1, currentResultIndex + 1))}
-                />
-              </div>
-              
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-[10px] font-black text-emerald-400 dark:text-emerald-500 uppercase tracking-widest">Rate this architecture</span>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => submitFeedback(star)}
-                      className={cn(
-                        "p-1 transition-all duration-300 hover:scale-125",
-                        feedbackData.rating >= star ? "text-amber-400" : "text-stone-300 dark:text-slate-600"
-                      )}
-                    >
-                      <Sparkles size={18} fill={feedbackData.rating >= star ? "currentColor" : "none"} />
-                    </button>
-                  ))}
                 </div>
               </div>
             </motion.div>
