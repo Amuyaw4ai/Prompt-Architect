@@ -356,18 +356,9 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <div className="mb-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-4xl font-black text-stone-900 dark:text-slate-100 mb-3 tracking-tight">Chat History</h2>
-                    <p className="text-lg text-stone-500 dark:text-slate-400">Pick up where you left off in your architectural journeys.</p>
-                  </div>
-                  <button 
-                    onClick={handleNewArchitect}
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-stone-900 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl text-sm font-bold hover:bg-stone-800 dark:hover:bg-emerald-400 transition-all shadow-xl shadow-stone-200 dark:shadow-none"
-                  >
-                    <PlusCircle size={20} />
-                    NEW CHAT
-                  </button>
+                <div className="mb-12">
+                  <h2 className="text-4xl font-black text-stone-900 dark:text-slate-100 mb-3 tracking-tight">Chat History</h2>
+                  <p className="text-lg text-stone-500 dark:text-slate-400">Pick up where you left off in your architectural journeys.</p>
                 </div>
                 <ChatHistory onSelect={handleSelectSession} currentSessionId={currentSession?.id} />
               </motion.div>
