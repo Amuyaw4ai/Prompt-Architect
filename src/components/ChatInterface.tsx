@@ -1321,7 +1321,11 @@ export const ChatInterface: React.FC<Props> = ({
 
                       {/* Modal Body: Side-to-Side Entries, 2-Card Viewport, Hidden Scrollbar */}
                       <div className="flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-2 pr-0.5">
-                        {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
+                        {ALL_FRAMEWORKS.filter(f => {
+                          if (promptType === 'code') return f.category === 'code' || f.domain === 'code';
+                          if (promptType === 'audio') return f.category === 'audio' || f.domain === 'audio';
+                          return f.category === promptType;
+                        }).map(fw => (
                           <button
                             key={fw.id}
                             onClick={() => {
