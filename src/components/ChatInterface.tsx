@@ -506,14 +506,6 @@ export const ChatInterface: React.FC<Props> = ({
   }, [messages.length, lastResult?.refinedPrompt, variables, promptType, onStatsChange]);
 
   useEffect(() => {
-    if (initialInput) {
-      setInput(initialInput);
-      handleSend(initialInput);
-      onInputUsed?.();
-    }
-  }, [initialInput]);
-
-  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
