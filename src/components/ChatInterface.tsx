@@ -1282,40 +1282,38 @@ export const ChatInterface: React.FC<Props> = ({
                       className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[998] lg:hidden pointer-events-auto cursor-pointer"
                     />
 
-                    {/* Mobile Floating Bottom Card (<lg) / Desktop Popover (lg:) */}
+                    {/* Mobile Floating Bottom Card (<lg) / Desktop Sleek Horizontal Bar (lg:) */}
                     <motion.div 
                       initial={{ opacity: 0, y: 40 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 40 }}
-                      className="fixed inset-x-3 bottom-3 max-h-[70vh] sm:inset-x-6 sm:bottom-6 sm:max-h-[65vh] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-4 flex flex-col z-[999] pointer-events-auto lg:static lg:absolute lg:bottom-full lg:right-0 lg:sm:right-auto lg:sm:left-4 lg:mb-3 lg:w-80 lg:max-h-72 lg:rounded-2xl lg:border lg:border-stone-200/80 lg:dark:border-slate-700/80 lg:bg-white/95 lg:dark:bg-slate-800/95 lg:shadow-2xl lg:p-4 overflow-hidden"
+                      className="fixed inset-x-3 bottom-3 max-h-[70vh] sm:inset-x-6 sm:bottom-6 sm:max-h-[65vh] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-4 flex flex-col z-[999] pointer-events-auto lg:static lg:absolute lg:bottom-full lg:right-0 lg:left-auto lg:mb-3 lg:w-[620px] lg:max-h-48 lg:h-48 lg:rounded-2xl lg:border lg:border-stone-200/80 lg:dark:border-slate-800 lg:bg-white/95 lg:dark:bg-slate-900/95 lg:backdrop-blur-2xl lg:shadow-2xl lg:p-3.5 overflow-hidden"
                     >
                       {/* Top Drag Pill Indicator (<lg) */}
                       <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-3 shrink-0 lg:hidden" />
                       
                       {/* Modal Header */}
-                      <div className="pb-3 mb-2.5 border-b border-slate-800/80 shrink-0 flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <BookTemplate size={16} className="text-emerald-400" />
-                            <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
-                              Starter Prompt Frameworks
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => setShowFrameworks(false)}
-                            className="p-1 text-slate-400 hover:text-white rounded-full transition-colors"
-                            aria-label="Close Frameworks Modal"
-                          >
-                            <X size={18} />
-                          </button>
+                      <div className="pb-2.5 mb-2 border-b border-stone-200/60 dark:border-slate-800/80 shrink-0 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <BookTemplate size={16} className="text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                            Starter Prompt Frameworks
+                          </span>
+                          <span className="hidden lg:inline-block text-[10px] text-stone-400 dark:text-slate-500 font-medium ml-2">
+                            Scroll horizontally to explore blueprints
+                          </span>
                         </div>
-                        <p className="text-[11px] text-slate-400">
-                          Select a battle-tested structure to seed your architecture
-                        </p>
+                        <button
+                          onClick={() => setShowFrameworks(false)}
+                          className="p-1 text-stone-400 hover:text-stone-700 dark:hover:text-white rounded-full transition-colors"
+                          aria-label="Close Frameworks Modal"
+                        >
+                          <X size={16} />
+                        </button>
                       </div>
 
-                      {/* Modal Body: Smooth Internal Scrolling & Compact Typography */}
-                      <div className="flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-2.5 pr-1">
+                      {/* Modal Body: Mobile Vertical List / Desktop Horizontal Side-by-Side Row (No scrollbar) */}
+                      <div className="flex-1 overflow-y-auto lg:overflow-y-hidden lg:overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-2.5 lg:space-y-0 lg:flex lg:flex-row lg:gap-3 pr-1 lg:pr-0 lg:py-0.5">
                         {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
                           <button
                             key={fw.id}
@@ -1323,13 +1321,13 @@ export const ChatInterface: React.FC<Props> = ({
                               setInput(fw.template);
                               setShowFrameworks(false);
                             }}
-                            className="w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-800/40 text-xs hover:border-emerald-500/40 transition-all active:scale-[0.99] group flex flex-col gap-1 cursor-pointer"
+                            className="w-full lg:w-60 lg:shrink-0 lg:h-full text-left p-3 rounded-xl border border-stone-200/80 dark:border-slate-800/80 bg-stone-50/70 dark:bg-slate-800/40 text-xs hover:border-emerald-500/50 hover:bg-emerald-50/60 dark:hover:bg-slate-800/90 transition-all active:scale-[0.99] group flex flex-col justify-between gap-1 cursor-pointer"
                           >
                             <div className="font-bold flex items-center justify-between gap-2">
-                              <span className="text-slate-100 group-hover:text-emerald-400 transition-colors text-xs sm:text-sm">{fw.name}</span>
-                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full shrink-0">{fw.domainName}</span>
+                              <span className="text-stone-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-xs font-bold truncate">{fw.name}</span>
+                              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 px-2 py-0.5 rounded-full shrink-0">{fw.domainName}</span>
                             </div>
-                            <div className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
+                            <div className="text-[11px] text-stone-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
                           </button>
                         ))}
                       </div>
