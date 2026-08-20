@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  prompt-architect:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prompt_architect_studio
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - studio-network
+
+networks:
+  studio-network:
+    driver: bridge

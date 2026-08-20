@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+.env.local
+.git
+.gitignore
+.vscode
+*.log
+*.pdf
+Dockerfile
+docker-compose.yml
+CONTAINERIZATION_STANDARD.md
+DEPLOYMENT.md
+k8s/

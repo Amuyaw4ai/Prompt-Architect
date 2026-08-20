@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prompt-architect-deployment
+  labels:
+    app: prompt-architect
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: prompt-architect
+  template:
+    metadata:
+      labels:
+        app: prompt-architect
+    spec:
+      containers:
+      - name: prompt-architect
+        image: gcr.io/YOUR_GCP_PROJECT_ID/prompt-architect:v2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: PORT
+          value: "3000"
+        - name: NODE_ENV
+          value: "production"
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: prompt-architect-secrets
+              key: gemini-api-key
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/templates
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /api/templates
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
