@@ -1282,18 +1282,18 @@ export const ChatInterface: React.FC<Props> = ({
                       className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[998] lg:hidden pointer-events-auto cursor-pointer"
                     />
 
-                    {/* Mobile Floating Bottom Card (<lg) / Desktop Bound Popover (lg:) */}
+                    {/* Mobile Floating Bottom Card (<lg) / Desktop Full-Width Side-to-Side Popover (lg:) */}
                     <motion.div 
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 30 }}
-                      className="fixed inset-x-3 bottom-3 max-h-[70vh] sm:inset-x-6 sm:bottom-6 sm:max-h-[65vh] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-4 flex flex-col z-[999] pointer-events-auto lg:static lg:absolute lg:bottom-full lg:right-0 lg:left-auto lg:mb-3 lg:w-full lg:max-w-md lg:max-h-56 lg:rounded-2xl lg:border lg:border-stone-200/80 lg:dark:border-slate-800 lg:bg-white/95 lg:dark:bg-slate-900/95 lg:backdrop-blur-2xl lg:shadow-2xl lg:p-3.5 overflow-hidden"
+                      className="fixed inset-x-3 bottom-3 max-h-[70vh] sm:inset-x-6 sm:bottom-6 sm:max-h-[65vh] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-4 flex flex-col z-[999] pointer-events-auto lg:static lg:absolute lg:bottom-full lg:inset-x-0 lg:w-full lg:mb-3 lg:max-h-[205px] lg:rounded-2xl lg:border lg:border-stone-200/80 lg:dark:border-slate-800 lg:bg-white/95 lg:dark:bg-slate-900/95 lg:backdrop-blur-2xl lg:shadow-2xl lg:p-3.5 overflow-hidden"
                     >
                       {/* Top Drag Pill Indicator (<lg) */}
                       <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-3 shrink-0 lg:hidden" />
                       
                       {/* Modal Header */}
-                      <div className="pb-2.5 mb-2 border-b border-stone-200/60 dark:border-slate-800/80 shrink-0 flex items-center justify-between">
+                      <div className="pb-2 mb-2 border-b border-stone-200/60 dark:border-slate-800/80 shrink-0 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <BookTemplate size={16} className="text-emerald-600 dark:text-emerald-400" />
                           <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
@@ -1309,8 +1309,8 @@ export const ChatInterface: React.FC<Props> = ({
                         </button>
                       </div>
 
-                      {/* Modal Body: Vertical Scroll List (No Scrollbar Shown) */}
-                      <div className="flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-2 pr-1">
+                      {/* Modal Body: Side-to-Side Entries, 2-Card Viewport, Hidden Scrollbar */}
+                      <div className="flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-2 pr-0.5">
                         {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
                           <button
                             key={fw.id}
