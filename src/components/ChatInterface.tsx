@@ -326,9 +326,10 @@ export const ChatInterface: React.FC<Props> = ({
   const versionsDropdownRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textFileInputRef = useRef<HTMLInputElement>(null);
-  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const textFileInputRef = useRef<HTMLInputElement>(null);  const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const lastXRef = useRef<number | null>(null);
+  const isSendingRef = useRef(false);
+  const hasProcessedInitialInputRef = useRef(false);
 
   // Auto-expand input textarea height with content volume up to mid-screen (~220px max height cap)
   useEffect(() => {
@@ -354,6 +355,14 @@ export const ChatInterface: React.FC<Props> = ({
       setPromptVersions([]);
     }
   }, [editingPrompt]);
+
+  useEffect(() => {
+    if (initialInput && !hasProcessedInitialInputRef.current) {
+      hasProcessedInitialInputRef.current = true;
+      handleSend(initialInput);
+      onInputUsed?.();
+    }
+  }, [initialInput]); 
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -446,10 +455,10 @@ export const ChatInterface: React.FC<Props> = ({
     }
   };
 
-  // Extract variables from prompt like [STYLE] or [subject]
+  // Extract variables from prompt like [STYLE] or [SUBJECT]
   useEffect(() => {
     if (lastResult?.refinedPrompt) {
-      const matches = lastResult.refinedPrompt.match(/\[[A-Za-z0-9_]+\]/g);
+      const matches = lastResult.refinedPrompt.match(/\[[A-Z_]+\]/g);
       if (matches) {
         const uniqueVars = Array.from(new Set(matches));
         const newVars: Record<string, string> = {};
@@ -468,8 +477,8 @@ export const ChatInterface: React.FC<Props> = ({
     if (!lastResult?.refinedPrompt) return '';
     let final = lastResult.refinedPrompt;
     Object.entries(variables).forEach(([name, value]) => {
-      if (value && value.trim()) {
-        final = final.replaceAll(`[${name}]`, value);
+      if (value.trim()) {
+        final = final.replace(new RegExp(`\\[${name}\\]`, 'g'), value);
       }
     });
     return final;
@@ -490,11 +499,8 @@ export const ChatInterface: React.FC<Props> = ({
     }
   }, [messages.length, lastResult?.refinedPrompt, variables, promptType, onStatsChange]);
 
-  const hasHandledInitialInputRef = useRef<string | null>(null);
-
   useEffect(() => {
-    if (initialInput && hasHandledInitialInputRef.current !== initialInput) {
-      hasHandledInitialInputRef.current = initialInput;
+    if (initialInput) {
       setInput(initialInput);
       handleSend(initialInput);
       onInputUsed?.();
@@ -561,8 +567,9 @@ export const ChatInterface: React.FC<Props> = ({
       const stagedTags = selectedOptions.join(' ');
       textToUse = textToUse.trim() ? `${textToUse.trim()}\n\nApplied Calibrations:\n${stagedTags}` : `Please calibrate prompt with:\n${stagedTags}`;
     }
-    if ((!textToUse.trim() && !selectedImage && attachedFiles.length === 0) || isLoading) return;
+    if ((!textToUse.trim() && !selectedImage && attachedFiles.length === 0) || isLoading || isSendingRef.current) return;
 
+    isSendingRef.current = true;
     let userContent = textToUse;
     if (selectedImage && !textToUse.trim()) {
       if (selectedImage.mimeType.startsWith("image/")) {
@@ -679,6 +686,7 @@ export const ChatInterface: React.FC<Props> = ({
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      isSendingRef.current = false;
     }
   };
 
@@ -1324,11 +1332,7 @@ export const ChatInterface: React.FC<Props> = ({
 
                       {/* Modal Body: Side-to-Side Entries, 2-Card Viewport, Hidden Scrollbar */}
                       <div className="flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-2 pr-0.5">
-                        {ALL_FRAMEWORKS.filter(f => {
-                          if (promptType === 'code') return f.category === 'code' || f.domain === 'code';
-                          if (promptType === 'audio') return f.category === 'audio' || f.domain === 'audio';
-                          return f.category === promptType;
-                        }).map(fw => (
+                        {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
                           <button
                             key={fw.id}
                             onClick={() => {
