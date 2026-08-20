@@ -131,7 +131,45 @@ async function generateContentWithFallback(ai: GoogleGenAI, params: {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
+
+  // Security Headers Middleware
+  app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+  });
+
+  // Basic API Rate Limiting Middleware
+  const requestCounts = new Map<string, { count: number; resetTime: number }>();
+  app.use("/api/", (req, res, next) => {
+    const ip = req.ip || req.socket.remoteAddress || "127.0.0.1";
+    const now = Date.now();
+    const windowMs = 60 * 1000;
+    const maxRequests = 120;
+
+    const current = requestCounts.get(ip) || { count: 0, resetTime: now + windowMs };
+
+    if (now > current.resetTime) {
+      current.count = 1;
+      current.resetTime = now + windowMs;
+    } else {
+      current.count += 1;
+    }
+
+    requestCounts.set(ip, current);
+
+    res.setHeader("X-RateLimit-Limit", maxRequests);
+    res.setHeader("X-RateLimit-Remaining", Math.max(0, maxRequests - current.count));
+
+    if (current.count > maxRequests) {
+      return res.status(429).json({ error: "Too many requests. Please wait a minute before retrying." });
+    }
+
+    next();
+  });
 
   // Set up body parser with higher limit for media upload base64 strings
   app.use(express.json({ limit: "50mb" }));

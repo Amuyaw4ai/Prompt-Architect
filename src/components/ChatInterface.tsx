@@ -251,6 +251,8 @@ const getDynamicCalibrationOptions = (
 interface Props {
   promptType: PromptType;
   onTypeChange: (type: PromptType) => void;
+  isLocalMode?: boolean;
+  onLocalModeChange?: (isLocal: boolean) => void;
   initialInput?: string;
   initialMessages?: Message[];
   initialResult?: PromptResult;
@@ -268,6 +270,8 @@ interface Props {
 export const ChatInterface: React.FC<Props> = ({ 
   promptType, 
   onTypeChange,
+  isLocalMode: externalIsLocalMode,
+  onLocalModeChange,
   initialInput, 
   initialMessages,
   initialResult,
@@ -282,14 +286,20 @@ export const ChatInterface: React.FC<Props> = ({
   onStatsChange
 }) => {
   const currentMobileTab = activeMobileTab;
-  const [isLocalMode, setIsLocalMode] = useState<boolean>(() => {
+  const [internalLocalMode, setInternalLocalMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('prompt_architect_engine_mode');
-    return saved ? saved === 'local' : true; // Default is Local mode (Local Studio)
+    return saved ? saved === 'local' : true;
   });
 
-  useEffect(() => {
-    localStorage.setItem('prompt_architect_engine_mode', isLocalMode ? 'local' : 'live');
-  }, [isLocalMode]);
+  const isLocalMode = externalIsLocalMode !== undefined ? externalIsLocalMode : internalLocalMode;
+
+  const setIsLocalMode = (val: boolean) => {
+    setInternalLocalMode(val);
+    localStorage.setItem('prompt_architect_engine_mode', val ? 'local' : 'live');
+    if (onLocalModeChange) {
+      onLocalModeChange(val);
+    }
+  };
 
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [input, setInput] = useState('');
@@ -308,6 +318,8 @@ export const ChatInterface: React.FC<Props> = ({
   const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video' | 'all'>('current');
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const isRightPanelCompact = rightPanelWidth <= 380;
+  const isRightPanelUltraCompact = rightPanelWidth <= 340;
+  const isRightPanelWide = rightPanelWidth >= 520;
   const [isDragging, setIsDragging] = useState(false);
   const [promptVersions, setPromptVersions] = useState<SavedPrompt[]>([]);
   const [showVersionsDropdown, setShowVersionsDropdown] = useState(false);
@@ -1545,102 +1557,91 @@ export const ChatInterface: React.FC<Props> = ({
             animate={{ opacity: 1, x: 0 }}
             className={cn("transition-all pb-24 lg:pb-6", isRightPanelCompact ? "p-3.5 sm:p-4" : "p-5 lg:p-6")}
           >
-            {/* Header: Title, Word Count, Score */}
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="w-full flex items-center justify-between gap-2 min-w-0">
-                <span className={cn(
-                  "hidden lg:block font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 truncate",
-                  isRightPanelCompact ? "text-[11px]" : "text-xs"
-                )}>
-                  Architectural Output
-                </span>
-
-                <div className="w-full lg:w-auto flex items-center justify-between lg:justify-end flex-wrap sm:flex-nowrap gap-2 shrink-0 py-1">
-                  <div className="flex items-center gap-2 text-xs font-medium text-stone-500 dark:text-slate-400 shrink-0">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-100/70 dark:bg-slate-800/70 border border-stone-200/50 dark:border-slate-700/50 rounded-md text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0 shadow-2xs">
-                      {getFinalPrompt().length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[10px]">{isRightPanelCompact ? 'CHARS' : 'CHARS'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-100/70 dark:bg-slate-800/70 border border-stone-200/50 dark:border-slate-700/50 rounded-md text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
-                      {getFinalPrompt().split(/\s+/).filter(Boolean).length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[10px]">{isRightPanelCompact ? 'WORDS' : 'WORDS'}</span>
-                    </div>
+            {/* Header: Stats & Quality Score */}
+            <div className="flex flex-col gap-2.5 mb-4">
+              <div className="w-full flex items-center justify-between gap-2 min-w-0 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0 shadow-2xs">
+                    {getFinalPrompt().length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">CHARS</span>
                   </div>
+                  <div className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
+                    {getFinalPrompt().split(/\s+/).filter(Boolean).length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">WORDS</span>
+                  </div>
+                </div>
+
+                <div 
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 cursor-help transition-all shadow-2xs group relative",
+                    calculatePromptScore(getFinalPrompt(), promptType).score >= 80 
+                      ? "bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/50" 
+                      : calculatePromptScore(getFinalPrompt(), promptType).score >= 50 
+                        ? "bg-amber-50/80 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/50" 
+                        : "bg-pink-50/80 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 border-pink-200/60 dark:border-pink-800/50"
+                  )}
+                  onClick={() => setShowScoreDetails(!showScoreDetails)}
+                  onMouseLeave={() => setShowScoreDetails(false)}
+                >
+                  <span className="text-[9px] uppercase font-bold tracking-wider opacity-80">SCORE:</span>
+                  <span>{calculatePromptScore(getFinalPrompt(), promptType).score}%</span>
                   <div 
                     className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border shrink-0 cursor-help transition-all shadow-2xs group relative",
-                      calculatePromptScore(getFinalPrompt(), promptType).score >= 80 
-                        ? "bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/50" 
-                        : calculatePromptScore(getFinalPrompt(), promptType).score >= 50 
-                          ? "bg-amber-50/80 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/50" 
-                          : "bg-pink-50/80 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 border-pink-200/60 dark:border-pink-800/50"
+                      "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:right-0 lg:left-auto lg:translate-y-0 lg:mt-2 lg:w-72 max-w-[calc(100vw-2rem)] p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
+                      showScoreDetails ? "block" : "hidden lg:group-hover:block"
                     )}
-                    onClick={() => setShowScoreDetails(!showScoreDetails)}
-                    onMouseLeave={() => setShowScoreDetails(false)}
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">SCORE:</span>
-                    <span>{calculatePromptScore(getFinalPrompt(), promptType).score}%</span>
-                    <div 
-                      className={cn(
-                        "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:right-0 lg:left-auto lg:translate-y-0 lg:mt-2 lg:w-72 max-w-[calc(100vw-2rem)] p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
-                        showScoreDetails ? "block" : "hidden lg:group-hover:block"
-                      )}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* Mobile close button */}
-                      <div className="flex justify-between items-center mb-3 lg:hidden">
-                        <span className="font-bold text-slate-200 text-sm">Score Details</span>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowScoreDetails(false);
-                          }}
-                          className="text-slate-400 hover:text-white p-1"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      
-                      {calculatePromptScore(getFinalPrompt(), promptType).strengths.length > 0 && (
-                        <>
-                          <div className="font-bold mb-2 text-emerald-400">Strengths:</div>
-                          <ul className="list-disc pl-4 space-y-1 mb-3 text-emerald-100/90 whitespace-normal">
-                            {calculatePromptScore(getFinalPrompt(), promptType).strengths.map((s, i) => (
-                              <li key={i}>{s}</li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
-                      {calculatePromptScore(getFinalPrompt(), promptType).improvements.length > 0 && (
-                        <>
-                          <div className="font-bold mb-2 text-amber-400">Suggestions to Improve:</div>
-                          <ul className="list-disc pl-4 space-y-1 text-amber-100/90 whitespace-normal">
-                            {calculatePromptScore(getFinalPrompt(), promptType).improvements.map((s, i) => (
-                              <li key={i}>{s}</li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Mobile overlay */}
-                    {showScoreDetails && (
-                      <div 
-                        className="fixed inset-0 bg-black/50 z-[90] lg:hidden"
+                    {/* Mobile close button */}
+                    <div className="flex justify-between items-center mb-3 lg:hidden">
+                      <span className="font-bold text-slate-200 text-sm">Score Details</span>
+                      <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowScoreDetails(false);
                         }}
-                      />
+                        className="text-slate-400 hover:text-white p-1"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    
+                    {calculatePromptScore(getFinalPrompt(), promptType).strengths.length > 0 && (
+                      <>
+                        <div className="font-bold mb-2 text-emerald-400">Strengths:</div>
+                        <ul className="list-disc pl-4 space-y-1 mb-3 text-emerald-100/90 whitespace-normal">
+                          {calculatePromptScore(getFinalPrompt(), promptType).strengths.map((s, i) => (
+                            <li key={i}>{s}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {calculatePromptScore(getFinalPrompt(), promptType).improvements.length > 0 && (
+                      <>
+                        <div className="font-bold mb-2 text-amber-400">Suggestions to Improve:</div>
+                        <ul className="list-disc pl-4 space-y-1 text-amber-100/90 whitespace-normal">
+                          {calculatePromptScore(getFinalPrompt(), promptType).improvements.map((s, i) => (
+                            <li key={i}>{s}</li>
+                          ))}
+                        </ul>
+                      </>
                     )}
                   </div>
+                  
+                  {/* Mobile overlay */}
+                  {showScoreDetails && (
+                    <div 
+                      className="fixed inset-0 bg-black/50 z-[90] lg:hidden"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowScoreDetails(false);
+                      }}
+                    />
+                  )}
                 </div>
               </div>
 
-              {/* Action Buttons Grid */}
-              <div className={cn(
-                "grid gap-1.5 w-full",
-                isRightPanelCompact ? "grid-cols-5" : "grid-cols-2 sm:grid-cols-5"
-              )}>
-                {/* 1. SAVE */}
+              {/* Dynamic Responsive Action Toolbar (5 Columns) */}
+              <div className="grid grid-cols-5 gap-1.5 w-full min-w-0">
+                {/* 1. SAVE / UPDATE */}
                 <button
                   onClick={() => {
                     if (!editingPrompt && lastResult) {
@@ -1653,18 +1654,22 @@ export const ChatInterface: React.FC<Props> = ({
                     setShowSaveModal(true);
                   }}
                   className={cn(
-                    "flex flex-col items-center justify-center bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-800/50 shadow-2xs hover:shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group",
-                    isRightPanelCompact ? "h-9 p-0" : "py-2 px-2"
+                    "flex flex-col items-center justify-center bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold border border-emerald-100 dark:border-emerald-800/50 shadow-2xs hover:shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group min-w-0 overflow-hidden",
+                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1"
                   )}
                   title={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
                   aria-label={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
                 >
-                  <div className="flex items-center justify-center gap-1.5">
-                    {editingPrompt ? <Save size={isRightPanelCompact ? 15 : 13} /> : <Plus size={isRightPanelCompact ? 15 : 13} />}
-                    {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{editingPrompt ? 'Update' : 'Save'}</span>}
+                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                    {editingPrompt ? <Save size={isRightPanelUltraCompact ? 15 : 13} className="shrink-0" /> : <Plus size={isRightPanelUltraCompact ? 15 : 13} className="shrink-0" />}
+                    {!isRightPanelUltraCompact && (
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                        {editingPrompt ? 'Update' : 'Save'}
+                      </span>
+                    )}
                   </div>
-                  {!isRightPanelCompact && (
-                    <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none">
+                  {isRightPanelWide && (
+                    <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0">
                       Library
                     </span>
                   )}
@@ -1674,8 +1679,8 @@ export const ChatInterface: React.FC<Props> = ({
                 <button
                   onClick={copyToClipboard}
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-xl text-xs font-bold transition-all shadow-2xs group",
-                    isRightPanelCompact ? "h-9 p-0" : "py-2 px-2",
+                    "flex flex-col items-center justify-center rounded-xl font-bold transition-all shadow-2xs group min-w-0 overflow-hidden",
+                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
                     copiedType === 'text'
                       ? "bg-emerald-600 dark:bg-emerald-500 text-white"
                       : "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-400"
@@ -1683,23 +1688,27 @@ export const ChatInterface: React.FC<Props> = ({
                   title={copiedType === 'text' ? "Copied prompt to clipboard!" : "Copy prompt text to clipboard"}
                   aria-label="Copy prompt"
                 >
-                  <div className="flex items-center justify-center gap-1.5">
-                    {copiedType === 'text' ? <Check size={isRightPanelCompact ? 15 : 13} className="stroke-[3]" /> : <Copy size={isRightPanelCompact ? 15 : 13} />}
-                    {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'text' ? 'Copied!' : 'Copy'}</span>}
+                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                    {copiedType === 'text' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="stroke-[3] shrink-0" /> : <Copy size={isRightPanelUltraCompact ? 15 : 13} className="shrink-0" />}
+                    {!isRightPanelUltraCompact && (
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                        {copiedType === 'text' ? 'Copied!' : 'Copy'}
+                      </span>
+                    )}
                   </div>
-                  {!isRightPanelCompact && (
-                    <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none">
+                  {isRightPanelWide && (
+                    <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0">
                       Prompt
                     </span>
                   )}
                 </button>
 
-                {/* 3. DOWNLOAD AS MARKDOWN */}
+                {/* 3. DOWNLOAD MARKDOWN */}
                 <button
                   onClick={handleDownloadMarkdown}
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group",
-                    isRightPanelCompact ? "h-9 p-0" : "py-2 px-2",
+                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden",
+                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
                     copiedType === 'markdown'
                       ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                       : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
@@ -1707,47 +1716,55 @@ export const ChatInterface: React.FC<Props> = ({
                   title={copiedType === 'markdown' ? "Saved Markdown file!" : "Download prompt as Markdown (.md) document"}
                   aria-label="Download prompt as Markdown"
                 >
-                  <div className="flex items-center justify-center gap-1.5">
-                    {copiedType === 'markdown' ? <Check size={isRightPanelCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <FileCode size={isRightPanelCompact ? 15 : 13} className="text-emerald-500" />}
-                    {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'markdown' ? 'Saved' : 'Down MD'}</span>}
+                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                    {copiedType === 'markdown' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileCode size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-500 shrink-0" />}
+                    {!isRightPanelUltraCompact && (
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                        {copiedType === 'markdown' ? 'Saved' : 'MD'}
+                      </span>
+                    )}
                   </div>
-                  {!isRightPanelCompact && (
-                    <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none">
+                  {isRightPanelWide && (
+                    <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none truncate min-w-0">
                       Markdown
                     </span>
                   )}
                 </button>
 
-                {/* 4. COPY AS JSON */}
+                {/* 4. COPY JSON */}
                 <button
                   onClick={copyAsJSON}
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group",
-                    isRightPanelCompact ? "h-9 p-0" : "py-2 px-2",
+                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden",
+                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
                     copiedType === 'json'
                       ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                       : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                   )}
-                  title={copiedType === 'json' ? "Copied JSON payload!" : "Copy prompt formatted as JSON payload"}
-                  aria-label="Copy JSON payload"
+                  title={copiedType === 'json' ? "Copied JSON structure!" : "Copy prompt formatted as JSON structure"}
+                  aria-label="Copy JSON structure"
                 >
-                  <div className="flex items-center justify-center gap-1.5">
-                    {copiedType === 'json' ? <Check size={isRightPanelCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Braces size={isRightPanelCompact ? 15 : 13} className="text-amber-500" />}
-                    {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'json' ? 'Copied' : 'Copy JSON'}</span>}
+                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                    {copiedType === 'json' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <Braces size={isRightPanelUltraCompact ? 15 : 13} className="text-amber-500 shrink-0" />}
+                    {!isRightPanelUltraCompact && (
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                        {copiedType === 'json' ? 'Copied' : isRightPanelWide ? 'Copy JSON' : 'JSON'}
+                      </span>
+                    )}
                   </div>
-                  {!isRightPanelCompact && (
-                    <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none">
-                      JSON
+                  {isRightPanelWide && (
+                    <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none truncate min-w-0">
+                      JSON Data
                     </span>
                   )}
                 </button>
 
-                {/* 5. DOWNLOAD AS JSON */}
+                {/* 5. DOWNLOAD JSON */}
                 <button
                   onClick={handleDownloadJSON}
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group",
-                    isRightPanelCompact ? "h-9 p-0 col-span-1" : "py-2 px-2 col-span-2 sm:col-span-1",
+                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden",
+                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
                     copiedType === 'download'
                       ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                       : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
@@ -1755,13 +1772,17 @@ export const ChatInterface: React.FC<Props> = ({
                   title={copiedType === 'download' ? "Saved JSON file!" : "Download prompt and settings as .json file"}
                   aria-label="Download JSON file"
                 >
-                  <div className="flex items-center justify-center gap-1.5">
-                    {copiedType === 'download' ? <Check size={isRightPanelCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <Download size={isRightPanelCompact ? 15 : 13} className="text-blue-500" />}
-                    {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'download' ? 'Saved' : 'Download'}</span>}
+                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                    {copiedType === 'download' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileJson size={isRightPanelUltraCompact ? 15 : 13} className="text-blue-500 shrink-0" />}
+                    {!isRightPanelUltraCompact && (
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                        {copiedType === 'download' ? 'Saved' : isRightPanelWide ? 'Download' : 'Down'}
+                      </span>
+                    )}
                   </div>
-                  {!isRightPanelCompact && (
-                    <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none">
-                      JSON
+                  {isRightPanelWide && (
+                    <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none truncate min-w-0">
+                      JSON File
                     </span>
                   )}
                 </button>

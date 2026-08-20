@@ -1,8 +1,1 @@
-{
-  "name": "Prompt Architect",
-  "description": "Transform simple ideas into detailed, high-performance prompts for AI image, video, and text models.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}
+{"name":"Prompt Architect","description":"Transform simple ideas into detailed, high-performance prompts for AI image, video, and text models.","requestFramePermissions":[],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}

@@ -5,7 +5,7 @@ import { TemplatesGallery } from './components/TemplatesGallery';
 import { ChatHistory } from './components/ChatHistory';
 import { Home } from './components/Home';
 import { PromptType, SavedPrompt, ChatSession } from './types';
-import { Sparkles, Info, Bookmark, Layout, Terminal, History, PlusCircle, Moon, Sun, Home as HomeIcon, RefreshCw, MessageSquare, FileCode } from 'lucide-react';
+import { Sparkles, Moon, Sun, PlusCircle, RefreshCw, MessageSquare, FileCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './utils';
 
@@ -20,6 +20,12 @@ export default function App() {
   const [prefilledPrompt, setPrefilledPrompt] = useState<{content: string, type: PromptType} | null>(null);
   const [editingPrompt, setEditingPrompt] = useState<SavedPrompt | undefined>(undefined);
   const [currentSession, setCurrentSession] = useState<ChatSession | undefined>(undefined);
+  
+  const [isLocalMode, setIsLocalMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('prompt_architect_engine_mode');
+    return saved ? saved === 'local' : true;
+  });
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('prompt_architect_theme');
     if (saved) {
@@ -27,6 +33,7 @@ export default function App() {
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
+
   const [chatKey, setChatKey] = useState<number>(0);
   const [activeMobileTab, setActiveMobileTab] = useState<'chat' | 'editor' | 'output'>('chat');
   const [mobileStats, setMobileStats] = useState<{ messageCount: number; wordCount: number; charCount: number; score: number }>({
@@ -45,6 +52,11 @@ export default function App() {
       localStorage.setItem('prompt_architect_theme', 'light');
     }
   }, [isDarkMode]);
+
+  const handleToggleLocalMode = (isLocal: boolean) => {
+    setIsLocalMode(isLocal);
+    localStorage.setItem('prompt_architect_engine_mode', isLocal ? 'local' : 'live');
+  };
 
   const handleTemplateSelect = (content: string, type: PromptType) => {
     setPrefilledPrompt({ content, type });
@@ -107,69 +119,99 @@ export default function App() {
 
   return (
     <div className="h-screen h-[100dvh] flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300 overflow-hidden">
-      {/* Header */}
-      <header className="border-b border-stone-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shrink-0 z-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Hamburger menu button for <lg screens */}
-            <div className="lg:hidden shrink-0">
-              <NavigationMenu currentView={currentView} onViewChange={setCurrentView} />
-            </div>
+      {/* Professional Studio Header */}
+      <header className="border-b border-stone-200/80 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl shrink-0 z-50 shadow-xs">
+        <div className="max-w-[1800px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-6">
+          
+          {/* Left Cluster: Hamburger Menu + Brand Logo + View Badge */}
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            {/* Hamburger button (Left side, opens left slide drawer) */}
+            <NavigationMenu 
+              currentView={currentView} 
+              onViewChange={setCurrentView} 
+              isLocalMode={isLocalMode}
+              onToggleLocalMode={handleToggleLocalMode}
+              onClearSession={handleClearSession}
+              onNewChat={handleNewArchitect}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+              hasActiveSession={Boolean(currentSession || editingPrompt || prefilledPrompt)}
+            />
 
-            {/* Clickable Brand Logo & Text */}
+            {/* Clickable Brand Logo & Title */}
             <button
               onClick={() => setCurrentView('home')}
-              className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 cursor-pointer group shrink-0 text-left"
+              className="flex items-center gap-2.5 cursor-pointer group shrink-0 text-left"
               title="Go to Home"
               aria-label="Prompt Architect Home"
             >
-              <div className="hidden lg:flex w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-xl items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 group-hover:scale-110 transition-transform shrink-0">
-                <Sparkles className="w-5 h-5 text-white dark:text-slate-900" />
+              <div className="w-9 h-9 bg-gradient-to-tr from-emerald-600 to-teal-400 dark:from-emerald-500 dark:to-teal-300 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <Sparkles className="w-5 h-5 text-white dark:text-slate-950" />
               </div>
-              <h1 className="text-sm font-semibold sm:text-base lg:text-xl lg:font-bold tracking-tight text-stone-800 dark:text-slate-100 whitespace-nowrap hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                Prompt Architect
-              </h1>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm font-black sm:text-base tracking-tight text-stone-900 dark:text-slate-100 whitespace-nowrap group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    Prompt Architect
+                  </h1>
+                  <span className="hidden md:inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
+                    {currentView === 'architect' ? 'Studio' : currentView === 'saved' ? 'Library' : currentView.toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-[10px] text-stone-400 dark:text-slate-400 font-medium -mt-0.5 hidden sm:inline-block">
+                  Multimodal Engineering Platform
+                </span>
+              </div>
             </button>
           </div>
-          
-          {/* Desktop Navigation links (>=lg) */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0">
-            <NavigationMenu currentView={currentView} onViewChange={setCurrentView} />
-          </div>
 
-          {/* Right Action Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
-            <div className="shrink-0">
-              <PromptTypeSelector selected={promptType} onChange={(type) => {
+          {/* Center Cluster: Target Modality Selector */}
+          <div className="flex items-center justify-center shrink-0">
+            <PromptTypeSelector 
+              selected={promptType} 
+              onChange={(type) => {
                 setPromptType(type);
                 if (currentView !== 'architect') setCurrentView('architect');
-              }} />
+              }} 
+            />
+          </div>
+
+          {/* Right Cluster: AI Engine Badge + Theme Toggle + New Chat Button */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Active AI Engine Badge Indicator */}
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-stone-100/70 dark:bg-slate-800/70 border border-stone-200/60 dark:border-slate-700/60 text-xs font-semibold text-stone-700 dark:text-slate-300">
+              <span className={cn("w-2 h-2 rounded-full animate-pulse", isLocalMode ? "bg-amber-500" : "bg-emerald-500")} />
+              <span className="text-[11px] font-bold">
+                {isLocalMode ? "Offline Engine" : "Gemini Live"}
+              </span>
             </div>
 
+            {/* Clear session button on desktop header */}
             {currentView === 'architect' && (currentSession || editingPrompt || prefilledPrompt) && (
               <button 
                 onClick={handleClearSession}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-2 text-stone-400 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 rounded-lg lg:rounded-xl text-xs font-bold transition-all group shrink-0"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-stone-500 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-400 bg-stone-100/40 dark:bg-slate-800/40 hover:bg-pink-50 dark:hover:bg-pink-950/30 rounded-xl text-xs font-bold transition-all border border-stone-200/50 dark:border-slate-700/50 shrink-0"
                 title="Clear current session"
               >
-                <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                <span className="hidden md:inline">CLEAR</span>
+                <RefreshCw size={13} className="hover:rotate-180 transition-transform duration-500" />
+                <span>CLEAR</span>
               </button>
             )}
 
+            {/* Dark/Light Mode Switcher */}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="h-8 w-8 p-0 sm:h-9 sm:w-9 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg lg:rounded-xl border border-stone-200/60 dark:border-slate-700/60 bg-stone-100/30 dark:bg-slate-800/30 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0"
-              title="Toggle Theme"
+              className="h-9 w-9 flex items-center justify-center rounded-xl border border-stone-200/80 dark:border-slate-700/80 bg-stone-100/60 dark:bg-slate-800/60 text-stone-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0 shadow-2xs"
+              title="Toggle Appearance Theme"
               aria-label="Toggle Theme"
             >
-              {isDarkMode ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-[18px] lg:h-[18px]" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-[18px] lg:h-[18px]" />}
+              {isDarkMode ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-stone-600" />}
             </button>
 
+            {/* New Chat Primary CTA */}
             <button 
               onClick={handleNewArchitect}
-              className="h-8 px-2 sm:h-9 sm:px-3 text-xs lg:h-auto lg:px-4 lg:py-2 lg:text-xs flex items-center gap-1.5 lg:gap-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-lg lg:rounded-xl font-bold shadow-md lg:shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all shrink-0 whitespace-nowrap"
-              title="New Chat"
+              className="h-9 px-3 sm:px-3.5 text-xs flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 rounded-xl font-extrabold shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-400 dark:hover:to-teal-400 transition-all shrink-0 whitespace-nowrap active:scale-95"
+              title="Start New Architect Session"
             >
               <PlusCircle size={15} />
               <span className="hidden sm:inline">NEW CHAT</span>
@@ -245,7 +287,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       {currentView === 'architect' ? (
         <main className="flex-1 h-[calc(100dvh-7.5rem)] lg:h-[calc(100dvh-4rem)] w-full max-w-[1800px] mx-auto px-2 sm:px-4 py-2 min-h-0 overflow-hidden flex flex-col">
           <div className="w-full h-full min-h-0 flex flex-col overflow-hidden">
@@ -253,6 +295,8 @@ export default function App() {
               key={chatKey}
               promptType={promptType} 
               onTypeChange={setPromptType}
+              isLocalMode={isLocalMode}
+              onLocalModeChange={handleToggleLocalMode}
               initialInput={prefilledPrompt?.content}
               initialMessages={currentSession?.messages || editingPrompt?.messages}
               initialResult={editingPrompt ? { refinedPrompt: editingPrompt.refinedPrompt, explanation: 'Loaded from library.' } : undefined}
@@ -399,7 +443,7 @@ export default function App() {
               
               <div className="pt-8 border-t border-stone-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
                 <p className="text-sm text-stone-500 dark:text-slate-500">
-                  © 2024 Prompt Architect. Crafted for creators.
+                  © 2026 Prompt Architect Studio. Crafted for creators.
                 </p>
                 <div className="flex items-center gap-6">
                   <a href="#" className="text-sm text-stone-500 dark:text-slate-500 hover:text-stone-900 dark:hover:text-slate-300">Privacy</a>
@@ -414,4 +458,3 @@ export default function App() {
     </div>
   );
 }
-

@@ -1,0 +1,29 @@
+# Prompt Architect Studio - Cursor AI Rules & Guidelines
+
+## 1. Project Architecture & Stack
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Lucide Icons (`lucide-react`), Framer Motion (`framer-motion`), React Markdown (`react-markdown`).
+- **Backend**: Node.js + Express (`server.ts`), SQLite database (`better-sqlite3`), Google Gemini SDK (`@google/genai`).
+- **Build System**: Vite (`vite.config.ts`), ESBuild.
+
+## 2. UI Layout Rules (3-Column Studio Interface)
+- **Main Column 1 (Left Sub-Column - Chat Stream)**:
+  - User messages are highlighted in a faint, opaque card container to clearly distinguish them from model responses. No avatar icons on message bubbles.
+  - Model responses render directly in the column with Markdown formatting and Quick Calibration Pills (Format, Tone, Complexity).
+  - Use smooth invisible scrolling (`[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`).
+- **Main Column 1 (Middle Sub-Column - Prompt Editor)**:
+  - Dedicated fixed-view editor for the refined prompt, supporting version history navigation, variable blueprints (`[VARIABLE]`), copy, and export options.
+- **Main Column 2 (Rightmost Column - Architectural Output)**:
+  - Preserves Quality Score Breakdown, Structural Reasoning, Interactive Clarifications, Contextual Modifiers, Framework Synthesizer, and Test Simulation Sandbox.
+
+## 3. Security & Code Integrity Rules
+- **API Secret Isolation**: `GEMINI_API_KEY` must remain strictly server-side in `process.env`. Never expose secrets in client-side components or bundles.
+- **Database Safety**: All SQLite queries in `server.ts` must use parameterized prepared statements (`db.prepare(...)`). Never concatenate raw user input into SQL strings.
+- **Version Control**: Do not commit `.env`, `prompts.db`, `prompts.db-journal`, `.antigravity/`, or `dist/`.
+
+## 4. Code Style & TypeScript Standards
+- Write clean, type-safe React functional components.
+- Use the `cn(...)` utility helper (`clsx` + `tailwind-merge`) for conditional Tailwind class names.
+- Provide defensive fallback states when calling backend APIs or generating content with Gemini models.
+
+## 5. User Interaction & Response Rules
+- **Step-by-Step Execution**: When the user provides multiple requests or questions in a prompt, address and execute them systematically one step at a time without bundling everything into an overwhelming summary. Prioritize accuracy, depth, and immediate implementation quality.
