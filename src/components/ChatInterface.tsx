@@ -204,6 +204,7 @@ export const ChatInterface: React.FC<Props> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textFileInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
   const lastXRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -1107,43 +1108,132 @@ export const ChatInterface: React.FC<Props> = ({
           {/* Bottom Gradient Scrim Overlay across Columns 1 & 2 */}
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-slate-900 dark:via-slate-900/80 z-10" />
 
-          {/* Centered Floating Persistent Chat Input Bar across Columns 1 & 2 */}
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-xl pointer-events-none">
-            <div className="pointer-events-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border border-stone-200/60 dark:border-slate-700/60 rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-2.5 transition-all">
+          {/* Mobile Floating Action Button (FAB) on non-chat tabs */}
+          {currentMobileTab !== 'chat' && (
+            <div className="lg:hidden fixed bottom-4 right-4 z-40">
+              <button
+                onClick={() => {
+                  onMobileTabChange?.('chat');
+                  setTimeout(() => {
+                    chatInputRef.current?.focus();
+                  }, 100);
+                }}
+                className="flex items-center gap-2 px-4 py-3 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-full font-bold text-xs shadow-xl shadow-emerald-900/20 active:scale-95 transition-all min-h-[44px]"
+              >
+                <MessageSquare size={16} />
+                <span>Refine / Chat</span>
+              </button>
+            </div>
+          )}
+
+          {/* Responsive Persistent Chat Input Bar (Pinned dock on mobile, floating capsule on desktop) */}
+          <div className={cn(
+            "fixed bottom-0 inset-x-0 w-full z-40 lg:absolute lg:bottom-5 lg:left-1/2 lg:-translate-x-1/2 lg:w-[92%] lg:max-w-xl lg:z-30 pointer-events-none",
+            currentMobileTab !== 'chat' && "hidden lg:block"
+          )}>
+            <div className="pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-stone-200/80 dark:border-slate-700/80 rounded-none shadow-lg px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:bg-white/80 lg:dark:bg-slate-900/80 lg:backdrop-blur-lg lg:border lg:border-stone-200/60 lg:dark:border-slate-700/60 lg:rounded-2xl lg:shadow-2xl lg:p-3.5 sm:lg:p-4 flex flex-col gap-2.5 transition-all">
               
-              {/* Frameworks Dropdown Popover */}
+              {/* Starter Frameworks Drawer / Popover */}
               <AnimatePresence>
                 {showFrameworks && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute bottom-full right-0 sm:right-auto sm:left-4 mb-3 w-72 sm:w-80 max-h-72 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-stone-200/80 dark:border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 pointer-events-auto flex flex-col"
-                  >
-                    <div className="p-3 border-b border-stone-100 dark:border-slate-700 shrink-0">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Starter Prompt Frameworks</span>
-                    </div>
-                    <div className="overflow-y-auto no-scrollbar flex-1">
-                      {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
-                        <button
-                          key={fw.id}
-                          onClick={() => {
-                            setInput(fw.template);
-                            setShowFrameworks(false);
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm text-stone-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors border-b border-stone-50 dark:border-slate-700/50 last:border-0"
-                        >
-                          <div className="font-bold mb-1 flex items-center justify-between">
-                            <span>{fw.name}</span>
-                            <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.5 rounded">{fw.domainName}</span>
+                  <>
+                    {/* Mobile Backdrop */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setShowFrameworks(false)}
+                      className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden pointer-events-auto"
+                    />
+
+                    {/* Mobile Bottom Sheet (<lg) / Desktop Popover (lg:) */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 40 }}
+                      className="fixed inset-x-0 bottom-0 max-h-[80vh] rounded-t-3xl border-t border-stone-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl z-50 pointer-events-auto flex flex-col lg:static lg:absolute lg:bottom-full lg:right-0 lg:sm:right-auto lg:sm:left-4 lg:mb-3 lg:w-80 lg:max-h-72 lg:rounded-2xl lg:border lg:border-stone-200/80 lg:dark:border-slate-700/80 lg:bg-white/95 lg:dark:bg-slate-800/95 lg:shadow-2xl overflow-hidden"
+                    >
+                      {/* Drag Handle & Header */}
+                      <div className="p-3.5 sm:p-4 border-b border-stone-100 dark:border-slate-800 shrink-0 flex flex-col gap-1.5">
+                        {/* Mobile handle indicator */}
+                        <div className="w-10 h-1 bg-stone-300 dark:bg-slate-700 rounded-full mx-auto mb-1 lg:hidden" />
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <BookTemplate size={16} className="text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                              Starter Prompt Frameworks
+                            </span>
                           </div>
-                          <div className="text-xs text-stone-400 dark:text-slate-500 truncate">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
+                          <button
+                            onClick={() => setShowFrameworks(false)}
+                            className="p-1 text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 rounded-full"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                          Select a battle-tested structure to seed your architecture
+                        </p>
+                      </div>
+
+                      {/* Framework list */}
+                      <div className="overflow-y-auto no-scrollbar flex-1 p-2 space-y-1.5 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pb-2">
+                        {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
+                          <button
+                            key={fw.id}
+                            onClick={() => {
+                              setInput(fw.template);
+                              setShowFrameworks(false);
+                            }}
+                            className="w-full text-left p-3 rounded-xl text-sm text-stone-700 dark:text-slate-300 hover:bg-emerald-50/80 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-900/50 min-h-[48px] active:scale-[0.99] group"
+                          >
+                            <div className="font-bold mb-1 flex items-center justify-between">
+                              <span className="group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{fw.name}</span>
+                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 px-2 py-0.5 rounded-full">{fw.domainName}</span>
+                            </div>
+                            <div className="text-xs text-stone-400 dark:text-slate-500 line-clamp-2">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
+
+              {/* Mobile Quick-Add Suggestions Carousel (Horizontally scrollable pills above docked input on <lg) */}
+              {contextualQuickAddSuggestions.length > 0 && (
+                <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
+                  <div className="flex items-center gap-1 text-[10px] font-black uppercase text-amber-500 shrink-0 pr-1">
+                    <Zap size={12} />
+                    <span>Quick Add:</span>
+                  </div>
+                  {contextualQuickAddSuggestions.map(sug => (
+                    <button
+                      key={sug.id}
+                      onClick={() => handleToggleQuickAddSuggestion(sug)}
+                      className={cn(
+                        "text-[11px] font-bold rounded-full border transition-all shrink-0 min-h-[38px] px-3.5 flex items-center gap-1.5 active:scale-95",
+                        sug.active
+                          ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 shadow-xs"
+                          : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-700 hover:border-emerald-300"
+                      )}
+                    >
+                      {sug.active ? (
+                        <>
+                          <Check size={12} className="text-white stroke-[3]" />
+                          <span>{sug.label}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-emerald-500 font-bold">+</span>
+                          <span>{sug.label}</span>
+                        </>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Top Row in Input Bar: Guidance / Quick Frameworks button */}
               <div className="flex items-center justify-between">
@@ -1152,9 +1242,9 @@ export const ChatInterface: React.FC<Props> = ({
                 </span>
                 <button 
                   onClick={() => setShowFrameworks(!showFrameworks)}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/50 dark:border-emerald-800/40 transition-colors"
+                  className="min-h-[44px] flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/50 dark:border-emerald-800/40 transition-colors"
                 >
-                  <BookTemplate size={13} />
+                  <BookTemplate size={14} />
                   <span>Starter Frameworks</span>
                 </button>
               </div>
@@ -1176,7 +1266,7 @@ export const ChatInterface: React.FC<Props> = ({
                       )}
                       <button
                         onClick={() => setSelectedImage(null)}
-                        className="absolute -top-1.5 -right-1.5 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-0.5 shadow-md hover:bg-pink-600 transition-colors"
+                        className="absolute -top-1.5 -right-1.5 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-1 shadow-md hover:bg-pink-600 transition-colors"
                       >
                         <X size={11} />
                       </button>
@@ -1188,7 +1278,7 @@ export const ChatInterface: React.FC<Props> = ({
                       <span className="text-xs font-medium text-stone-700 dark:text-slate-300 max-w-[140px] truncate">{file.name}</span>
                       <button
                         onClick={() => setAttachedFiles(prev => prev.filter((_, i) => i !== idx))}
-                        className="ml-1 text-stone-400 hover:text-pink-600 transition-colors"
+                        className="ml-1 p-1 text-stone-400 hover:text-pink-600 transition-colors"
                       >
                         <X size={12} />
                       </button>
@@ -1213,35 +1303,36 @@ export const ChatInterface: React.FC<Props> = ({
                   ref={textFileInputRef}
                   onChange={handleTextFileUpload}
                 />
-                <div className="absolute left-2 flex items-center gap-1 z-10">
+                <div className="absolute left-1.5 flex items-center gap-1 z-10">
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
+                    className="min-h-[44px] min-w-[44px] p-2.5 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-xl sm:rounded-full flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60 sm:border-0"
                     title="Upload image or media"
                   >
                     <ImagePlus size={17} />
                   </button>
                   <button
                     onClick={() => textFileInputRef.current?.click()}
-                    className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
+                    className="min-h-[44px] min-w-[44px] p-2.5 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-xl sm:rounded-full flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60 sm:border-0"
                     title="Attach text context (.txt, .md, .csv)"
                   >
                     <Paperclip size={17} />
                   </button>
                 </div>
                 <input
+                  ref={chatInputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Describe your idea or request prompt refinements..."
                   className={cn(
-                    "w-full pl-24 py-3.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500",
+                    "w-full pl-28 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[44px]",
                     lastResult?.refinedPrompt ? "pr-28" : "pr-16"
                   )}
                   disabled={isLoading}
                 />
-                <div className="absolute right-2.5 flex gap-1.5">
+                <div className="absolute right-1.5 flex gap-1.5">
                   {lastResult?.refinedPrompt && (
                     <button
                       onClick={() => {
@@ -1249,7 +1340,7 @@ export const ChatInterface: React.FC<Props> = ({
                         handleSend(`Please refine this prompt further:\n\n${final}`);
                       }}
                       disabled={isLoading}
-                      className="p-2 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                      className="min-h-[44px] min-w-[44px] p-2.5 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 flex items-center justify-center"
                       title="Refine Current Prompt"
                     >
                       <Sparkles size={16} />
@@ -1258,7 +1349,7 @@ export const ChatInterface: React.FC<Props> = ({
                   <button
                     onClick={() => handleSend()}
                     disabled={(!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading}
-                    className="p-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95"
+                    className="min-h-[44px] min-w-[44px] p-2.5 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center"
                     title="Send Message"
                   >
                     <Send size={16} />
@@ -1295,7 +1386,7 @@ export const ChatInterface: React.FC<Props> = ({
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className={cn("transition-all", isRightPanelCompact ? "p-3.5 sm:p-4" : "p-5 lg:p-6")}
+            className={cn("transition-all pb-24 lg:pb-6", isRightPanelCompact ? "p-3.5 sm:p-4" : "p-5 lg:p-6")}
           >
             {/* Header: Title, Word Count, Score */}
             <div className="flex flex-col gap-3 mb-4">
@@ -1555,7 +1646,7 @@ export const ChatInterface: React.FC<Props> = ({
             )}
 
             {/* Contextual Suggestive Frameworks Bar */}
-            <div className="mb-4 p-3 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
+            <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
               <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <BookTemplate size={13} className="text-emerald-500 shrink-0" />
@@ -1582,7 +1673,7 @@ export const ChatInterface: React.FC<Props> = ({
                         key={tab.id}
                         onClick={() => setActiveFrameworkCategory(tab.id as any)}
                         className={cn(
-                          "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md transition-all",
+                          "text-[10px] font-bold uppercase px-2 py-1 rounded-md transition-all min-h-[32px] flex items-center justify-center",
                           isActive
                             ? "bg-emerald-600 dark:bg-emerald-500 text-white shadow-2xs"
                             : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
@@ -1595,7 +1686,8 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
+              {/* Horizontal carousel on mobile, flex-wrap on desktop */}
+              <div className="flex overflow-x-auto lg:overflow-visible lg:flex-wrap no-scrollbar gap-2 py-1 -mx-1 px-1 lg:mx-0 lg:px-0">
                 {contextualFrameworksData.suggested.map((fw: ContextualFramework) => {
                   const isTransformingThis = isTransformingFramework && transformingFrameworkName === fw.name;
                   const isContextMatch = (fw.score || 0) > 2;
@@ -1607,8 +1699,7 @@ export const ChatInterface: React.FC<Props> = ({
                       onClick={() => handleApplyFramework(fw)} 
                       title={`${fw.name} — ${fw.description}`}
                       className={cn(
-                        "text-[10px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left",
-                        isRightPanelCompact ? "px-2 py-1" : "px-2.5 py-1.5",
+                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left shrink-0 min-h-[38px] px-3.5",
                         isTransformingThis
                           ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
                           : isContextMatch
@@ -1616,11 +1707,11 @@ export const ChatInterface: React.FC<Props> = ({
                             : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700 disabled:opacity-50 disabled:pointer-events-none"
                       )}
                     >
-                      <Sparkles size={10} className={cn("shrink-0", isTransformingThis ? "text-white animate-spin" : isContextMatch ? "text-emerald-500" : "text-stone-400 dark:text-slate-400 group-hover:text-emerald-500")} />
+                      <Sparkles size={12} className={cn("shrink-0", isTransformingThis ? "text-white animate-spin" : isContextMatch ? "text-emerald-500" : "text-stone-400 dark:text-slate-400 group-hover:text-emerald-500")} />
                       <span className="font-semibold">{fw.name}</span>
                       {fw.domainName && !isRightPanelCompact && (
                         <span className={cn(
-                          "text-[8px] font-semibold px-1 py-0.2 rounded uppercase tracking-tighter shrink-0",
+                          "text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0",
                           isTransformingThis
                             ? "bg-emerald-700/50 text-emerald-100"
                             : isContextMatch
@@ -1637,7 +1728,7 @@ export const ChatInterface: React.FC<Props> = ({
             </div>
 
             {/* Contextual Suggestive Quick Add */}
-            <div className="mb-4 p-3 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
+            <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
               <div className="flex items-center justify-between gap-2 mb-2.5">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <Zap size={13} className="text-amber-500 shrink-0" />
@@ -1652,7 +1743,8 @@ export const ChatInterface: React.FC<Props> = ({
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
+              {/* Horizontal carousel on mobile, flex-wrap on desktop */}
+              <div className="flex overflow-x-auto lg:overflow-visible lg:flex-wrap no-scrollbar gap-2 py-1 -mx-1 px-1 lg:mx-0 lg:px-0">
                 {contextualQuickAddSuggestions.map(sug => {
                   return (
                     <button 
@@ -1660,8 +1752,7 @@ export const ChatInterface: React.FC<Props> = ({
                       onClick={() => handleToggleQuickAddSuggestion(sug)} 
                       title={sug.active ? `Remove "${sug.label}" from prompt` : `Insert "${sug.label}" into prompt`}
                       className={cn(
-                        "text-[10px] font-bold rounded-lg border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5",
-                        isRightPanelCompact ? "px-2 py-0.5" : "px-2.5 py-1",
+                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 shrink-0 min-h-[38px] px-3.5",
                         sug.active
                           ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500 shadow-xs shadow-emerald-600/30 hover:bg-emerald-700 dark:hover:bg-emerald-600"
                           : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
@@ -1669,7 +1760,7 @@ export const ChatInterface: React.FC<Props> = ({
                     >
                       {sug.active ? (
                         <>
-                          <Check size={11} className="text-white stroke-[3]" />
+                          <Check size={12} className="text-white stroke-[3]" />
                           <span>{sug.label}</span>
                         </>
                       ) : (
