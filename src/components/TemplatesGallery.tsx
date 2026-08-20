@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Plus, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Template, PromptType } from '../types';
 import { motion } from 'motion/react';
 import { cn } from '../utils';
+import { TemplateDetailModal } from './TemplateDetailModal';
 
 interface Props {
-  onSelect: (prompt: string, type: PromptType) => void;
+  onSelect: (prompt: string, type: PromptType, autoSend: boolean) => void;
 }
 
 export const TemplatesGallery: React.FC<Props> = ({ onSelect }) => {
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
@@ -20,149 +20,67 @@ export const TemplatesGallery: React.FC<Props> = ({ onSelect }) => {
       .then(setTemplates);
   }, []);
 
-  const handleTemplateClick = (t: Template) => {
-    setSelectedTemplate(t);
-    const initialValues: Record<string, string> = {};
-    t.placeholders.forEach(p => initialValues[p] = '');
-    setFormValues(initialValues);
-  };
-
-  const handleGenerate = () => {
-    if (!selectedTemplate) return;
-    let result = selectedTemplate.template;
-    Object.entries(formValues).forEach(([key, val]) => {
-      result = result.replaceAll(`[${key}]`, val || `[${key}]`);
-    });
-    onSelect(result, selectedTemplate.type);
-    setSelectedTemplate(null);
-  };
-
   const displayedTemplates = showAll ? templates : templates.slice(0, 8);
 
   return (
     <div className="space-y-12">
-      {!selectedTemplate ? (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {displayedTemplates.map((t) => (
-              <motion.div
-                key={t.id}
-                whileHover={{ y: -8, scale: 1.02 }}
-                onClick={() => handleTemplateClick(t)}
-                className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-sm hover:shadow-2xl hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all cursor-pointer group relative overflow-hidden flex flex-col"
-              >
-                {t.image && (
-                  <div className="w-full h-48 mb-6 rounded-2xl overflow-hidden relative shrink-0">
-                    <img src={t.image} alt={t.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                  </div>
-                )}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/20 transition-colors" />
-                
-                <div className="flex items-center justify-between mb-6 relative z-10">
-                  <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
-                    {t.category}
-                  </span>
-                  <div className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                    t.type === 'image' ? "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400" : 
-                    t.type === 'video' ? "bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400" : "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                  )}>
-                    {t.type}
-                  </div>
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {displayedTemplates.map((t) => (
+            <motion.div
+              key={t.id}
+              whileHover={{ y: -8, scale: 1.02 }}
+              onClick={() => setActiveTemplate(t)}
+              className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-sm hover:shadow-2xl hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all cursor-pointer group relative overflow-hidden flex flex-col"
+            >
+              {t.image && (
+                <div className="w-full h-48 mb-6 rounded-2xl overflow-hidden relative shrink-0">
+                  <img src={t.image} alt={t.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 </div>
-                <h3 className="text-xl font-black text-stone-900 dark:text-slate-100 mb-3 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors relative z-10">{t.title}</h3>
-                <p className="text-sm text-stone-500 dark:text-slate-400 mb-6 leading-relaxed flex-grow relative z-10">{t.description}</p>
-                <div className="flex items-center gap-2 text-xs font-black text-stone-900 dark:text-slate-100 group-hover:gap-4 transition-all uppercase tracking-widest relative z-10">
-                  Architect Blueprint <ChevronRight size={16} className="text-emerald-600 dark:text-emerald-400" />
+              )}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/20 transition-colors" />
+              
+              <div className="flex items-center justify-between mb-6 relative z-10">
+                <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
+                  {t.category}
+                </span>
+                <div className={cn(
+                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                  t.type === 'image' ? "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400" : 
+                  t.type === 'video' ? "bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400" : "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                )}>
+                  {t.type}
                 </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          {!showAll && templates.length > 8 && (
-            <div className="flex justify-center pt-4">
-              <button
-                onClick={() => setShowAll(true)}
-                className="px-8 py-4 bg-stone-100 dark:bg-slate-800 text-stone-900 dark:text-slate-100 rounded-full font-black text-xs uppercase tracking-widest hover:bg-stone-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-2"
-              >
-                View More Templates <ChevronRight size={16} />
-              </button>
-            </div>
-          )}
+              </div>
+              <h3 className="text-xl font-black text-stone-900 dark:text-slate-100 mb-3 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors relative z-10">{t.title}</h3>
+              <p className="text-sm text-stone-500 dark:text-slate-400 mb-6 leading-relaxed flex-grow relative z-10">{t.description}</p>
+              <div className="flex items-center gap-2 text-xs font-black text-stone-900 dark:text-slate-100 group-hover:gap-4 transition-all uppercase tracking-widest relative z-10">
+                Inspect Specification <ChevronRight size={16} className="text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </motion.div>
+          ))}
         </div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-white dark:bg-slate-800 p-12 rounded-[3rem] border border-stone-200 dark:border-slate-700 shadow-2xl max-w-3xl mx-auto relative overflow-hidden"
-        >
-          <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-500/5 dark:bg-emerald-500/10 blur-3xl rounded-full -ml-32 -mt-32" />
-          
-          <button 
-            onClick={() => setSelectedTemplate(null)}
-            className="flex items-center gap-2 text-xs font-black text-stone-400 dark:text-slate-500 uppercase tracking-widest mb-10 hover:text-stone-900 dark:hover:text-slate-100 transition-colors group"
-          >
-            <ChevronRight size={16} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
-            Back to Blueprints
-          </button>
-          
-          <div className="mb-12">
-            {selectedTemplate.image && (
-              <div className="w-full h-64 mb-8 rounded-3xl overflow-hidden relative shadow-lg">
-                <img src={selectedTemplate.image} alt={selectedTemplate.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-              </div>
-            )}
-            <div className="flex items-center gap-3 mb-4">
-              <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
-                {selectedTemplate.category}
-              </span>
-              <span className="text-xs font-black text-emerald-400 dark:text-emerald-500 uppercase tracking-widest">{selectedTemplate.type}</span>
-            </div>
-            <h2 className="text-4xl font-black text-stone-900 dark:text-slate-100 mb-4 tracking-tight">{selectedTemplate.title}</h2>
-            <p className="text-lg text-stone-500 dark:text-slate-400 leading-relaxed">{selectedTemplate.description}</p>
+        
+        {!showAll && templates.length > 8 && (
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={() => setShowAll(true)}
+              className="px-8 py-4 bg-stone-100 dark:bg-slate-800 text-stone-900 dark:text-slate-100 rounded-full font-black text-xs uppercase tracking-widest hover:bg-stone-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-2"
+            >
+              View More Templates <ChevronRight size={16} />
+            </button>
           </div>
+        )}
+      </div>
 
-          <div className="space-y-8">
-            {selectedTemplate.placeholders.map((p) => (
-              <div key={p}>
-                <label className="block text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">
-                  {p.replace('_', ' ')}
-                </label>
-                <input
-                  type="text"
-                  value={formValues[p] || ''}
-                  onChange={(e) => setFormValues(prev => ({ ...prev, [p]: e.target.value }))}
-                  placeholder={`Define the ${p.replace('_', ' ')}...`}
-                  className="w-full px-6 py-4 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
-                />
-                {selectedTemplate.suggestions?.[p] && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {selectedTemplate.suggestions[p].map((suggestion, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setFormValues(prev => ({ ...prev, [p]: suggestion }))}
-                        className="px-3 py-1.5 text-[11px] font-semibold bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400 rounded-lg border border-stone-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-colors"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            className="w-full mt-12 py-5 bg-stone-900 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-[2rem] font-black flex items-center justify-center gap-3 hover:bg-emerald-600 dark:hover:bg-emerald-400 transition-all shadow-xl shadow-stone-200 dark:shadow-none hover:shadow-emerald-200 dark:hover:shadow-none active:scale-95 uppercase tracking-widest"
-          >
-            <Sparkles size={24} />
-            Architect Prompt
-          </button>
-        </motion.div>
-      )}
+      {/* Template Detail Overview Modal */}
+      <TemplateDetailModal
+        template={activeTemplate}
+        isOpen={!!activeTemplate}
+        onClose={() => setActiveTemplate(null)}
+        onSelect={onSelect}
+      />
     </div>
   );
 };

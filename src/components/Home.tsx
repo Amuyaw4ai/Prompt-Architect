@@ -6,7 +6,7 @@ import { PromptType, SavedPrompt } from '../types';
 interface HomeProps {
   onNavigate: (view: 'architect' | 'saved' | 'templates' | 'history') => void;
   onNewArchitect: (type: PromptType) => void;
-  onSelectTemplate: (content: string, type: PromptType) => void;
+  onSelectTemplate: (content: string, type: PromptType, autoSend?: boolean) => void;
 }
 
 export const Home: React.FC<HomeProps> = ({ onNavigate, onNewArchitect, onSelectTemplate }) => {

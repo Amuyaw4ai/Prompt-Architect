@@ -254,6 +254,7 @@ interface Props {
   isLocalMode?: boolean;
   onLocalModeChange?: (isLocal: boolean) => void;
   initialInput?: string;
+  autoSendInitialInput?: boolean;
   initialMessages?: Message[];
   initialResult?: PromptResult;
   editingPrompt?: SavedPrompt;
@@ -273,6 +274,7 @@ export const ChatInterface: React.FC<Props> = ({
   isLocalMode: externalIsLocalMode,
   onLocalModeChange,
   initialInput, 
+  autoSendInitialInput = false,
   initialMessages,
   initialResult,
   editingPrompt,
@@ -359,10 +361,14 @@ export const ChatInterface: React.FC<Props> = ({
   useEffect(() => {
     if (initialInput && !hasProcessedInitialInputRef.current) {
       hasProcessedInitialInputRef.current = true;
-      handleSend(initialInput);
+      if (autoSendInitialInput) {
+        handleSend(initialInput);
+      } else {
+        setInput(initialInput);
+      }
       onInputUsed?.();
     }
-  }, [initialInput]); 
+  }, [initialInput, autoSendInitialInput]); 
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -58,8 +58,8 @@ export default function App() {
     localStorage.setItem('prompt_architect_engine_mode', isLocal ? 'local' : 'live');
   };
 
-  const handleTemplateSelect = (content: string, type: PromptType) => {
-    setPrefilledPrompt({ content, type });
+  const handleTemplateSelect = (content: string, type: PromptType, autoSend: boolean = false) => {
+    setPrefilledPrompt({ content, type, autoSend });
     setPromptType(type);
     setEditingPrompt(undefined);
     setCurrentSession(undefined);
@@ -298,6 +298,7 @@ export default function App() {
               isLocalMode={isLocalMode}
               onLocalModeChange={handleToggleLocalMode}
               initialInput={prefilledPrompt?.content}
+              autoSendInitialInput={prefilledPrompt?.autoSend}
               initialMessages={currentSession?.messages || editingPrompt?.messages}
               initialResult={editingPrompt ? { refinedPrompt: editingPrompt.refinedPrompt, explanation: 'Loaded from library.' } : undefined}
               editingPrompt={editingPrompt}
