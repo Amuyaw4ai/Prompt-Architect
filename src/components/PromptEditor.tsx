@@ -238,7 +238,7 @@ export const PromptEditor: React.FC<Props> = ({
       </div>
       
       {/* Editor Body - Scrollable content */}
-      <div className="relative p-4 pb-60 flex-1 min-h-0 overflow-y-auto no-scrollbar [mask-image:linear-gradient(to_bottom,black_calc(100%-8rem),transparent_calc(100%-1rem))]">
+      <div className="relative p-4 pb-20 lg:pb-28 flex-1 min-h-0 overflow-y-auto no-scrollbar [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent_100%)]">
         {isPreview ? (
           <div className="font-mono text-sm text-stone-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
             {getFinalPrompt() || (
@@ -271,7 +271,7 @@ export const PromptEditor: React.FC<Props> = ({
         )}
 
         {/* Bottom Spacer to ensure full scroll travel above floating dock */}
-        <div className="h-48 shrink-0 pointer-events-none" aria-hidden="true" />
+        <div className="h-16 lg:h-24 shrink-0 pointer-events-none" aria-hidden="true" />
 
         {/* Bracket Variable Autocomplete Dropdown */}
         {showAutocomplete && !isPreview && filteredSuggestions.length > 0 && (

@@ -298,6 +298,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [currentResultIndex, setCurrentResultIndex] = useState<number>(currentSession?.currentResultIndex ?? (initialResult ? 0 : -1));
   const lastResult = currentResultIndex >= 0 ? resultHistory[currentResultIndex] : null;
   const [copiedType, setCopiedType] = useState<'text' | 'markdown' | 'json' | 'download' | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string, name?: string } | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
@@ -520,8 +521,21 @@ export const ChatInterface: React.FC<Props> = ({
     }
   };
 
+  const handleToggleOption = (category: string, opt: string) => {
+    const tag = `[${category}: ${opt}]`;
+    setSelectedOptions(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag) 
+        : [...prev, tag]
+    );
+  };
+
   const handleSend = async (overrideInput?: string) => {
-    const textToUse = overrideInput !== undefined ? overrideInput : input;
+    let textToUse = overrideInput !== undefined ? overrideInput : input;
+    if (overrideInput === undefined && selectedOptions.length > 0) {
+      const stagedTags = selectedOptions.join(' ');
+      textToUse = textToUse.trim() ? `${textToUse.trim()}\n\nApplied Calibrations:\n${stagedTags}` : `Please calibrate prompt with:\n${stagedTags}`;
+    }
     if ((!textToUse.trim() && !selectedImage && attachedFiles.length === 0) || isLoading) return;
 
     let userContent = textToUse;
@@ -554,6 +568,7 @@ export const ChatInterface: React.FC<Props> = ({
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setSelectedOptions([]);
 
     let result: PromptResult;
     let isFallback = false;
@@ -1056,7 +1071,7 @@ export const ChatInterface: React.FC<Props> = ({
           )}>
             <div 
               ref={scrollRef}
-              className="flex-1 h-full min-h-0 overflow-y-auto p-5 sm:p-6 pb-60 space-y-6 scroll-smooth bg-stone-50/20 dark:bg-slate-900/20 no-scrollbar [mask-image:linear-gradient(to_bottom,black_calc(100%-8rem),transparent_calc(100%-1rem))]"
+              className="flex-1 h-full min-h-0 overflow-y-auto p-5 sm:p-6 pb-20 lg:pb-28 space-y-6 scroll-smooth bg-stone-50/20 dark:bg-slate-900/20 no-scrollbar [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent_100%)]"
             >
               {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-8">
@@ -1128,23 +1143,31 @@ export const ChatInterface: React.FC<Props> = ({
                             {dynamicSuggestions.map((group, gIdx) => (
                               <div key={gIdx} className="flex flex-wrap items-center gap-1.5">
                                 <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1 min-w-[50px]">{group.category}:</span>
-                                {group.options.map((opt) => (
-                                  <button
-                                    key={opt}
-                                    onClick={() => handleSend(`Calibrate prompt: Apply ${group.category.toLowerCase()} "${opt}"`)}
-                                    disabled={isLoading}
-                                    className={cn(
-                                      "px-2 py-0.5 text-[10px] font-semibold rounded-md border transition-all disabled:opacity-50 active:scale-95 shadow-2xs",
-                                      group.color === 'emerald'
-                                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/50 dark:border-emerald-800/40"
-                                        : group.color === 'amber'
-                                          ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200/50 dark:border-amber-800/40"
-                                          : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200/50 dark:border-purple-800/40"
-                                    )}
-                                  >
-                                    {opt}
-                                  </button>
-                                ))}
+                                {group.options.map((opt) => {
+                                  const tag = `[${group.category}: ${opt}]`;
+                                  const isSelected = selectedOptions.includes(tag);
+                                  return (
+                                    <button
+                                      key={opt}
+                                      type="button"
+                                      onClick={() => handleToggleOption(group.category, opt)}
+                                      disabled={isLoading}
+                                      className={cn(
+                                        "px-2 py-0.5 text-[10px] font-semibold rounded-md border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1",
+                                        isSelected
+                                          ? "bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 border-emerald-600 dark:border-emerald-500 shadow-sm ring-1 ring-emerald-400 font-bold"
+                                          : group.color === 'emerald'
+                                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/50 dark:border-emerald-800/40"
+                                            : group.color === 'amber'
+                                              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200/50 dark:border-amber-800/40"
+                                              : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200/50 dark:border-purple-800/40"
+                                      )}
+                                    >
+                                      {isSelected && <Check size={10} className="stroke-[3]" />}
+                                      <span>{opt}</span>
+                                    </button>
+                                  );
+                                })}
                               </div>
                             ))}
                           </div>
@@ -1166,7 +1189,7 @@ export const ChatInterface: React.FC<Props> = ({
               )}
 
               {/* Bottom Spacer to ensure full scroll travel above floating dock */}
-              <div className="h-48 shrink-0 pointer-events-none" aria-hidden="true" />
+              <div className="h-16 lg:h-24 shrink-0 pointer-events-none" aria-hidden="true" />
             </div>
           </div>
 
@@ -1207,7 +1230,7 @@ export const ChatInterface: React.FC<Props> = ({
           </div>
 
           {/* Bottom Gradient Scrim Overlay across Columns 1 & 2 */}
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-slate-900 dark:via-slate-900/80 z-10" />
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 lg:h-20 bg-gradient-to-t from-white/90 via-white/40 to-transparent dark:from-slate-900/90 dark:via-slate-900/40 z-10" />
 
           {/* Mobile Floating Action Button (FAB) on non-chat tabs */}
           {currentMobileTab !== 'chat' && (
@@ -1350,6 +1373,39 @@ export const ChatInterface: React.FC<Props> = ({
                 </button>
               </div>
 
+              {/* Staged Multi-Select Calibration Badges */}
+              {selectedOptions.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 p-2 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/50 rounded-xl">
+                  <div className="flex items-center gap-1 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 mr-1 shrink-0">
+                    <Sparkles size={11} />
+                    <span>Staged Options:</span>
+                  </div>
+                  {selectedOptions.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 shadow-2xs shrink-0"
+                    >
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOptions(prev => prev.filter(t => t !== tag))}
+                        className="hover:opacity-75 p-0.5 ml-0.5"
+                        title="Remove option"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOptions([])}
+                    className="text-[10px] font-semibold text-stone-400 hover:text-pink-600 dark:hover:text-pink-400 ml-auto px-1.5 py-0.5 rounded transition-colors shrink-0"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
+
               {/* Attachments Preview */}
               {(selectedImage || attachedFiles.length > 0) && (
                 <div className="flex flex-wrap gap-2 mb-1">
@@ -1449,7 +1505,7 @@ export const ChatInterface: React.FC<Props> = ({
                   )}
                   <button
                     onClick={() => handleSend()}
-                    disabled={(!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading}
+                    disabled={(!input.trim() && selectedOptions.length === 0 && !selectedImage && attachedFiles.length === 0) || isLoading}
                     className="min-h-[44px] min-w-[44px] p-2.5 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center"
                     title="Send Message"
                   >
