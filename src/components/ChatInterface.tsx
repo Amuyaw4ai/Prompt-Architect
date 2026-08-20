@@ -327,8 +327,18 @@ export const ChatInterface: React.FC<Props> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textFileInputRef = useRef<HTMLInputElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const lastXRef = useRef<number | null>(null);
+
+  // Auto-expand input textarea height with content volume up to mid-screen (~220px max height cap)
+  useEffect(() => {
+    if (chatInputRef.current) {
+      chatInputRef.current.style.height = 'auto';
+      const scrollH = chatInputRef.current.scrollHeight;
+      const maxHeight = 220; // max cap around mid screen height
+      chatInputRef.current.style.height = `${Math.min(scrollH, maxHeight)}px`;
+    }
+  }, [input]);
 
   useEffect(() => {
     if (editingPrompt) {
@@ -1468,36 +1478,43 @@ export const ChatInterface: React.FC<Props> = ({
                   ref={textFileInputRef}
                   onChange={handleTextFileUpload}
                 />
-                <div className="absolute left-1.5 flex items-center gap-1 z-10">
+                <div className="absolute left-1.5 bottom-1.5 flex items-center gap-1 z-10">
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="min-h-[44px] min-w-[44px] p-2.5 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-xl sm:rounded-full flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60 sm:border-0"
+                    className="min-h-[38px] min-w-[38px] p-2 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white/90 dark:bg-slate-800/90 rounded-xl flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60"
                     title="Upload image or media"
                   >
-                    <ImagePlus size={17} />
+                    <ImagePlus size={16} />
                   </button>
                   <button
                     onClick={() => textFileInputRef.current?.click()}
-                    className="min-h-[44px] min-w-[44px] p-2.5 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-xl sm:rounded-full flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60 sm:border-0"
+                    className="min-h-[38px] min-w-[38px] p-2 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white/90 dark:bg-slate-800/90 rounded-xl flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60"
                     title="Attach text context (.txt, .md, .csv)"
                   >
-                    <Paperclip size={17} />
+                    <Paperclip size={16} />
                   </button>
                 </div>
-                <input
+
+                <textarea
                   ref={chatInputRef}
-                  type="text"
+                  rows={1}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Describe your idea or request prompt refinements..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="Describe your idea or request prompt refinements... (Shift+Enter for line break)"
                   className={cn(
-                    "w-full pl-28 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[44px]",
-                    lastResult?.refinedPrompt ? "pr-28" : "pr-16"
+                    "w-full pl-24 py-2.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[44px] max-h-[220px] resize-none overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden leading-relaxed",
+                    lastResult?.refinedPrompt ? "pr-24" : "pr-14"
                   )}
                   disabled={isLoading}
                 />
-                <div className="absolute right-1.5 flex gap-1.5">
+
+                <div className="absolute right-1.5 bottom-1.5 flex gap-1.5 z-10">
                   {lastResult?.refinedPrompt && (
                     <button
                       onClick={() => {
@@ -1505,7 +1522,7 @@ export const ChatInterface: React.FC<Props> = ({
                         handleSend(`Please refine this prompt further:\n\n${final}`);
                       }}
                       disabled={isLoading}
-                      className="min-h-[44px] min-w-[44px] p-2.5 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 flex items-center justify-center"
+                      className="min-h-[38px] min-w-[38px] p-2 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 flex items-center justify-center"
                       title="Refine Current Prompt"
                     >
                       <Sparkles size={16} />
@@ -1514,8 +1531,8 @@ export const ChatInterface: React.FC<Props> = ({
                   <button
                     onClick={() => handleSend()}
                     disabled={(!input.trim() && selectedOptions.length === 0 && !selectedImage && attachedFiles.length === 0) || isLoading}
-                    className="min-h-[44px] min-w-[44px] p-2.5 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center"
-                    title="Send Message"
+                    className="min-h-[38px] min-w-[38px] p-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center"
+                    title="Send Message (Enter)"
                   >
                     <Send size={16} />
                   </button>
