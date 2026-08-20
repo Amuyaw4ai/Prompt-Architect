@@ -1269,7 +1269,7 @@ export const ChatInterface: React.FC<Props> = ({
           )}>
             <div className="pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-stone-200/80 dark:border-slate-700/80 rounded-none shadow-lg px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:bg-white/80 lg:dark:bg-slate-900/80 lg:backdrop-blur-lg lg:border lg:border-stone-200/60 lg:dark:border-slate-700/60 lg:rounded-2xl lg:shadow-2xl lg:p-3.5 sm:lg:p-4 flex flex-col gap-2.5 transition-all">
               
-              {/* Starter Frameworks Drawer / Popover */}
+              {/* Starter Frameworks Drawer / Popover (Mobile Block 3A Redesign) */}
               <AnimatePresence>
                 {showFrameworks && (
                   <>
@@ -1279,42 +1279,43 @@ export const ChatInterface: React.FC<Props> = ({
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       onClick={() => setShowFrameworks(false)}
-                      className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden pointer-events-auto"
+                      className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[998] lg:hidden pointer-events-auto cursor-pointer"
                     />
 
-                    {/* Mobile Bottom Sheet (<lg) / Desktop Popover (lg:) */}
+                    {/* Mobile Floating Bottom Card (<lg) / Desktop Popover (lg:) */}
                     <motion.div 
                       initial={{ opacity: 0, y: 40 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 40 }}
-                      className="fixed inset-x-0 bottom-0 max-h-[80vh] rounded-t-3xl border-t border-stone-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl z-50 pointer-events-auto flex flex-col lg:static lg:absolute lg:bottom-full lg:right-0 lg:sm:right-auto lg:sm:left-4 lg:mb-3 lg:w-80 lg:max-h-72 lg:rounded-2xl lg:border lg:border-stone-200/80 lg:dark:border-slate-700/80 lg:bg-white/95 lg:dark:bg-slate-800/95 lg:shadow-2xl overflow-hidden"
+                      className="fixed inset-x-3 bottom-3 max-h-[70vh] sm:inset-x-6 sm:bottom-6 sm:max-h-[65vh] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-4 flex flex-col z-[999] pointer-events-auto lg:static lg:absolute lg:bottom-full lg:right-0 lg:sm:right-auto lg:sm:left-4 lg:mb-3 lg:w-80 lg:max-h-72 lg:rounded-2xl lg:border lg:border-stone-200/80 lg:dark:border-slate-700/80 lg:bg-white/95 lg:dark:bg-slate-800/95 lg:shadow-2xl lg:p-4 overflow-hidden"
                     >
-                      {/* Drag Handle & Header */}
-                      <div className="p-3.5 sm:p-4 border-b border-stone-100 dark:border-slate-800 shrink-0 flex flex-col gap-1.5">
-                        {/* Mobile handle indicator */}
-                        <div className="w-10 h-1 bg-stone-300 dark:bg-slate-700 rounded-full mx-auto mb-1 lg:hidden" />
-                        
+                      {/* Top Drag Pill Indicator (<lg) */}
+                      <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-3 shrink-0 lg:hidden" />
+                      
+                      {/* Modal Header */}
+                      <div className="pb-3 mb-2.5 border-b border-slate-800/80 shrink-0 flex flex-col gap-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <BookTemplate size={16} className="text-emerald-600 dark:text-emerald-400" />
-                            <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                            <BookTemplate size={16} className="text-emerald-400" />
+                            <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
                               Starter Prompt Frameworks
                             </span>
                           </div>
                           <button
                             onClick={() => setShowFrameworks(false)}
-                            className="p-1 text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 rounded-full"
+                            className="p-1 text-slate-400 hover:text-white rounded-full transition-colors"
+                            aria-label="Close Frameworks Modal"
                           >
                             <X size={18} />
                           </button>
                         </div>
-                        <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                        <p className="text-[11px] text-slate-400">
                           Select a battle-tested structure to seed your architecture
                         </p>
                       </div>
 
-                      {/* Framework list */}
-                      <div className="overflow-y-auto no-scrollbar flex-1 p-2 space-y-1.5 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pb-2">
+                      {/* Modal Body: Smooth Internal Scrolling & Compact Typography */}
+                      <div className="flex-1 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-y-2.5 pr-1">
                         {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
                           <button
                             key={fw.id}
@@ -1322,13 +1323,13 @@ export const ChatInterface: React.FC<Props> = ({
                               setInput(fw.template);
                               setShowFrameworks(false);
                             }}
-                            className="w-full text-left p-3 rounded-xl text-sm text-stone-700 dark:text-slate-300 hover:bg-emerald-50/80 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-900/50 min-h-[48px] active:scale-[0.99] group"
+                            className="w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-800/40 text-xs hover:border-emerald-500/40 transition-all active:scale-[0.99] group flex flex-col gap-1 cursor-pointer"
                           >
-                            <div className="font-bold mb-1 flex items-center justify-between">
-                              <span className="group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{fw.name}</span>
-                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 px-2 py-0.5 rounded-full">{fw.domainName}</span>
+                            <div className="font-bold flex items-center justify-between gap-2">
+                              <span className="text-slate-100 group-hover:text-emerald-400 transition-colors text-xs sm:text-sm">{fw.name}</span>
+                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full shrink-0">{fw.domainName}</span>
                             </div>
-                            <div className="text-xs text-stone-400 dark:text-slate-500 line-clamp-2">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
+                            <div className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
                           </button>
                         ))}
                       </div>
