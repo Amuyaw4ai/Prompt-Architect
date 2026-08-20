@@ -109,72 +109,70 @@ export default function App() {
     <div className="h-screen h-[100dvh] flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300 overflow-hidden">
       {/* Header */}
       <header className="border-b border-stone-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shrink-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-auto py-3 sm:py-0 sm:h-16 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center justify-between w-full sm:w-auto shrink-0">
-            <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 cursor-pointer group shrink-0" onClick={() => setCurrentView('home')}>
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-emerald-600 dark:bg-emerald-500 rounded-lg lg:rounded-xl flex items-center justify-center shadow-md lg:shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 group-hover:scale-105 lg:group-hover:scale-110 transition-transform shrink-0">
-                <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-white dark:text-slate-900" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Hamburger menu button for <lg screens */}
+            <div className="lg:hidden shrink-0">
+              <NavigationMenu currentView={currentView} onViewChange={setCurrentView} />
+            </div>
+
+            {/* Clickable Brand Logo & Text */}
+            <button
+              onClick={() => setCurrentView('home')}
+              className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 cursor-pointer group shrink-0 text-left"
+              title="Go to Home"
+              aria-label="Prompt Architect Home"
+            >
+              <div className="hidden lg:flex w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-xl items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 group-hover:scale-110 transition-transform shrink-0">
+                <Sparkles className="w-5 h-5 text-white dark:text-slate-900" />
               </div>
-              <h1 className="text-sm font-semibold lg:text-xl lg:font-bold tracking-tight text-stone-800 dark:text-slate-100 whitespace-nowrap">Prompt Architect</h1>
-            </div>
-            
-            <div className="flex sm:hidden items-center gap-1.5 shrink-0">
-              <PromptTypeSelector selected={promptType} onChange={(type) => {
-                setPromptType(type);
-                if (currentView !== 'architect') setCurrentView('architect');
-              }} />
-              <button 
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="h-8 w-8 p-0 shrink-0 flex items-center justify-center rounded-lg border border-stone-200/60 dark:border-slate-700/60 bg-stone-100/30 dark:bg-slate-800/30 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all"
-                title="Toggle Theme"
-              >
-                {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
-              </button>
-              <button 
-                onClick={handleNewArchitect}
-                className="h-8 w-8 p-0 shrink-0 flex items-center justify-center bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-lg shadow-md shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all"
-                title="New Chat"
-              >
-                <PlusCircle size={15} />
-              </button>
-            </div>
+              <h1 className="text-sm font-semibold sm:text-base lg:text-xl lg:font-bold tracking-tight text-stone-800 dark:text-slate-100 whitespace-nowrap hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                Prompt Architect
+              </h1>
+            </button>
           </div>
           
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Desktop Navigation links (>=lg) */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <NavigationMenu currentView={currentView} onViewChange={setCurrentView} />
-            <div className="hidden sm:block shrink-0">
+          </div>
+
+          {/* Right Action Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
+            <div className="shrink-0">
               <PromptTypeSelector selected={promptType} onChange={(type) => {
                 setPromptType(type);
                 if (currentView !== 'architect') setCurrentView('architect');
               }} />
             </div>
-          </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 lg:gap-3 shrink-0">
             {currentView === 'architect' && (currentSession || editingPrompt || prefilledPrompt) && (
               <button 
                 onClick={handleClearSession}
-                className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-2 text-stone-400 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 rounded-lg lg:rounded-xl text-xs font-bold transition-all group shrink-0"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-2 text-stone-400 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 rounded-lg lg:rounded-xl text-xs font-bold transition-all group shrink-0"
                 title="Clear current session"
               >
                 <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
                 <span className="hidden md:inline">CLEAR</span>
               </button>
             )}
+
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="h-8 w-8 p-0 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg lg:rounded-xl border border-stone-200/60 dark:border-slate-700/60 bg-stone-100/30 dark:bg-slate-800/30 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0"
+              className="h-8 w-8 p-0 sm:h-9 sm:w-9 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg lg:rounded-xl border border-stone-200/60 dark:border-slate-700/60 bg-stone-100/30 dark:bg-slate-800/30 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0"
               title="Toggle Theme"
+              aria-label="Toggle Theme"
             >
-              {isDarkMode ? <Sun className="w-3.5 h-3.5 lg:w-[18px] lg:h-[18px]" /> : <Moon className="w-3.5 h-3.5 lg:w-[18px] lg:h-[18px]" />}
+              {isDarkMode ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-[18px] lg:h-[18px]" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-[18px] lg:h-[18px]" />}
             </button>
+
             <button 
               onClick={handleNewArchitect}
-              className="h-8 px-2.5 text-xs lg:h-auto lg:px-4 lg:py-2 lg:text-xs flex items-center gap-1.5 lg:gap-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-lg lg:rounded-xl font-bold shadow-md lg:shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all shrink-0 whitespace-nowrap"
+              className="h-8 px-2 sm:h-9 sm:px-3 text-xs lg:h-auto lg:px-4 lg:py-2 lg:text-xs flex items-center gap-1.5 lg:gap-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-lg lg:rounded-xl font-bold shadow-md lg:shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all shrink-0 whitespace-nowrap"
               title="New Chat"
             >
               <PlusCircle size={15} />
-              <span className="hidden md:inline">NEW CHAT</span>
+              <span className="hidden sm:inline">NEW CHAT</span>
             </button>
           </div>
         </div>
