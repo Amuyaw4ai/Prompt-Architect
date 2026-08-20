@@ -74,6 +74,61 @@ try {
   db.exec("ALTER TABLE saved_prompts ADD COLUMN version_notes TEXT;");
 } catch (e) {}
 
+async function generateContentWithFallback(ai: GoogleGenAI, params: {
+  contents: any;
+  config: any;
+  models?: string[];
+}) {
+  const candidateModels = params.models || [
+    "gemini-3.7-flash",
+    "gemini-flash-latest",
+    "gemini-3.1-flash-lite"
+  ];
+
+  let lastError: any = null;
+
+  for (const modelName of candidateModels) {
+    const maxRetries = 2;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: params.contents,
+          config: params.config
+        });
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const errMsg = (err?.message || "").toLowerCase();
+        const errStatus = err?.status || err?.code || "";
+        const isTransient = 
+          errMsg.includes("503") || 
+          errMsg.includes("unavailable") || 
+          errMsg.includes("high demand") || 
+          errMsg.includes("resource_exhausted") || 
+          errMsg.includes("429") || 
+          errMsg.includes("overloaded") ||
+          errStatus === 503 ||
+          errStatus === "UNAVAILABLE" ||
+          errStatus === 429;
+
+        if (isTransient && attempt < maxRetries) {
+          const delayMs = (attempt + 1) * 800;
+          console.warn(`Gemini model ${modelName} returned transient error (${err.message}). Retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})...`);
+          await new Promise(r => setTimeout(r, delayMs));
+          continue;
+        }
+
+        // If not transient or retries exhausted for this model, log and try next candidate
+        console.warn(`Gemini model ${modelName} call did not succeed, checking next candidate model... Error:`, err?.message || err);
+        break;
+      }
+    }
+  }
+
+  throw lastError || new Error("All Gemini models are currently experiencing high demand. Please try again in a few moments.");
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -172,8 +227,7 @@ CRITICAL ARCHITECTURAL RULES:
 
       contents.push({ text: textPrompt });
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+      const response = await generateContentWithFallback(ai, {
         contents: { parts: contents },
         config: {
           systemInstruction: SYSTEM_INSTRUCTIONS,
@@ -280,8 +334,7 @@ ${currentPrompt}
 Please re-architect this prompt into the ${frameworkName} framework now.
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+      const response = await generateContentWithFallback(ai, {
         contents: promptText,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,

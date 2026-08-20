@@ -138,6 +138,116 @@ const getDailySuggestions = (suggestions: Record<string, string[]>, count: numbe
 
 const VARIABLE_SUGGESTIONS = getDailySuggestions(ALL_VARIABLE_SUGGESTIONS);
 
+interface CalibrationGroup {
+  category: string;
+  color: 'emerald' | 'amber' | 'purple';
+  options: string[];
+}
+
+const getDynamicCalibrationOptions = (
+  type: PromptType,
+  promptContent: string,
+  messageContent: string
+): CalibrationGroup[] => {
+  const combined = `${promptContent} ${messageContent}`.toLowerCase();
+
+  if (type === 'image') {
+    const isPortrait = combined.includes('portrait') || combined.includes('person') || combined.includes('character') || combined.includes('face') || combined.includes('model') || combined.includes('woman') || combined.includes('man');
+    const isLandscape = combined.includes('landscape') || combined.includes('environment') || combined.includes('city') || combined.includes('nature') || combined.includes('room') || combined.includes('building') || combined.includes('cyberpunk') || combined.includes('scenery');
+    const isAnimeOrArt = combined.includes('anime') || combined.includes('illustration') || combined.includes('art') || combined.includes('vector') || combined.includes('painting') || combined.includes('cartoon') || combined.includes('studio ghibli');
+
+    return [
+      {
+        category: 'Lighting & Mood',
+        color: 'emerald',
+        options: isLandscape 
+          ? ['Cinematic Golden Hour', 'Moody Fog & Mist', 'Dramatic Sunbeams', 'Night Cyberpunk Neon']
+          : isPortrait 
+            ? ['Soft Studio Portrait Keylight', 'Dramatic Rim Lighting', 'Warm Sunset Bokeh', 'High-Key Fashion Clean']
+            : ['Volumetric Lighting', 'Warm Cinematic Glow', 'Moody Chiaroscuro', 'Studio Softbox']
+      },
+      {
+        category: 'Style & Medium',
+        color: 'amber',
+        options: isAnimeOrArt
+          ? ['Makoto Shinkai Anime Style', 'Vibrant Concept Digital Art', 'Minimalist Flat Vector', 'Watercolor & Ink']
+          : ['35mm Film Grain (Kodak Portra)', 'Hyperrealistic 8K Octane Render', 'Editorial Photography', 'Cinematic Panavision 70mm']
+      },
+      {
+        category: 'Composition & Framing',
+        color: 'purple',
+        options: isPortrait
+          ? ['Close-Up Shot with 85mm Lens', 'Medium Waist-Up Shot', 'Low-Angle Heroic Stance', 'Centered Symmetric Framing']
+          : isLandscape
+            ? ['Wide Angle Pan (16:9)', 'Aerial Drone Top-Down', 'Rule-of-Thirds Dynamic Lines', 'Deep Depth of Field']
+            : ['16:9 Cinematic Aspect Ratio', 'Macro Detail Close-Up', 'Symmetrical Center Framing', 'Low-Angle Hero Shot']
+      }
+    ];
+  }
+
+  if (type === 'video') {
+    const isAction = combined.includes('action') || combined.includes('run') || combined.includes('car') || combined.includes('fight') || combined.includes('fast') || combined.includes('sport');
+    return [
+      {
+        category: 'Camera Motion',
+        color: 'emerald',
+        options: isAction
+          ? ['Dynamic Fast Orbit Tracking', 'High-Speed FPV Drone Chase', 'Whip Pan Action Snap', 'Dynamic Low Steadycam']
+          : ['Slow Cinematic Dolly Push-In', 'Dynamic Drone Orbit 360°', 'Smooth Steadycam Tracking', 'Subtle Organic Handheld Pan']
+      },
+      {
+        category: 'Pacing & Speed',
+        color: 'amber',
+        options: ['Slow Motion 60fps Smooth Flow', 'Fast-Paced Action Cut', 'Hyperlapse Time-Compression', 'Real-Time Natural Cadence']
+      },
+      {
+        category: 'Atmosphere & Grade',
+        color: 'purple',
+        options: ['Teal & Orange Cinematic Grade', 'Vintage 70s Warm Film Glow', 'High-Contrast Moody Noir', 'Vibrant Natural Sunlight']
+      }
+    ];
+  }
+
+  // Text / Chatbot modality
+  const isCoding = combined.includes('code') || combined.includes('react') || combined.includes('python') || combined.includes('sql') || combined.includes('api') || combined.includes('function') || combined.includes('developer') || combined.includes('software');
+  const isMarketing = combined.includes('marketing') || combined.includes('copy') || combined.includes('seo') || combined.includes('campaign') || combined.includes('email') || combined.includes('brand') || combined.includes('sales') || combined.includes('ad');
+  const isAnalysis = combined.includes('analys') || combined.includes('data') || combined.includes('report') || combined.includes('business') || combined.includes('strategy') || combined.includes('review') || combined.includes('metrics');
+
+  return [
+    {
+      category: 'Format',
+      color: 'emerald',
+      options: isCoding 
+        ? ['Step-by-Step Code with Comments', 'Production-Ready TypeScript', 'Minimalist Code Only', 'Markdown Table Breakdown']
+        : isMarketing 
+          ? ['High-Converting Hook + Body + CTA', 'Bullet Points with Key Benefits', 'Multi-Variant Ad Copies', 'Punchy Social Post']
+          : isAnalysis
+            ? ['Executive Summary + Key Takeaways', 'Markdown Comparison Table', 'Structured JSON Schema', 'Numbered Action Plan']
+            : ['Bullet Points with Key Takeaways', 'Step-by-Step Guide', 'JSON Schema', 'Markdown Table', 'In-Depth Essay']
+    },
+    {
+      category: 'Tone',
+      color: 'amber',
+      options: isCoding
+        ? ['Senior Principal Engineer', 'Concise & Authoritative', 'Instructional Tutorial', 'Direct & Minimal']
+        : isMarketing
+          ? ['High-Energy & Persuasive', 'Warm & Friendly', 'Urgent & Compelling', 'Witty & Relatable']
+          : isAnalysis
+            ? ['Executive & Strategic', 'Objective & Data-Driven', 'Analytical & Thorough', 'Pragmatic & Clear']
+            : ['Formal & Professional', 'Casual & Friendly', 'Authoritative & Concise', 'Socratic & Educational']
+    },
+    {
+      category: 'Depth',
+      color: 'purple',
+      options: isCoding
+        ? ['Production Edge Cases Included', 'Beginner-Friendly Explanation (ELI5)', 'Strict Typings & Error Handling', 'Quick Snippet Only']
+        : isAnalysis
+          ? ['Comprehensive C-Level Brief', 'Actionable 5-Step Checklist', 'Deep-Dive Risk Assessment', 'Quick 3-Bullet Summary']
+          : ['Beginner (ELI5)', 'Intermediate Practical', 'Advanced Expert Level', 'Actionable Checklist Only']
+    }
+  ];
+};
+
 interface Props {
   promptType: PromptType;
   onTypeChange: (type: PromptType) => void;
@@ -963,95 +1073,86 @@ export const ChatInterface: React.FC<Props> = ({
               )}
               
               <AnimatePresence initial={false}>
-                {messages.map((m) => (
-                  <motion.div
-                    key={m.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`w-full flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`w-full ${
-                      m.role === 'user' 
-                        ? 'max-w-[94%] sm:max-w-[90%] bg-stone-200/70 dark:bg-slate-700/70 text-stone-900 dark:text-slate-100 rounded-2xl p-4 sm:p-5 border border-stone-300/50 dark:border-slate-600/50 shadow-xs' 
-                        : 'bg-transparent text-stone-800 dark:text-slate-200 p-0 sm:p-1 border-0 shadow-none'
-                    }`}>
-                      {m.imageUrl && (
-                        m.mediaType?.startsWith("video/") || m.imageUrl?.startsWith("data:video/") ? (
-                          <video src={m.imageUrl} controls className="max-w-full h-auto max-h-56 rounded-xl mb-3 border border-emerald-500/30" />
-                        ) : m.mediaType?.startsWith("image/") || m.imageUrl?.startsWith("data:image/") || !m.mediaType ? (
-                          <img src={m.imageUrl} alt="Uploaded media" className="max-w-full h-auto max-h-56 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
-                        ) : (
-                          <div className="inline-flex items-center gap-2 bg-stone-100 dark:bg-slate-800 border border-emerald-500/20 p-2.5 rounded-xl mb-3">
-                            <Paperclip size={15} className="text-emerald-500" />
-                            <span className="text-xs font-semibold text-stone-700 dark:text-slate-300">Attached Media file</span>
-                          </div>
-                        )
-                      )}
-                      {m.attachedFiles && m.attachedFiles.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {m.attachedFiles.map((file, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5 bg-stone-300/60 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-stone-400/30 dark:border-slate-600/40">
-                              <Paperclip size={12} className="text-stone-600 dark:text-slate-300" />
-                              <span className="text-[11px] font-medium text-stone-800 dark:text-slate-200 max-w-[120px] truncate">{file.name}</span>
+                {messages.map((m, index) => {
+                  const isLatestAssistantMessage = index === messages.length - 1 && m.role === 'assistant';
+                  const currentPromptText = getFinalPrompt();
+                  const dynamicSuggestions = isLatestAssistantMessage 
+                    ? getDynamicCalibrationOptions(promptType, currentPromptText, m.content)
+                    : [];
+
+                  return (
+                    <motion.div
+                      key={m.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`w-full flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`w-full ${
+                        m.role === 'user' 
+                          ? 'max-w-[94%] sm:max-w-[90%] bg-stone-200/70 dark:bg-slate-700/70 text-stone-900 dark:text-slate-100 rounded-2xl p-4 sm:p-5 border border-stone-300/50 dark:border-slate-600/50 shadow-xs' 
+                          : 'bg-transparent text-stone-800 dark:text-slate-200 p-0 sm:p-1 border-0 shadow-none'
+                      }`}>
+                        {m.imageUrl && (
+                          m.mediaType?.startsWith("video/") || m.imageUrl?.startsWith("data:video/") ? (
+                            <video src={m.imageUrl} controls className="max-w-full h-auto max-h-56 rounded-xl mb-3 border border-emerald-500/30" />
+                          ) : m.mediaType?.startsWith("image/") || m.imageUrl?.startsWith("data:image/") || !m.mediaType ? (
+                            <img src={m.imageUrl} alt="Uploaded media" className="max-w-full h-auto max-h-56 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="inline-flex items-center gap-2 bg-stone-100 dark:bg-slate-800 border border-emerald-500/20 p-2.5 rounded-xl mb-3">
+                              <Paperclip size={15} className="text-emerald-500" />
+                              <span className="text-xs font-semibold text-stone-700 dark:text-slate-300">Attached Media file</span>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                      {m.content && (
-                        <div className={cn("markdown-body", m.role === 'user' ? "text-stone-900 dark:text-slate-100 font-medium" : "text-stone-800 dark:text-slate-200")}>
-                          <ReactMarkdown>{m.content}</ReactMarkdown>
-                        </div>
-                      )}
-                      {m.role === 'assistant' && (promptType === 'text' || m.content.toLowerCase().includes('format') || m.content.toLowerCase().includes('tone') || m.content.toLowerCase().includes('complexity')) && (
-                        <div className="mt-3.5 pt-3 border-t border-stone-200/60 dark:border-slate-700/60 space-y-2">
-                          <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
-                            <Sparkles size={11} />
-                            <span>Quick Answer / Calibrate:</span>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1">
-                            <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Format:</span>
-                            {['Bullet Points', 'Essay', 'Step-by-Step Code', 'JSON Schema', 'Markdown Table'].map((fmt) => (
-                              <button
-                                key={fmt}
-                                onClick={() => handleSend(`Set preferred format to: "${fmt}"`)}
-                                disabled={isLoading}
-                                className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-md border border-emerald-200/50 dark:border-emerald-800/40 transition-colors disabled:opacity-50"
-                              >
-                                {fmt}
-                              </button>
+                          )
+                        )}
+                        {m.attachedFiles && m.attachedFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {m.attachedFiles.map((file, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5 bg-stone-300/60 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-stone-400/30 dark:border-slate-600/40">
+                                <Paperclip size={12} className="text-stone-600 dark:text-slate-300" />
+                                <span className="text-[11px] font-medium text-stone-800 dark:text-slate-200 max-w-[120px] truncate">{file.name}</span>
+                              </div>
                             ))}
                           </div>
-                          <div className="flex flex-wrap items-center gap-1">
-                            <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Tone:</span>
-                            {['Formal & Professional', 'Casual & Friendly', 'Humorous & Witty', 'Authoritative & Concise'].map((tn) => (
-                              <button
-                                key={tn}
-                                onClick={() => handleSend(`Set desired tone to: "${tn}"`)}
-                                disabled={isLoading}
-                                className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-md border border-amber-200/50 dark:border-amber-800/40 transition-colors disabled:opacity-50"
-                              >
-                                {tn}
-                              </button>
+                        )}
+                        {m.content && (
+                          <div className={cn("markdown-body", m.role === 'user' ? "text-stone-900 dark:text-slate-100 font-medium" : "text-stone-800 dark:text-slate-200")}>
+                            <ReactMarkdown>{m.content}</ReactMarkdown>
+                          </div>
+                        )}
+                        {isLatestAssistantMessage && dynamicSuggestions.length > 0 && (
+                          <div className="mt-3.5 pt-3 border-t border-stone-200/60 dark:border-slate-700/60 space-y-2.5">
+                            <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
+                              <Sparkles size={11} />
+                              <span>Quick Answer / Calibrate:</span>
+                            </div>
+                            {dynamicSuggestions.map((group, gIdx) => (
+                              <div key={gIdx} className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1 min-w-[50px]">{group.category}:</span>
+                                {group.options.map((opt) => (
+                                  <button
+                                    key={opt}
+                                    onClick={() => handleSend(`Calibrate prompt: Apply ${group.category.toLowerCase()} "${opt}"`)}
+                                    disabled={isLoading}
+                                    className={cn(
+                                      "px-2 py-0.5 text-[10px] font-semibold rounded-md border transition-all disabled:opacity-50 active:scale-95 shadow-2xs",
+                                      group.color === 'emerald'
+                                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/50 dark:border-emerald-800/40"
+                                        : group.color === 'amber'
+                                          ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200/50 dark:border-amber-800/40"
+                                          : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200/50 dark:border-purple-800/40"
+                                    )}
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
                             ))}
                           </div>
-                          <div className="flex flex-wrap items-center gap-1">
-                            <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Complexity:</span>
-                            {['Beginner (ELI5)', 'Intermediate', 'Advanced Expert', 'Executive Summary'].map((cplx) => (
-                              <button
-                                key={cplx}
-                                onClick={() => handleSend(`Set response complexity to: "${cplx}"`)}
-                                disabled={isLoading}
-                                className="px-2 py-0.5 text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-md border border-purple-200/50 dark:border-purple-800/40 transition-colors disabled:opacity-50"
-                              >
-                                {cplx}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
 
               {isLoading && (
@@ -1398,25 +1499,29 @@ export const ChatInterface: React.FC<Props> = ({
                   Architectural Output
                 </span>
 
-                <div className="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-1.5 shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                      {getFinalPrompt().length} {isRightPanelCompact ? 'C' : 'CHARS'}
+                <div className="w-full lg:w-auto flex items-center justify-between lg:justify-end flex-wrap sm:flex-nowrap gap-2 shrink-0 py-1">
+                  <div className="flex items-center gap-2 text-xs font-medium text-stone-500 dark:text-slate-400 shrink-0">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-100/70 dark:bg-slate-800/70 border border-stone-200/50 dark:border-slate-700/50 rounded-md text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0 shadow-2xs">
+                      {getFinalPrompt().length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[10px]">{isRightPanelCompact ? 'CHARS' : 'CHARS'}</span>
                     </div>
-                    <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                      {getFinalPrompt().split(/\s+/).filter(Boolean).length} {isRightPanelCompact ? 'W' : 'WORDS'}
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-100/70 dark:bg-slate-800/70 border border-stone-200/50 dark:border-slate-700/50 rounded-md text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
+                      {getFinalPrompt().split(/\s+/).filter(Boolean).length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[10px]">{isRightPanelCompact ? 'WORDS' : 'WORDS'}</span>
                     </div>
                   </div>
                   <div 
-                    className={cn("flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold group relative cursor-help",
-                      calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? "bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" :
-                      calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? "bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" :
-                      "bg-pink-100/50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border shrink-0 cursor-help transition-all shadow-2xs group relative",
+                      calculatePromptScore(getFinalPrompt(), promptType).score >= 80 
+                        ? "bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/50" 
+                        : calculatePromptScore(getFinalPrompt(), promptType).score >= 50 
+                          ? "bg-amber-50/80 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/50" 
+                          : "bg-pink-50/80 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 border-pink-200/60 dark:border-pink-800/50"
                     )}
                     onClick={() => setShowScoreDetails(!showScoreDetails)}
                     onMouseLeave={() => setShowScoreDetails(false)}
                   >
-                    SCORE: {calculatePromptScore(getFinalPrompt(), promptType).score}%
+                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">SCORE:</span>
+                    <span>{calculatePromptScore(getFinalPrompt(), promptType).score}%</span>
                     <div 
                       className={cn(
                         "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:right-0 lg:left-auto lg:translate-y-0 lg:mt-2 lg:w-72 max-w-[calc(100vw-2rem)] p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
