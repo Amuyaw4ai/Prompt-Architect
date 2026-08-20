@@ -110,30 +110,32 @@ export default function App() {
       {/* Header */}
       <header className="border-b border-stone-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shrink-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-auto py-3 sm:py-0 sm:h-16 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center justify-between w-full sm:w-auto">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setCurrentView('home')}>
-              <div className="w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 group-hover:scale-110 transition-transform">
-                <Sparkles size={20} className="text-white dark:text-slate-900" />
+          <div className="flex items-center justify-between w-full sm:w-auto shrink-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 cursor-pointer group shrink-0" onClick={() => setCurrentView('home')}>
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-emerald-600 dark:bg-emerald-500 rounded-lg lg:rounded-xl flex items-center justify-center shadow-md lg:shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 group-hover:scale-105 lg:group-hover:scale-110 transition-transform shrink-0">
+                <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-white dark:text-slate-900" />
               </div>
-              <h1 className="font-bold text-xl tracking-tight text-stone-800 dark:text-slate-100">Prompt Architect</h1>
+              <h1 className="text-sm font-semibold lg:text-xl lg:font-bold tracking-tight text-stone-800 dark:text-slate-100 whitespace-nowrap">Prompt Architect</h1>
             </div>
             
-            <div className="flex sm:hidden items-center gap-2">
+            <div className="flex sm:hidden items-center gap-1.5">
               <PromptTypeSelector selected={promptType} onChange={(type) => {
                 setPromptType(type);
                 if (currentView !== 'architect') setCurrentView('architect');
               }} />
               <button 
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0"
+                title="Toggle Theme"
               >
-                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
               </button>
               <button 
                 onClick={handleNewArchitect}
-                className="w-10 h-10 flex items-center justify-center bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 transition-all"
+                className="w-8 h-8 flex items-center justify-center bg-emerald-600 text-white rounded-lg shadow-md shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 transition-all shrink-0"
+                title="New Chat"
               >
-                <PlusCircle size={18} />
+                <PlusCircle size={15} />
               </button>
             </div>
           </div>
