@@ -1390,23 +1390,25 @@ export const ChatInterface: React.FC<Props> = ({
           >
             {/* Header: Title, Word Count, Score */}
             <div className="flex flex-col gap-3 mb-4">
-              <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="w-full flex items-center justify-between gap-2 min-w-0">
                 <span className={cn(
-                  "font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 truncate",
+                  "hidden lg:block font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 truncate",
                   isRightPanelCompact ? "text-[11px]" : "text-xs"
                 )}>
                   Architectural Output
                 </span>
 
-                <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {getFinalPrompt().length} {isRightPanelCompact ? 'C' : 'CHARS'}
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    {getFinalPrompt().split(/\s+/).filter(Boolean).length} {isRightPanelCompact ? 'W' : 'WORDS'}
+                <div className="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                      {getFinalPrompt().length} {isRightPanelCompact ? 'C' : 'CHARS'}
+                    </div>
+                    <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      {getFinalPrompt().split(/\s+/).filter(Boolean).length} {isRightPanelCompact ? 'W' : 'WORDS'}
+                    </div>
                   </div>
                   <div 
-                    className={cn("flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold group relative cursor-help",
+                    className={cn("flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold group relative cursor-help",
                       calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? "bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" :
                       calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? "bg-amber-100/50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" :
                       "bg-pink-100/50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400"

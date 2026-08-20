@@ -118,21 +118,21 @@ export default function App() {
               <h1 className="text-sm font-semibold lg:text-xl lg:font-bold tracking-tight text-stone-800 dark:text-slate-100 whitespace-nowrap">Prompt Architect</h1>
             </div>
             
-            <div className="flex sm:hidden items-center gap-1.5">
+            <div className="flex sm:hidden items-center gap-1.5 shrink-0">
               <PromptTypeSelector selected={promptType} onChange={(type) => {
                 setPromptType(type);
                 if (currentView !== 'architect') setCurrentView('architect');
               }} />
               <button 
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0"
+                className="h-8 w-8 p-0 shrink-0 flex items-center justify-center rounded-lg border border-stone-200/60 dark:border-slate-700/60 bg-stone-100/30 dark:bg-slate-800/30 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all"
                 title="Toggle Theme"
               >
-                {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
+                {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
               </button>
               <button 
                 onClick={handleNewArchitect}
-                className="w-8 h-8 flex items-center justify-center bg-emerald-600 text-white rounded-lg shadow-md shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 transition-all shrink-0"
+                className="h-8 w-8 p-0 shrink-0 flex items-center justify-center bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-lg shadow-md shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all"
                 title="New Chat"
               >
                 <PlusCircle size={15} />
@@ -140,9 +140,9 @@ export default function App() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <NavigationMenu currentView={currentView} onViewChange={setCurrentView} />
-            <div className="hidden sm:block">
+            <div className="hidden sm:block shrink-0">
               <PromptTypeSelector selected={promptType} onChange={(type) => {
                 setPromptType(type);
                 if (currentView !== 'architect') setCurrentView('architect');
@@ -150,11 +150,11 @@ export default function App() {
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1.5 lg:gap-3 shrink-0">
             {currentView === 'architect' && (currentSession || editingPrompt || prefilledPrompt) && (
               <button 
                 onClick={handleClearSession}
-                className="flex items-center gap-1.5 px-3 py-2 text-stone-400 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 rounded-xl text-xs font-bold transition-all group"
+                className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-2 text-stone-400 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 rounded-lg lg:rounded-xl text-xs font-bold transition-all group shrink-0"
                 title="Clear current session"
               >
                 <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
@@ -163,18 +163,18 @@ export default function App() {
             )}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all"
+              className="h-8 w-8 p-0 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg lg:rounded-xl border border-stone-200/60 dark:border-slate-700/60 bg-stone-100/30 dark:bg-slate-800/30 text-stone-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0"
               title="Toggle Theme"
             >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {isDarkMode ? <Sun className="w-3.5 h-3.5 lg:w-[18px] lg:h-[18px]" /> : <Moon className="w-3.5 h-3.5 lg:w-[18px] lg:h-[18px]" />}
             </button>
             <button 
               onClick={handleNewArchitect}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl text-xs font-bold shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all"
+              className="h-8 px-2.5 text-xs lg:h-auto lg:px-4 lg:py-2 lg:text-xs flex items-center gap-1.5 lg:gap-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-lg lg:rounded-xl font-bold shadow-md lg:shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all shrink-0 whitespace-nowrap"
               title="New Chat"
             >
-              <PlusCircle size={16} />
-              <span>NEW CHAT</span>
+              <PlusCircle size={15} />
+              <span className="hidden md:inline">NEW CHAT</span>
             </button>
           </div>
         </div>
