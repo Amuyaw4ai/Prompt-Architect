@@ -68,34 +68,34 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
           <Menu size={16} />
         </button>
 
-        {/* Slide-Over Drawer & Blurred Backdrop Overlay */}
+        {/* Full-Screen Portal Stacking: Slide-Over Drawer & Blurred Backdrop Overlay */}
         <AnimatePresence>
           {isOpen && (
-            <div className="fixed inset-0 z-50 overflow-hidden">
-              {/* Backdrop with strong blur */}
+            <div className="fixed inset-0 z-[990] overflow-hidden">
+              {/* True Viewport Overlay: Backdrop Blur with Outside Click Dismissal */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => setIsOpen(false)}
-                className="fixed inset-0 bg-black/70 backdrop-blur-md z-40 cursor-pointer"
+                className="fixed inset-0 bg-black/80 backdrop-blur-md z-[995] cursor-pointer"
                 aria-hidden="true"
               />
 
-              {/* Drawer Content - High contrast opaque dark surface */}
+              {/* Drawer Content - 100% Solid Dark Surface sitting above Backdrop */}
               <motion.aside
                 initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 260 }}
-                className="fixed inset-y-0 left-0 w-72 max-w-[80vw] z-50 bg-slate-900/98 dark:bg-zinc-950/98 border-r border-slate-800/80 dark:border-zinc-800/80 p-5 shadow-2xl flex flex-col justify-between"
+                className="fixed inset-y-0 left-0 w-72 max-w-[80vw] z-[1000] bg-[#090d16] text-white border-r border-slate-800 p-5 shadow-2xl flex flex-col justify-between"
                 role="dialog"
                 aria-label="Mobile Navigation"
               >
                 {/* Drawer Header */}
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between border-b border-slate-800/80 dark:border-zinc-800/80 pb-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                     <button
                       onClick={() => {
                         onViewChange('home');
@@ -114,7 +114,7 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
 
                     <button
                       onClick={() => setIsOpen(false)}
-                      className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/80 dark:hover:bg-zinc-900 transition-colors"
+                      className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                       aria-label="Close Navigation Menu"
                     >
                       <X size={18} />
@@ -135,8 +135,8 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
                           className={cn(
                             "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left transition-all group",
                             isActive
-                              ? "bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 shadow-xs font-bold"
-                              : "text-slate-200 hover:bg-slate-800/60 dark:hover:bg-zinc-900/60 hover:text-white font-medium"
+                              ? "bg-emerald-950/80 text-emerald-400 border border-emerald-500/50 shadow-xs font-bold"
+                              : "text-slate-200 hover:bg-slate-800/90 hover:text-white font-medium"
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -144,7 +144,7 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
                               "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                               isActive
                                 ? "bg-slate-800 text-emerald-400 shadow-xs"
-                                : "bg-slate-800/70 dark:bg-zinc-900 text-slate-400 group-hover:text-emerald-400"
+                                : "bg-slate-800 text-slate-400 group-hover:text-emerald-400"
                             )}>
                               {item.icon}
                             </div>
@@ -161,8 +161,8 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
                 </div>
 
                 {/* Drawer Footer */}
-                <div className="pt-4 border-t border-slate-800/80 dark:border-zinc-800/80">
-                  <div className="p-3 bg-slate-800/60 dark:bg-zinc-900/60 rounded-xl border border-slate-700/50 dark:border-zinc-800/50 text-center">
+                <div className="pt-4 border-t border-slate-800">
+                  <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 text-center">
                     <p className="text-[11px] font-semibold text-slate-200">Prompt Architect v2.0</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">Optimized for Image, Video & Text models</p>
                   </div>
