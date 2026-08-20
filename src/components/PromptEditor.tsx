@@ -123,8 +123,8 @@ export const PromptEditor: React.FC<Props> = ({
   const getFinalPrompt = () => {
     let final = value;
     Object.entries(variables).forEach(([name, val]) => {
-      if (val.trim()) {
-        final = final.replace(new RegExp(`\\[${name}\\]`, 'g'), val);
+      if (val && val.trim()) {
+        final = final.replaceAll(`[${name}]`, val);
       }
     });
     return final;

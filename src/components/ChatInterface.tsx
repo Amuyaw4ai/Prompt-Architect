@@ -446,10 +446,10 @@ export const ChatInterface: React.FC<Props> = ({
     }
   };
 
-  // Extract variables from prompt like [STYLE] or [SUBJECT]
+  // Extract variables from prompt like [STYLE] or [subject]
   useEffect(() => {
     if (lastResult?.refinedPrompt) {
-      const matches = lastResult.refinedPrompt.match(/\[[A-Z_]+\]/g);
+      const matches = lastResult.refinedPrompt.match(/\[[A-Za-z0-9_]+\]/g);
       if (matches) {
         const uniqueVars = Array.from(new Set(matches));
         const newVars: Record<string, string> = {};
@@ -468,8 +468,8 @@ export const ChatInterface: React.FC<Props> = ({
     if (!lastResult?.refinedPrompt) return '';
     let final = lastResult.refinedPrompt;
     Object.entries(variables).forEach(([name, value]) => {
-      if (value.trim()) {
-        final = final.replace(new RegExp(`\\[${name}\\]`, 'g'), value);
+      if (value && value.trim()) {
+        final = final.replaceAll(`[${name}]`, value);
       }
     });
     return final;
