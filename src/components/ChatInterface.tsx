@@ -8,7 +8,6 @@ import { getContextualFrameworks, ContextualFramework, ALL_FRAMEWORKS } from '..
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { cn, calculatePromptScore } from '../utils';
-import { PromptTypeSelector } from './PromptTypeSelector';
 import { PromptEditor } from './PromptEditor';
 
 const ALL_VARIABLE_SUGGESTIONS: Record<string, string[]> = {
@@ -151,6 +150,9 @@ interface Props {
   onInputUsed?: () => void;
   onSaveSuccess?: (savedPrompt: SavedPrompt) => void;
   onSwitchVersion?: (prompt: SavedPrompt) => void;
+  activeMobileTab?: 'chat' | 'editor' | 'output';
+  onMobileTabChange?: (tab: 'chat' | 'editor' | 'output') => void;
+  onStatsChange?: (stats: { messageCount: number; wordCount: number; charCount: number; score: number }) => void;
 }
 
 export const ChatInterface: React.FC<Props> = ({ 
@@ -164,8 +166,12 @@ export const ChatInterface: React.FC<Props> = ({
   onSessionUpdate,
   onInputUsed,
   onSaveSuccess,
-  onSwitchVersion
+  onSwitchVersion,
+  activeMobileTab = 'chat',
+  onMobileTabChange,
+  onStatsChange
 }) => {
+  const currentMobileTab = activeMobileTab;
   const [isLocalMode, setIsLocalMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('prompt_architect_engine_mode');
     return saved ? saved === 'local' : true; // Default is Local mode (Local Studio)
@@ -334,6 +340,21 @@ export const ChatInterface: React.FC<Props> = ({
     });
     return final;
   };
+
+  useEffect(() => {
+    if (onStatsChange) {
+      const finalPrompt = getFinalPrompt();
+      const words = finalPrompt.trim() ? finalPrompt.split(/\s+/).filter(Boolean).length : 0;
+      const chars = finalPrompt.length;
+      const scoreObj = calculatePromptScore(finalPrompt, promptType);
+      onStatsChange({
+        messageCount: messages.length,
+        wordCount: words,
+        charCount: chars,
+        score: scoreObj.score
+      });
+    }
+  }, [messages.length, lastResult?.refinedPrompt, variables, promptType, onStatsChange]);
 
   useEffect(() => {
     if (initialInput) {
@@ -517,29 +538,81 @@ export const ChatInterface: React.FC<Props> = ({
     setTimeout(() => setCopiedType(null), 2000);
   };
 
-  const copyAsMarkdownBlock = () => {
+  const handleDownloadMarkdown = () => {
     const final = getFinalPrompt();
-    navigator.clipboard.writeText(`\`\`\`markdown\n${final}\n\`\`\``);
+    if (!final) return;
+
+    const title = saveData.title || lastResult?.suggestedTitle || 'Architected Prompt';
+    const cleanFileName = (title || 'architected_prompt')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'architected_prompt';
+
+    const tagsLine = lastResult?.suggestedTags && lastResult.suggestedTags.length > 0
+      ? `**Tags:** ${lastResult.suggestedTags.join(', ')}\n`
+      : '';
+    const varsEntries = Object.entries(variables).filter(([_, v]) => v.trim());
+    const varsLine = varsEntries.length > 0
+      ? `**Variables:**\n${varsEntries.map(([k, v]) => `- \`[${k}]\`: ${v}`).join('\n')}\n`
+      : '';
+
+    const mdContent = `# ${title}\n\n**Modality:** ${promptType.toUpperCase()}\n${tagsLine}${varsLine}\n---\n\n${final}\n`;
+
+    const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${cleanFileName}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+
     setCopiedType('markdown');
     setTimeout(() => setCopiedType(null), 2000);
   };
 
-  const copyAsJSON = () => {
-    if (!lastResult) return;
-    const jsonPayload = JSON.stringify({
-      title: saveData.title || lastResult.suggestedTitle || 'Architected Prompt',
+  const getPromptJSONData = () => {
+    if (!lastResult) return null;
+    const userTags = saveData.tags ? saveData.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const tags = userTags.length > 0 ? userTags : (lastResult.suggestedTags || []);
+    const title = saveData.title || lastResult.suggestedTitle || 'Architected Prompt';
+
+    return {
+      title,
       prompt: getFinalPrompt(),
       type: promptType,
-      variables: variables,
-      tags: lastResult.suggestedTags || []
-    }, null, 2);
-    navigator.clipboard.writeText(jsonPayload);
+      variables,
+      tags,
+      originalIdea: messages.find(m => m.role === 'user')?.content || ''
+    };
+  };
+
+  const copyAsJSON = () => {
+    const data = getPromptJSONData();
+    if (!data) return;
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     setCopiedType('json');
     setTimeout(() => setCopiedType(null), 2000);
   };
 
   const handleDownloadJSON = () => {
-    exportToJSON();
+    const data = getPromptJSONData();
+    if (!data) return;
+
+    const cleanFileName = (data.title || 'architected_prompt')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'architected_prompt';
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${cleanFileName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
     setCopiedType('download');
     setTimeout(() => setCopiedType(null), 2000);
   };
@@ -746,29 +819,10 @@ export const ChatInterface: React.FC<Props> = ({
     }
   };
 
-  const exportToJSON = () => {
-    if (!lastResult) return;
-    const data = JSON.stringify({
-      title: saveData.title || 'Untitled Prompt',
-      prompt: getFinalPrompt(),
-      variables,
-      type: promptType,
-      originalIdea: messages.find(m => m.role === 'user')?.content || '',
-      tags: saveData.tags.split(',').map(t => t.trim()).filter(Boolean)
-    }, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'architected_prompt.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const isExpired = currentSession && (Date.now() - currentSession.createdAt) > 3600000;
 
   return (
-    <div className="flex flex-col h-auto lg:h-[750px] bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 overflow-hidden relative transition-colors duration-300">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-stone-200 dark:border-slate-700 overflow-hidden relative transition-colors duration-300">
       {isExpired && (
         <div className="absolute top-0 left-0 right-0 z-50 bg-amber-500 dark:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest py-1.5 text-center animate-pulse">
           Session Expired (1 Hour Limit) - Please start a new chat for fresh context
@@ -875,456 +929,345 @@ export const ChatInterface: React.FC<Props> = ({
         )}
       </AnimatePresence>
 
-      {/* Header with Model Selector */}
-      <div className="px-8 py-4 border-b border-stone-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50/30 dark:bg-slate-800/50">
-        <div className="flex flex-wrap items-center gap-4">
-          <PromptTypeSelector selected={promptType} onChange={handleTypeChange} />
-          
-          {/* Active Mode selector */}
-          <div className="flex items-center bg-stone-100 dark:bg-slate-700 p-1 rounded-2xl border border-stone-200 dark:border-slate-600 shadow-sm">
-            <button
-              onClick={() => setIsLocalMode(true)}
-              className={cn(
-                "px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2",
-                isLocalMode 
-                  ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                  : "text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-slate-200"
-              )}
-              title="Completely private offline heuristic-based compiler"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Local Studio
-            </button>
-            <button
-              onClick={() => setIsLocalMode(false)}
-              className={cn(
-                "px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2",
-                !isLocalMode 
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm"
-                  : "text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-slate-200"
-              )}
-              title="Remote live Google Gemini-3.5-flash agent"
-            >
-              <span className={cn("w-1.5 h-1.5 rounded-full", !isLocalMode ? "bg-blue-500 animate-pulse" : "bg-stone-300 dark:bg-slate-500")} />
-              Live Google AI
-            </button>
-          </div>
-
-          <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-white dark:bg-slate-700 border border-stone-100 dark:border-slate-600 rounded-full shadow-sm">
-            <span className="text-[9px] font-bold text-stone-500 dark:text-slate-300 uppercase tracking-widest">
-              Engine: {isLocalMode ? "Offline-Heuristic" : "Live-Gemini"}
-            </span>
-          </div>
-
-          {currentSession && (
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white dark:bg-slate-700 border border-stone-100 dark:border-slate-600 rounded-full shadow-sm">
-              <Clock size={12} className="text-stone-400 dark:text-slate-400" />
-              <span className="text-[10px] font-bold text-stone-500 dark:text-slate-300">
-                ACTIVE
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-4">
-          {editingPrompt && (
-             <div className="relative" ref={versionsDropdownRef}>
-               <button 
-                 onClick={() => setShowVersionsDropdown(!showVersionsDropdown)}
-                 className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
-               >
-                 <span>Editing: {editingPrompt.title}</span>
-                 {promptVersions.length > 1 && <ChevronDown size={12} />}
-               </button>
-               
-               <AnimatePresence>
-                 {showVersionsDropdown && promptVersions.length > 1 && (
-                   <motion.div
-                     initial={{ opacity: 0, y: 5, scale: 0.95 }}
-                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                     exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                     className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-stone-200 dark:border-slate-700 overflow-hidden z-50"
-                   >
-                     <div className="p-2 border-b border-stone-100 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/50">
-                       <h3 className="text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-wider px-2">Versions</h3>
-                     </div>
-                     <div className="max-h-64 overflow-y-auto p-1">
-                       {promptVersions.map((version) => (
-                         <button
-                           key={version.id}
-                           onClick={() => {
-                             setShowVersionsDropdown(false);
-                             if (version.id !== editingPrompt.id) {
-                               onSwitchVersion?.(version);
-                             }
-                           }}
-                           className={cn(
-                             "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex flex-col gap-1",
-                             version.id === editingPrompt.id 
-                               ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400" 
-                               : "hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-300"
-                           )}
-                         >
-                           <div className="flex items-center justify-between">
-                             <span className="font-semibold truncate">{version.title}</span>
-                             <span className="text-[10px] opacity-60 shrink-0">
-                               {new Date(version.createdAt).toLocaleDateString()}
-                             </span>
-                           </div>
-                           {version.versionNotes && (
-                             <span className="text-xs opacity-70 truncate block">
-                               {version.versionNotes}
-                             </span>
-                           )}
-                           {version.derivedFromId && (
-                             <span className="text-[9px] text-amber-600/70 dark:text-amber-400/70 block mt-0.5">
-                               ↳ Branched from {promptVersions.find(p => p.id === version.derivedFromId)?.title || 'previous version'}
-                             </span>
-                           )}
-                         </button>
-                       ))}
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-             </div>
-          )}
-          {messages.length > 0 && (
-            <button 
-              onClick={clearChat}
-              className="text-xs font-bold text-stone-400 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 transition-colors flex items-center gap-2 group"
-            >
-              <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-              <span className="hidden sm:inline">CLEAR SESSION</span>
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Main Content Area - 3 Column Layout */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
         
-        {/* Left + Middle Combined Section: Main Chat Interface */}
-        <div className="flex-1 flex flex-col min-w-0 min-h-0 lg:border-r border-stone-100 dark:border-slate-700">
+        {/* Joint Container for Left Column (Chat) & Middle Column (Prompt Editor) with floating input bar */}
+        <div className={cn(
+          "relative flex-col lg:flex-row flex-1 min-w-0 h-full min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700",
+          currentMobileTab === 'output' ? 'hidden lg:flex' : 'flex'
+        )}>
           
-          {/* Top Columns: Left (Chat) & Middle (Prompt Editor) */}
-          <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-            
-            {/* Left Column: Chat conversation without avatars, faint opaque user bubble, no box for AI */}
-            <div className="flex-1 lg:w-1/2 flex flex-col min-w-0 min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80">
-              <div 
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 scroll-smooth bg-stone-50/20 dark:bg-slate-900/20 no-scrollbar"
-              >
-                {messages.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-8">
-                    <div className="w-14 h-14 bg-stone-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                      <Sparkles size={24} />
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-stone-900 dark:text-slate-100 tracking-tight">Prompt Architect</p>
-                      <p className="text-xs text-stone-500 dark:text-slate-400 max-w-xs mx-auto mt-1">
-                        Describe your vision below to build an optimized prompt with parameters and formatting.
-                      </p>
-                    </div>
+          {/* Left Column: Chat conversation without avatars, faint opaque user bubble, no box for AI */}
+          <div className={cn(
+            "flex-col min-w-0 h-full min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80 overflow-hidden",
+            currentMobileTab === 'chat' ? 'flex flex-1 w-full' : 'hidden lg:flex lg:w-1/2 lg:flex-1'
+          )}>
+            <div 
+              ref={scrollRef}
+              className="flex-1 h-full min-h-0 overflow-y-auto p-5 sm:p-6 pb-60 space-y-6 scroll-smooth bg-stone-50/20 dark:bg-slate-900/20 no-scrollbar [mask-image:linear-gradient(to_bottom,black_calc(100%-8rem),transparent_calc(100%-1rem))]"
+            >
+              {messages.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-8">
+                  <div className="w-14 h-14 bg-stone-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <Sparkles size={24} />
                   </div>
-                )}
-                
-                <AnimatePresence initial={false}>
-                  {messages.map((m) => (
-                    <motion.div
-                      key={m.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`w-full flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`w-full ${
-                        m.role === 'user' 
-                          ? 'max-w-[94%] sm:max-w-[90%] bg-stone-200/70 dark:bg-slate-700/70 text-stone-900 dark:text-slate-100 rounded-2xl p-4 sm:p-5 border border-stone-300/50 dark:border-slate-600/50 shadow-xs' 
-                          : 'bg-transparent text-stone-800 dark:text-slate-200 p-0 sm:p-1 border-0 shadow-none'
-                      }`}>
-                        {m.imageUrl && (
-                          m.mediaType?.startsWith("video/") || m.imageUrl?.startsWith("data:video/") ? (
-                            <video src={m.imageUrl} controls className="max-w-full h-auto max-h-56 rounded-xl mb-3 border border-emerald-500/30" />
-                          ) : m.mediaType?.startsWith("image/") || m.imageUrl?.startsWith("data:image/") || !m.mediaType ? (
-                            <img src={m.imageUrl} alt="Uploaded media" className="max-w-full h-auto max-h-56 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
-                          ) : (
-                            <div className="inline-flex items-center gap-2 bg-stone-100 dark:bg-slate-800 border border-emerald-500/20 p-2.5 rounded-xl mb-3">
-                              <Paperclip size={15} className="text-emerald-500" />
-                              <span className="text-xs font-semibold text-stone-700 dark:text-slate-300">Attached Media file</span>
+                  <div>
+                    <p className="text-lg font-bold text-stone-900 dark:text-slate-100 tracking-tight">Prompt Architect</p>
+                    <p className="text-xs text-stone-500 dark:text-slate-400 max-w-xs mx-auto mt-1">
+                      Describe your vision below to build an optimized prompt with parameters and formatting.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <AnimatePresence initial={false}>
+                {messages.map((m) => (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`w-full flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`w-full ${
+                      m.role === 'user' 
+                        ? 'max-w-[94%] sm:max-w-[90%] bg-stone-200/70 dark:bg-slate-700/70 text-stone-900 dark:text-slate-100 rounded-2xl p-4 sm:p-5 border border-stone-300/50 dark:border-slate-600/50 shadow-xs' 
+                        : 'bg-transparent text-stone-800 dark:text-slate-200 p-0 sm:p-1 border-0 shadow-none'
+                    }`}>
+                      {m.imageUrl && (
+                        m.mediaType?.startsWith("video/") || m.imageUrl?.startsWith("data:video/") ? (
+                          <video src={m.imageUrl} controls className="max-w-full h-auto max-h-56 rounded-xl mb-3 border border-emerald-500/30" />
+                        ) : m.mediaType?.startsWith("image/") || m.imageUrl?.startsWith("data:image/") || !m.mediaType ? (
+                          <img src={m.imageUrl} alt="Uploaded media" className="max-w-full h-auto max-h-56 object-contain rounded-xl mb-3 border border-emerald-500/30" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="inline-flex items-center gap-2 bg-stone-100 dark:bg-slate-800 border border-emerald-500/20 p-2.5 rounded-xl mb-3">
+                            <Paperclip size={15} className="text-emerald-500" />
+                            <span className="text-xs font-semibold text-stone-700 dark:text-slate-300">Attached Media file</span>
+                          </div>
+                        )
+                      )}
+                      {m.attachedFiles && m.attachedFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {m.attachedFiles.map((file, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 bg-stone-300/60 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-stone-400/30 dark:border-slate-600/40">
+                              <Paperclip size={12} className="text-stone-600 dark:text-slate-300" />
+                              <span className="text-[11px] font-medium text-stone-800 dark:text-slate-200 max-w-[120px] truncate">{file.name}</span>
                             </div>
-                          )
-                        )}
-                        {m.attachedFiles && m.attachedFiles.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {m.attachedFiles.map((file, idx) => (
-                              <div key={idx} className="flex items-center gap-1.5 bg-stone-300/60 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-stone-400/30 dark:border-slate-600/40">
-                                <Paperclip size={12} className="text-stone-600 dark:text-slate-300" />
-                                <span className="text-[11px] font-medium text-stone-800 dark:text-slate-200 max-w-[120px] truncate">{file.name}</span>
-                              </div>
+                          ))}
+                        </div>
+                      )}
+                      {m.content && (
+                        <div className={cn("markdown-body", m.role === 'user' ? "text-stone-900 dark:text-slate-100 font-medium" : "text-stone-800 dark:text-slate-200")}>
+                          <ReactMarkdown>{m.content}</ReactMarkdown>
+                        </div>
+                      )}
+                      {m.role === 'assistant' && (promptType === 'text' || m.content.toLowerCase().includes('format') || m.content.toLowerCase().includes('tone') || m.content.toLowerCase().includes('complexity')) && (
+                        <div className="mt-3.5 pt-3 border-t border-stone-200/60 dark:border-slate-700/60 space-y-2">
+                          <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
+                            <Sparkles size={11} />
+                            <span>Quick Answer / Calibrate:</span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Format:</span>
+                            {['Bullet Points', 'Essay', 'Step-by-Step Code', 'JSON Schema', 'Markdown Table'].map((fmt) => (
+                              <button
+                                key={fmt}
+                                onClick={() => handleSend(`Set preferred format to: "${fmt}"`)}
+                                disabled={isLoading}
+                                className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-md border border-emerald-200/50 dark:border-emerald-800/40 transition-colors disabled:opacity-50"
+                              >
+                                {fmt}
+                              </button>
                             ))}
                           </div>
-                        )}
-                        {m.content && (
-                          <div className={cn("markdown-body", m.role === 'user' ? "text-stone-900 dark:text-slate-100 font-medium" : "text-stone-800 dark:text-slate-200")}>
-                            <ReactMarkdown>{m.content}</ReactMarkdown>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Tone:</span>
+                            {['Formal & Professional', 'Casual & Friendly', 'Humorous & Witty', 'Authoritative & Concise'].map((tn) => (
+                              <button
+                                key={tn}
+                                onClick={() => handleSend(`Set desired tone to: "${tn}"`)}
+                                disabled={isLoading}
+                                className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-md border border-amber-200/50 dark:border-amber-800/40 transition-colors disabled:opacity-50"
+                              >
+                                {tn}
+                              </button>
+                            ))}
                           </div>
-                        )}
-                        {m.role === 'assistant' && (promptType === 'text' || m.content.toLowerCase().includes('format') || m.content.toLowerCase().includes('tone') || m.content.toLowerCase().includes('complexity')) && (
-                          <div className="mt-3.5 pt-3 border-t border-stone-200/60 dark:border-slate-700/60 space-y-2">
-                            <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
-                              <Sparkles size={11} />
-                              <span>Quick Answer / Calibrate:</span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1">
-                              <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Format:</span>
-                              {['Bullet Points', 'Essay', 'Step-by-Step Code', 'JSON Schema', 'Markdown Table'].map((fmt) => (
-                                <button
-                                  key={fmt}
-                                  onClick={() => handleSend(`Set preferred format to: "${fmt}"`)}
-                                  disabled={isLoading}
-                                  className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-md border border-emerald-200/50 dark:border-emerald-800/40 transition-colors disabled:opacity-50"
-                                >
-                                  {fmt}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1">
-                              <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Tone:</span>
-                              {['Formal & Professional', 'Casual & Friendly', 'Humorous & Witty', 'Authoritative & Concise'].map((tn) => (
-                                <button
-                                  key={tn}
-                                  onClick={() => handleSend(`Set desired tone to: "${tn}"`)}
-                                  disabled={isLoading}
-                                  className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-md border border-amber-200/50 dark:border-amber-800/40 transition-colors disabled:opacity-50"
-                                >
-                                  {tn}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1">
-                              <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Complexity:</span>
-                              {['Beginner (ELI5)', 'Intermediate', 'Advanced Expert', 'Executive Summary'].map((cplx) => (
-                                <button
-                                  key={cplx}
-                                  onClick={() => handleSend(`Set response complexity to: "${cplx}"`)}
-                                  disabled={isLoading}
-                                  className="px-2 py-0.5 text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-md border border-purple-200/50 dark:border-purple-800/40 transition-colors disabled:opacity-50"
-                                >
-                                  {cplx}
-                                </button>
-                              ))}
-                            </div>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1">Complexity:</span>
+                            {['Beginner (ELI5)', 'Intermediate', 'Advanced Expert', 'Executive Summary'].map((cplx) => (
+                              <button
+                                key={cplx}
+                                onClick={() => handleSend(`Set response complexity to: "${cplx}"`)}
+                                disabled={isLoading}
+                                className="px-2 py-0.5 text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-md border border-purple-200/50 dark:border-purple-800/40 transition-colors disabled:opacity-50"
+                              >
+                                {cplx}
+                              </button>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-
-                {isLoading && (
-                  <div className="flex justify-start py-2">
-                    <div className="flex gap-1.5 items-center px-4 py-2.5 bg-stone-100 dark:bg-slate-800 rounded-full border border-stone-200/60 dark:border-slate-700">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Middle Column: The prompt editor and nothing else */}
-            <div className="flex-1 lg:w-1/2 flex flex-col min-w-0 min-h-[280px] lg:min-h-0 p-4 sm:p-5 bg-stone-50/40 dark:bg-slate-900/30 overflow-hidden">
-              <div className="flex-1 flex flex-col min-h-0">
-                <PromptEditor
-                  value={lastResult?.refinedPrompt || ''}
-                  onChange={(newVal) => {
-                    if (lastResult) {
-                      setResultHistory(prev => {
-                        const newHistory = [...prev];
-                        newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: newVal };
-                        return newHistory;
-                      });
-                    } else {
-                      const newRes: PromptResult = {
-                        refinedPrompt: newVal,
-                        explanation: 'Drafted in editor.',
-                        suggestedTitle: 'Architected Prompt'
-                      };
-                      setResultHistory([newRes]);
-                      setCurrentResultIndex(0);
-                    }
-                  }}
-                  variables={variables}
-                  currentVersionIndex={currentResultIndex >= 0 ? currentResultIndex : 0}
-                  totalVersions={Math.max(1, resultHistory.length)}
-                  onPreviousVersion={() => handleResultIndexChange(Math.max(0, currentResultIndex - 1))}
-                  onNextVersion={() => handleResultIndexChange(Math.min(resultHistory.length - 1, currentResultIndex + 1))}
-                  isTransforming={isTransformingFramework}
-                  transformingName={transformingFrameworkName}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Chat Input Bar: Spans the full width of Left + Middle columns */}
-          <div className="p-4 sm:p-5 border-t border-stone-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col gap-3 relative shrink-0">
-            
-            {/* Frameworks Dropdown */}
-            <AnimatePresence>
-              {showFrameworks && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute bottom-full left-6 mb-2 w-64 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden z-50"
-                >
-                  <div className="p-3 border-b border-stone-100 dark:border-slate-700">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Starter Prompt Frameworks</span>
-                  </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
-                      <button
-                        key={fw.id}
-                        onClick={() => {
-                          setInput(fw.template);
-                          setShowFrameworks(false);
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm text-stone-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors border-b border-stone-50 dark:border-slate-700/50 last:border-0"
-                      >
-                        <div className="font-bold mb-1 flex items-center justify-between">
-                          <span>{fw.name}</span>
-                          <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.5 rounded">{fw.domainName}</span>
                         </div>
-                        <div className="text-xs text-stone-400 dark:text-slate-500 truncate">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Top Row in Input Bar: Guidance / Quick Frameworks button */}
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500">
-                {promptType.toUpperCase()} ARCHITECT
-              </span>
-              <button 
-                onClick={() => setShowFrameworks(!showFrameworks)}
-                className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/50 dark:border-emerald-800/40 transition-colors"
-              >
-                <BookTemplate size={13} />
-                <span>Starter Frameworks</span>
-              </button>
-            </div>
-
-            {/* Attachments Preview */}
-            {(selectedImage || attachedFiles.length > 0) && (
-              <div className="flex flex-wrap gap-2 mb-1">
-                {selectedImage && (
-                  <div className="relative inline-block">
-                    {selectedImage.mimeType?.startsWith("image/") ? (
-                      <img src={selectedImage.url} alt="Selected" className="h-14 w-14 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" referrerPolicy="no-referrer" />
-                    ) : selectedImage.mimeType?.startsWith("video/") ? (
-                      <video src={selectedImage.url} className="h-14 w-14 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" muted playsInline autoPlay loop />
-                    ) : (
-                      <div className="h-14 w-14 bg-stone-100 dark:bg-slate-700 border-2 border-emerald-500 rounded-xl flex flex-col items-center justify-center p-1 text-center shadow-sm">
-                        <Paperclip size={14} className="text-emerald-500" />
-                        <span className="text-[8px] font-black text-stone-500 dark:text-slate-400 truncate w-full">{selectedImage.name || 'File'}</span>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => setSelectedImage(null)}
-                      className="absolute -top-1.5 -right-1.5 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-0.5 shadow-md hover:bg-pink-600 transition-colors"
-                    >
-                      <X size={11} />
-                    </button>
-                  </div>
-                )}
-                {attachedFiles.map((file, idx) => (
-                  <div key={idx} className="relative flex items-center gap-1.5 bg-stone-100 dark:bg-slate-700 px-2.5 py-1.5 rounded-xl border border-stone-200 dark:border-slate-600">
-                    <Paperclip size={13} className="text-stone-500 dark:text-slate-400" />
-                    <span className="text-xs font-medium text-stone-700 dark:text-slate-300 max-w-[140px] truncate">{file.name}</span>
-                    <button
-                      onClick={() => setAttachedFiles(prev => prev.filter((_, i) => i !== idx))}
-                      className="ml-1 text-stone-400 hover:text-pink-600 transition-colors"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
+                      )}
+                    </div>
+                  </motion.div>
                 ))}
-              </div>
-            )}
+              </AnimatePresence>
 
-            <div className="relative flex items-center group">
-              <input
-                type="file"
-                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
+              {isLoading && (
+                <div className="flex justify-start py-2">
+                  <div className="flex gap-1.5 items-center px-4 py-2.5 bg-stone-100 dark:bg-slate-800 rounded-full border border-stone-200/60 dark:border-slate-700">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" />
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Spacer to ensure full scroll travel above floating dock */}
+              <div className="h-48 shrink-0 pointer-events-none" aria-hidden="true" />
+            </div>
+          </div>
+
+          {/* Middle Column: The prompt editor */}
+          <div className={cn(
+            "flex-col min-w-0 h-full p-4 sm:p-5 bg-stone-50/40 dark:bg-slate-900/30 overflow-hidden",
+            currentMobileTab === 'editor' ? 'flex flex-1 w-full min-h-0' : 'hidden lg:flex lg:w-1/2 lg:flex-1 lg:min-h-0'
+          )}>
+            <div className="flex-1 h-full min-h-0 flex flex-col overflow-hidden">
+              <PromptEditor
+                value={lastResult?.refinedPrompt || ''}
+                onChange={(newVal) => {
+                  if (lastResult) {
+                    setResultHistory(prev => {
+                      const newHistory = [...prev];
+                      newHistory[currentResultIndex] = { ...newHistory[currentResultIndex], refinedPrompt: newVal };
+                      return newHistory;
+                    });
+                  } else {
+                    const newRes: PromptResult = {
+                      refinedPrompt: newVal,
+                      explanation: 'Drafted in editor.',
+                      suggestedTitle: 'Architected Prompt'
+                    };
+                    setResultHistory([newRes]);
+                    setCurrentResultIndex(0);
+                  }
+                }}
+                variables={variables}
+                currentVersionIndex={currentResultIndex >= 0 ? currentResultIndex : 0}
+                totalVersions={Math.max(1, resultHistory.length)}
+                onPreviousVersion={() => handleResultIndexChange(Math.max(0, currentResultIndex - 1))}
+                onNextVersion={() => handleResultIndexChange(Math.min(resultHistory.length - 1, currentResultIndex + 1))}
+                isTransforming={isTransformingFramework}
+                transformingName={transformingFrameworkName}
               />
-              <input
-                type="file"
-                accept=".txt,.md,.csv,.json"
-                multiple
-                className="hidden"
-                ref={textFileInputRef}
-                onChange={handleTextFileUpload}
-              />
-              <div className="absolute left-2 flex items-center gap-1 z-10">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
-                  title="Upload image or media"
+            </div>
+          </div>
+
+          {/* Bottom Gradient Scrim Overlay across Columns 1 & 2 */}
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-slate-900 dark:via-slate-900/80 z-10" />
+
+          {/* Centered Floating Persistent Chat Input Bar across Columns 1 & 2 */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-xl pointer-events-none">
+            <div className="pointer-events-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border border-stone-200/60 dark:border-slate-700/60 rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-2.5 transition-all">
+              
+              {/* Frameworks Dropdown Popover */}
+              <AnimatePresence>
+                {showFrameworks && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute bottom-full right-0 sm:right-auto sm:left-4 mb-3 w-72 sm:w-80 max-h-72 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-stone-200/80 dark:border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 pointer-events-auto flex flex-col"
+                  >
+                    <div className="p-3 border-b border-stone-100 dark:border-slate-700 shrink-0">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Starter Prompt Frameworks</span>
+                    </div>
+                    <div className="overflow-y-auto no-scrollbar flex-1">
+                      {ALL_FRAMEWORKS.filter(f => f.category === promptType || f.category === 'text').map(fw => (
+                        <button
+                          key={fw.id}
+                          onClick={() => {
+                            setInput(fw.template);
+                            setShowFrameworks(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-stone-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors border-b border-stone-50 dark:border-slate-700/50 last:border-0"
+                        >
+                          <div className="font-bold mb-1 flex items-center justify-between">
+                            <span>{fw.name}</span>
+                            <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.5 rounded">{fw.domainName}</span>
+                          </div>
+                          <div className="text-xs text-stone-400 dark:text-slate-500 truncate">{fw.description || fw.template.replace(/\n/g, ' ')}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Top Row in Input Bar: Guidance / Quick Frameworks button */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500">
+                  {promptType.toUpperCase()} ARCHITECT
+                </span>
+                <button 
+                  onClick={() => setShowFrameworks(!showFrameworks)}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/50 dark:border-emerald-800/40 transition-colors"
                 >
-                  <ImagePlus size={17} />
-                </button>
-                <button
-                  onClick={() => textFileInputRef.current?.click()}
-                  className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
-                  title="Attach text context (.txt, .md, .csv)"
-                >
-                  <Paperclip size={17} />
+                  <BookTemplate size={13} />
+                  <span>Starter Frameworks</span>
                 </button>
               </div>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Describe your idea or request prompt refinements..."
-                className={cn(
-                  "w-full pl-24 py-4 bg-stone-50 dark:bg-slate-900 border-2 border-transparent rounded-[1.75rem] focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500",
-                  lastResult?.refinedPrompt ? "pr-28" : "pr-16"
-                )}
-                disabled={isLoading}
-              />
-              <div className="absolute right-2.5 flex gap-1.5">
-                {lastResult?.refinedPrompt && (
+
+              {/* Attachments Preview */}
+              {(selectedImage || attachedFiles.length > 0) && (
+                <div className="flex flex-wrap gap-2 mb-1">
+                  {selectedImage && (
+                    <div className="relative inline-block">
+                      {selectedImage.mimeType?.startsWith("image/") ? (
+                        <img src={selectedImage.url} alt="Selected" className="h-14 w-14 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" referrerPolicy="no-referrer" />
+                      ) : selectedImage.mimeType?.startsWith("video/") ? (
+                        <video src={selectedImage.url} className="h-14 w-14 object-cover rounded-xl border-2 border-emerald-500 shadow-sm" muted playsInline autoPlay loop />
+                      ) : (
+                        <div className="h-14 w-14 bg-stone-100 dark:bg-slate-700 border-2 border-emerald-500 rounded-xl flex flex-col items-center justify-center p-1 text-center shadow-sm">
+                          <Paperclip size={14} className="text-emerald-500" />
+                          <span className="text-[8px] font-black text-stone-500 dark:text-slate-400 truncate w-full">{selectedImage.name || 'File'}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setSelectedImage(null)}
+                        className="absolute -top-1.5 -right-1.5 bg-stone-900 dark:bg-slate-700 text-white rounded-full p-0.5 shadow-md hover:bg-pink-600 transition-colors"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  )}
+                  {attachedFiles.map((file, idx) => (
+                    <div key={idx} className="relative flex items-center gap-1.5 bg-stone-100 dark:bg-slate-700 px-2.5 py-1.5 rounded-xl border border-stone-200 dark:border-slate-600">
+                      <Paperclip size={13} className="text-stone-500 dark:text-slate-400" />
+                      <span className="text-xs font-medium text-stone-700 dark:text-slate-300 max-w-[140px] truncate">{file.name}</span>
+                      <button
+                        onClick={() => setAttachedFiles(prev => prev.filter((_, i) => i !== idx))}
+                        className="ml-1 text-stone-400 hover:text-pink-600 transition-colors"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="relative flex items-center group">
+                <input
+                  type="file"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                />
+                <input
+                  type="file"
+                  accept=".txt,.md,.csv,.json"
+                  multiple
+                  className="hidden"
+                  ref={textFileInputRef}
+                  onChange={handleTextFileUpload}
+                />
+                <div className="absolute left-2 flex items-center gap-1 z-10">
                   <button
-                    onClick={() => {
-                      const final = getFinalPrompt();
-                      handleSend(`Please refine this prompt further:\n\n${final}`);
-                    }}
-                    disabled={isLoading}
-                    className="p-2.5 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
-                    title="Refine Current Prompt"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
+                    title="Upload image or media"
                   >
-                    <Sparkles size={18} />
+                    <ImagePlus size={17} />
                   </button>
-                )}
-                <button
-                  onClick={() => handleSend()}
-                  disabled={(!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading}
-                  className="p-2.5 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95"
-                  title="Send Message"
-                >
-                  <Send size={18} />
-                </button>
+                  <button
+                    onClick={() => textFileInputRef.current?.click()}
+                    className="p-2 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white dark:bg-slate-900 rounded-full"
+                    title="Attach text context (.txt, .md, .csv)"
+                  >
+                    <Paperclip size={17} />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder="Describe your idea or request prompt refinements..."
+                  className={cn(
+                    "w-full pl-24 py-3.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500",
+                    lastResult?.refinedPrompt ? "pr-28" : "pr-16"
+                  )}
+                  disabled={isLoading}
+                />
+                <div className="absolute right-2.5 flex gap-1.5">
+                  {lastResult?.refinedPrompt && (
+                    <button
+                      onClick={() => {
+                        const final = getFinalPrompt();
+                        handleSend(`Please refine this prompt further:\n\n${final}`);
+                      }}
+                      disabled={isLoading}
+                      className="p-2 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                      title="Refine Current Prompt"
+                    >
+                      <Sparkles size={16} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleSend()}
+                    disabled={(!input.trim() && !selectedImage && attachedFiles.length === 0) || isLoading}
+                    className="p-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95"
+                    title="Send Message"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+
         </div>
 
         {/* Right Column: Architectural Output */}
@@ -1343,7 +1286,10 @@ export const ChatInterface: React.FC<Props> = ({
         </div>
 
         <div 
-          className="w-full lg:w-[var(--right-panel-width)] flex flex-col bg-emerald-50/40 dark:bg-emerald-900/10 border-t lg:border-t-0 border-emerald-100 dark:border-emerald-900/30 overflow-y-auto shrink-0 min-w-[280px]"
+          className={cn(
+            "w-full lg:w-[var(--right-panel-width)] flex-col bg-emerald-50/40 dark:bg-emerald-900/10 border-t lg:border-t-0 border-emerald-100 dark:border-emerald-900/30 overflow-y-auto shrink-0 min-w-[280px]",
+            currentMobileTab === 'output' ? 'flex flex-1 h-full min-h-0' : 'hidden lg:flex'
+          )}
           style={{ '--right-panel-width': `${rightPanelWidth}px` } as React.CSSProperties}
         >
           <motion.div 
@@ -1361,7 +1307,10 @@ export const ChatInterface: React.FC<Props> = ({
                   Architectural Output
                 </span>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                    {getFinalPrompt().length} {isRightPanelCompact ? 'C' : 'CHARS'}
+                  </div>
                   <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                     {getFinalPrompt().split(/\s+/).filter(Boolean).length} {isRightPanelCompact ? 'W' : 'WORDS'}
                   </div>
@@ -1377,7 +1326,7 @@ export const ChatInterface: React.FC<Props> = ({
                     SCORE: {calculatePromptScore(getFinalPrompt(), promptType).score}%
                     <div 
                       className={cn(
-                        "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:left-0 lg:right-auto lg:translate-y-0 lg:mt-2 lg:w-72 p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
+                        "fixed left-4 right-4 top-1/2 -translate-y-1/2 lg:absolute lg:top-full lg:right-0 lg:left-auto lg:translate-y-0 lg:mt-2 lg:w-72 max-w-[calc(100vw-2rem)] p-4 bg-slate-800 text-white text-xs rounded-xl shadow-xl z-[100]",
                         showScoreDetails ? "block" : "hidden lg:group-hover:block"
                       )}
                       onClick={(e) => e.stopPropagation()}
@@ -1491,9 +1440,9 @@ export const ChatInterface: React.FC<Props> = ({
                   )}
                 </button>
 
-                {/* 3. COPY AS MARKDOWN BLOCK */}
+                {/* 3. DOWNLOAD AS MARKDOWN */}
                 <button
-                  onClick={copyAsMarkdownBlock}
+                  onClick={handleDownloadMarkdown}
                   className={cn(
                     "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group",
                     isRightPanelCompact ? "h-9 p-0" : "py-2 px-2",
@@ -1501,12 +1450,12 @@ export const ChatInterface: React.FC<Props> = ({
                       ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                       : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                   )}
-                  title={copiedType === 'markdown' ? "Copied Markdown code block!" : "Copy formatted as Markdown code block (```)"}
-                  aria-label="Copy formatted as Markdown"
+                  title={copiedType === 'markdown' ? "Saved Markdown file!" : "Download prompt as Markdown (.md) document"}
+                  aria-label="Download prompt as Markdown"
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     {copiedType === 'markdown' ? <Check size={isRightPanelCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" /> : <FileCode size={isRightPanelCompact ? 15 : 13} className="text-emerald-500" />}
-                    {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'markdown' ? 'Copied' : 'Copy MD'}</span>}
+                    {!isRightPanelCompact && <span className="text-[11px] font-bold uppercase tracking-tight">{copiedType === 'markdown' ? 'Saved' : 'Down MD'}</span>}
                   </div>
                   {!isRightPanelCompact && (
                     <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none">
