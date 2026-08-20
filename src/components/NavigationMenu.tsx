@@ -68,28 +68,30 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
           <Menu size={16} />
         </button>
 
-        {/* Full-Screen Portal Stacking: Slide-Over Drawer & Blurred Backdrop Overlay */}
+        {/* Slide-Over Drawer & Blurred Backdrop Overlay Rendered via a Portal */}
         <AnimatePresence>
-          {isOpen && (
-            <div className="fixed inset-0 z-[990] overflow-hidden">
-              {/* True Viewport Overlay: Backdrop Blur with Outside Click Dismissal */}
+          {isOpen && typeof window !== 'undefined' && (
+            React.createElement(React.Fragment, null,
+              // 1. True Viewport Overlay
               <motion.div
+                key="mobile-drawer-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => setIsOpen(false)}
-                className="fixed inset-0 bg-black/80 backdrop-blur-md z-[995] cursor-pointer"
+                className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998] cursor-pointer"
                 aria-hidden="true"
-              />
+              />,
 
-              {/* Drawer Content - 100% Solid Dark Surface sitting above Backdrop */}
+              // 2. Drawer Content
               <motion.aside
+                key="mobile-drawer-aside"
                 initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 260 }}
-                className="fixed inset-y-0 left-0 w-72 max-w-[80vw] z-[1000] bg-[#090d16] text-white border-r border-slate-800 p-5 shadow-2xl flex flex-col justify-between"
+                className="fixed inset-y-0 left-0 w-72 max-w-[80vw] z-[9999] bg-[#090d16] text-white border-r border-slate-800 p-5 shadow-2xl flex flex-col justify-between"
                 role="dialog"
                 aria-label="Mobile Navigation"
               >
@@ -133,15 +135,15 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
                             setIsOpen(false);
                           }}
                           className={cn(
-                            "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left transition-all group",
+                            "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left transition-all group border border-transparent",
                             isActive
-                              ? "bg-emerald-950/80 text-emerald-400 border border-emerald-500/50 shadow-xs font-bold"
-                              : "text-slate-200 hover:bg-slate-800/90 hover:text-white font-medium"
+                              ? "bg-emerald-950/80 text-emerald-400 border-emerald-500/30 shadow-xs font-bold"
+                              : "text-slate-200 hover:bg-slate-800/90 hover:text-white"
                           )}
                         >
                           <div className="flex items-center gap-3">
                             <div className={cn(
-                              "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                              "w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0",
                               isActive
                                 ? "bg-slate-800 text-emerald-400 shadow-xs"
                                 : "bg-slate-800 text-slate-400 group-hover:text-emerald-400"
@@ -149,8 +151,8 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
                               {item.icon}
                             </div>
                             <div>
-                              <div className="text-xs font-bold text-slate-100">{item.label}</div>
-                              <div className="text-[10px] text-slate-400 font-normal">{item.description}</div>
+                              <div className="text-xs font-bold text-current">{item.label}</div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">{item.description}</div>
                             </div>
                           </div>
                           <ChevronRight size={14} className={cn("transition-transform text-slate-500 opacity-40 group-hover:opacity-100", isActive ? "text-emerald-400 opacity-100" : "")} />
@@ -168,7 +170,7 @@ export const NavigationMenu: React.FC<Props> = ({ currentView, onViewChange }) =
                   </div>
                 </div>
               </motion.aside>
-            </div>
+            )
           )}
         </AnimatePresence>
       </div>
