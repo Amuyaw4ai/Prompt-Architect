@@ -490,8 +490,11 @@ export const ChatInterface: React.FC<Props> = ({
     }
   }, [messages.length, lastResult?.refinedPrompt, variables, promptType, onStatsChange]);
 
+  const hasHandledInitialInputRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (initialInput) {
+    if (initialInput && hasHandledInitialInputRef.current !== initialInput) {
+      hasHandledInitialInputRef.current = initialInput;
       setInput(initialInput);
       handleSend(initialInput);
       onInputUsed?.();
