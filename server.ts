@@ -7,8 +7,8 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { GoogleGenAI, Type } from "@google/genai";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const _filename = typeof __filename !== "undefined" ? __filename : "";
+const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
 
 const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === "production" ? path.join("/tmp", "prompts.db") : "prompts.db");
 let db: any;
@@ -1150,10 +1150,10 @@ Please re-architect this prompt into the ${frameworkName} framework now.
     });
     app.use(vite.middlewares);
   } else {
-    const staticDistPath = fs.existsSync(path.join(__dirname, "dist"))
-      ? path.join(__dirname, "dist")
-      : fs.existsSync(path.join(__dirname, "../dist"))
-      ? path.join(__dirname, "../dist")
+    const staticDistPath = fs.existsSync(path.join(_dirname, "dist"))
+      ? path.join(_dirname, "dist")
+      : fs.existsSync(path.join(_dirname, "../dist"))
+      ? path.join(_dirname, "../dist")
       : path.join(process.cwd(), "dist");
 
     app.use(express.static(staticDistPath));
