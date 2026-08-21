@@ -62,6 +62,29 @@ export default function App() {
     }
   }, [currentView]);
 
+  // Mobile Back Button / PopState Navigation Handler
+  useEffect(() => {
+    // Synchronize history state entry when view or tab changes
+    window.history.pushState({ view: currentView, mobileTab: activeMobileTab }, '');
+
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.view) {
+        setCurrentView(state.view);
+        if (state.mobileTab) {
+          setActiveMobileTab(state.mobileTab);
+        }
+      } else {
+        if (currentView !== 'home') {
+          setCurrentView('home');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentView, activeMobileTab]);
+
   const handleToggleLocalMode = (isLocal: boolean) => {
     setIsLocalMode(isLocal);
     localStorage.setItem('prompt_architect_engine_mode', isLocal ? 'local' : 'live');

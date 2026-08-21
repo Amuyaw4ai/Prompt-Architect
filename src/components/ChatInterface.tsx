@@ -991,6 +991,24 @@ export const ChatInterface: React.FC<Props> = ({
     prevTabIdxRef.current = currentTabIdx;
   }, [currentTabIdx]);
 
+  // Intercept mobile Back gesture when modals or context menus are open
+  useEffect(() => {
+    const isAnyModalOpen = showSaveModal || showFrameworks || showQuickAddModifiers || showAttachMenu;
+    if (isAnyModalOpen) {
+      window.history.pushState({ modalOpen: true }, '');
+
+      const handleModalPopState = () => {
+        if (showSaveModal) setShowSaveModal(false);
+        if (showFrameworks) setShowFrameworks(false);
+        if (showQuickAddModifiers) setShowQuickAddModifiers(false);
+        if (showAttachMenu) setShowAttachMenu(false);
+      };
+
+      window.addEventListener('popstate', handleModalPopState);
+      return () => window.removeEventListener('popstate', handleModalPopState);
+    }
+  }, [showSaveModal, showFrameworks, showQuickAddModifiers, showAttachMenu]);
+
   const handleSwipeLeft = () => {
     if (currentTabIdx < 2 && onMobileTabChange) {
       onMobileTabChange(mobileTabOrder[currentTabIdx + 1]);
