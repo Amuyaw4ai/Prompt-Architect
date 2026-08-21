@@ -120,6 +120,17 @@ Application versions follow standard **Semantic Versioning** (`vMAJOR.MINOR.PATC
 4. **Maintenance & Release Tracking**:
    - Every version increment MUST be updated in `package.json` (`"version": "X.Y.Z"`) and tagged in Git (`git tag -a vX.Y.Z`).
 
+### 6.1 Document Versioning Standard (`vMAJOR.MINOR`)
+
+Governance specification documents (like `SECURE_VIBE_CODING_STANDARDS.md` and `CONTAINERIZATION_STANDARD.md`) follow **Specification Versioning (`vMAJOR.MINOR`)**:
+
+1. **`MINOR` Increment (e.g. `v2.0` -> `v2.1` -> `v2.2`)**:
+   - The AI Assistant MUST automatically increment `MINOR` whenever adding a new **Universal SOP Section** (e.g., Mobile Navigation, GitHub Security Governance) or updating mandatory file checklists.
+   - The AI Assistant MUST append the new version number, scope summary, and target environment into the **Document Revision History** table under Section 1.
+2. **`MAJOR` Increment (e.g. `v1.0` -> `v2.0` -> `v3.0`)**:
+   - The AI Assistant MUST increment `MAJOR` when consolidating or re-architecting the core 3-Phase Lifecycle Protocol or merging major infrastructure frameworks.
+   - Bumping `MAJOR` resets `MINOR` to `0` (e.g., `v1.4` -> `v2.0`).
+
 ---
 
 ## 7. Universal SPA Mobile Navigation Standard (`history.pushState` & `popstate`)
