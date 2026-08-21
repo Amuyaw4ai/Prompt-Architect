@@ -1150,9 +1150,15 @@ Please re-architect this prompt into the ${frameworkName} framework now.
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
+    const staticDistPath = fs.existsSync(path.join(__dirname, "dist"))
+      ? path.join(__dirname, "dist")
+      : fs.existsSync(path.join(__dirname, "../dist"))
+      ? path.join(__dirname, "../dist")
+      : path.join(process.cwd(), "dist");
+
+    app.use(express.static(staticDistPath));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(staticDistPath, "index.html"));
     });
   }
 
