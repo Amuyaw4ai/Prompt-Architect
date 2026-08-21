@@ -43,5 +43,5 @@ USER node
 # Expose default application port space
 EXPOSE 8080 3000
 
-# Start full-stack server
-CMD ["npx", "tsx", "server.ts"]
+# Start full-stack server using local binary
+CMD ["./node_modules/.bin/tsx", "server.ts"]

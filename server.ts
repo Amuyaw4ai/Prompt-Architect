@@ -138,7 +138,7 @@ async function generateContentWithFallback(ai: GoogleGenAI, params: {
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Security Headers Middleware
   app.use((_req, res, next) => {
