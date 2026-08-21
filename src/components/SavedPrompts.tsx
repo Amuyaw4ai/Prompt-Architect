@@ -284,11 +284,11 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                   <div className="mt-6 pt-4 border-t border-stone-100 dark:border-slate-700">
                     <button 
                       onClick={(e) => { e.stopPropagation(); toggleGroup(groupId); }}
-                      className="flex items-center justify-between w-full text-xs font-bold text-stone-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                      className="flex items-center justify-between w-full text-xs font-bold text-stone-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
                     >
                       <span className="flex items-center gap-2">
                         <GitBranch size={14} />
-                        {isExpanded ? 'Hide Version History' : 'View Version History'}
+                        {isExpanded ? 'Hide Version History' : `View All ${sortedVersions.length} Versions`}
                       </span>
                       {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
@@ -301,44 +301,66 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden"
                         >
-                          <div className="mt-4 space-y-3 pl-4 border-l-2 border-stone-200 dark:border-slate-700">
-                            {sortedVersions.slice(1).map((version, idx) => (
-                              <div 
-                                key={version.id} 
-                                onClick={(e) => { e.stopPropagation(); onEdit(version); }}
-                                className="p-3 bg-stone-50 dark:bg-slate-900/50 rounded-xl border border-stone-100 dark:border-slate-700/50 group/version relative cursor-pointer hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-colors"
-                              >
-                                <div className="flex justify-between items-start mb-2">
-                                  <div className="text-[10px] font-black text-stone-400 dark:text-slate-500 uppercase tracking-widest">
-                                    Version {sortedVersions.length - idx - 1} • {new Date(version.createdAt).toLocaleDateString()}
+                          <div className="mt-4 space-y-3 pl-3 sm:pl-4 border-l-2 border-emerald-500/30 dark:border-emerald-400/30">
+                            {sortedVersions.map((version, idx) => {
+                              const isLatest = idx === 0;
+                              const versionNum = sortedVersions.length - idx;
+                              return (
+                                <div 
+                                  key={version.id} 
+                                  onClick={(e) => { e.stopPropagation(); onEdit(version); }}
+                                  className={cn(
+                                    "p-3.5 rounded-xl border transition-all cursor-pointer group/version relative",
+                                    isLatest 
+                                      ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/50 shadow-2xs" 
+                                      : "bg-stone-50 dark:bg-slate-900/50 border-stone-100 dark:border-slate-700/50 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                                  )}
+                                >
+                                  <div className="flex justify-between items-center mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-stone-200 dark:bg-slate-700 text-stone-700 dark:text-slate-300">
+                                        v{versionNum} {isLatest && '(Latest)'}
+                                      </span>
+                                      <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500">
+                                        {new Date(version.createdAt).toLocaleDateString()}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      <button 
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); onEdit(version); }}
+                                        className="px-2.5 py-1 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-lg text-[10px] font-bold hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                                        title={`Load Version ${versionNum} into Architect Workspace`}
+                                      >
+                                        <Edit3 size={11} />
+                                        <span>Load v{versionNum}</span>
+                                      </button>
+                                      {!isLatest && (
+                                        <button 
+                                          type="button"
+                                          onClick={(e) => { e.stopPropagation(); handleDelete(version.id); }}
+                                          className="p-1 text-stone-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer"
+                                          title="Delete sub-version"
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="flex gap-2 opacity-0 group-hover/version:opacity-100 transition-opacity">
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); onEdit(version); }}
-                                      className="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-slate-900 transition-all"
-                                      title="Load this version"
-                                    >
-                                      <Edit3 size={12} />
-                                    </button>
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); handleDelete(version.id); }}
-                                      className="p-1.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-lg hover:bg-pink-600 dark:hover:bg-pink-500 hover:text-white dark:hover:text-slate-900 transition-all"
-                                      title="Delete version"
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
+
+                                  <div className="text-xs font-mono text-stone-700 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                                    {version.refinedPrompt}
                                   </div>
+
+                                  {version.versionNotes && (
+                                    <div className="mt-2 text-[10px] font-semibold text-blue-600 dark:text-blue-400 italic bg-blue-50/60 dark:bg-blue-950/40 px-2 py-1 rounded-md border border-blue-100 dark:border-blue-900/40">
+                                      Note: {version.versionNotes}
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="text-xs font-mono text-stone-600 dark:text-slate-400 line-clamp-2">
-                                  {version.refinedPrompt}
-                                </div>
-                                {version.versionNotes && (
-                                  <div className="mt-2 text-[10px] text-blue-600 dark:text-blue-400 italic">
-                                    Note: {version.versionNotes}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </motion.div>
                       )}
