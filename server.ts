@@ -10,7 +10,14 @@ import { GoogleGenAI, Type } from "@google/genai";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("prompts.db");
+const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === "production" ? path.join("/tmp", "prompts.db") : "prompts.db");
+let db: any;
+try {
+  db = new Database(dbPath);
+} catch (err) {
+  console.warn("Failed to open SQLite database at", dbPath, "falling back to in-memory database:", err);
+  db = new Database(":memory:");
+}
 
 // Initialize Database
 db.exec(`
