@@ -121,10 +121,10 @@ export default function App() {
     <div className="h-screen h-[100dvh] flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300 overflow-hidden">
       {/* Professional Studio Header */}
       <header className="border-b border-stone-200/80 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl shrink-0 z-50 shadow-xs">
-        <div className="max-w-[1800px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-6">
+        <div className="max-w-[1800px] mx-auto px-2.5 sm:px-6 h-16 flex items-center justify-between gap-1.5 sm:gap-6">
           
           {/* Left Cluster: Hamburger Menu + Brand Logo + View Badge */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
             {/* Hamburger button (Left side, opens left slide drawer) */}
             <NavigationMenu 
               currentView={currentView} 
@@ -141,7 +141,7 @@ export default function App() {
             {/* Clickable Brand Logo & Title */}
             <button
               onClick={() => setCurrentView('home')}
-              className="flex items-center gap-2.5 cursor-pointer group shrink-0 text-left"
+              className="flex items-center gap-2 cursor-pointer group shrink-0 text-left"
               title="Go to Home"
               aria-label="Prompt Architect Home"
             >
@@ -150,7 +150,7 @@ export default function App() {
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm font-black sm:text-base tracking-tight text-stone-900 dark:text-slate-100 whitespace-nowrap group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  <h1 className="hidden min-[380px]:inline-block text-sm font-black sm:text-base tracking-tight text-stone-900 dark:text-slate-100 whitespace-nowrap group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     Prompt Architect
                   </h1>
                   <span className="hidden md:inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
@@ -176,7 +176,7 @@ export default function App() {
           </div>
 
           {/* Right Cluster: AI Engine Badge + Theme Toggle + New Chat Button */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Active AI Engine Badge Indicator */}
             <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-stone-100/70 dark:bg-slate-800/70 border border-stone-200/60 dark:border-slate-700/60 text-xs font-semibold text-stone-700 dark:text-slate-300">
               <span className={cn("w-2 h-2 rounded-full animate-pulse", isLocalMode ? "bg-amber-500" : "bg-emerald-500")} />
@@ -210,10 +210,10 @@ export default function App() {
             {/* New Chat Primary CTA */}
             <button 
               onClick={handleNewArchitect}
-              className="h-9 px-3 sm:px-3.5 text-xs flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 rounded-xl font-extrabold shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-400 dark:hover:to-teal-400 transition-all shrink-0 whitespace-nowrap active:scale-95"
+              className="h-9 px-2.5 sm:px-3.5 text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 rounded-xl font-extrabold shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-400 dark:hover:to-teal-400 transition-all shrink-0 whitespace-nowrap active:scale-95 min-w-[36px]"
               title="Start New Architect Session"
             >
-              <PlusCircle size={15} />
+              <PlusCircle size={17} className="shrink-0" />
               <span className="hidden sm:inline">NEW CHAT</span>
             </button>
           </div>
