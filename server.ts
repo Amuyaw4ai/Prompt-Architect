@@ -9,7 +9,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 const _filename = typeof __filename !== "undefined" ? __filename : "";
 const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
 
-const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === "production" ? path.join("/tmp", "prompts.db") : "prompts.db");
+const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === "production" ? ":memory:" : "prompts.db");
 let db: any;
 try {
   db = new Database(dbPath);
