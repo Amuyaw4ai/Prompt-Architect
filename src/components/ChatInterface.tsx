@@ -1165,42 +1165,83 @@ export const ChatInterface: React.FC<Props> = ({
                             <ReactMarkdown>{m.content}</ReactMarkdown>
                           </div>
                         )}
-                        {isLatestAssistantMessage && dynamicSuggestions.length > 0 && (
-                          <div className="mt-3.5 pt-3 border-t border-stone-200/60 dark:border-slate-700/60 space-y-2.5">
-                            <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
-                              <Sparkles size={11} />
-                              <span>Quick Answer / Calibrate:</span>
-                            </div>
-                            {dynamicSuggestions.map((group, gIdx) => (
-                              <div key={gIdx} className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1 min-w-[50px]">{group.category}:</span>
-                                {group.options.map((opt) => {
-                                  const tag = `[${group.category}: ${opt}]`;
-                                  const isSelected = selectedOptions.includes(tag);
-                                  return (
+                        {isLatestAssistantMessage && (dynamicSuggestions.length > 0 || contextualQuickAddSuggestions.length > 0) && (
+                          <div className="mt-3.5 pt-3 border-t border-stone-200/60 dark:border-slate-700/60 space-y-3">
+                            {dynamicSuggestions.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
+                                  <Sparkles size={11} />
+                                  <span>Quick Answer / Calibrate:</span>
+                                </div>
+                                {dynamicSuggestions.map((group, gIdx) => (
+                                  <div key={gIdx} className="flex flex-wrap items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1 min-w-[50px]">{group.category}:</span>
+                                    {group.options.map((opt) => {
+                                      const tag = `[${group.category}: ${opt}]`;
+                                      const isSelected = selectedOptions.includes(tag);
+                                      return (
+                                        <button
+                                          key={opt}
+                                          type="button"
+                                          onClick={() => handleToggleOption(group.category, opt)}
+                                          disabled={isLoading}
+                                          className={cn(
+                                            "px-2 py-0.5 text-[10px] font-semibold rounded-md border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1",
+                                            isSelected
+                                              ? "bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 border-emerald-600 dark:border-emerald-500 shadow-sm ring-1 ring-emerald-400 font-bold"
+                                              : group.color === 'emerald'
+                                                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/50 dark:border-emerald-800/40"
+                                                : group.color === 'amber'
+                                                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200/50 dark:border-amber-800/40"
+                                                  : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200/50 dark:border-purple-800/40"
+                                          )}
+                                        >
+                                          {isSelected && <Check size={10} className="stroke-[3]" />}
+                                          <span>{opt}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {contextualQuickAddSuggestions.length > 0 && (
+                              <div className="space-y-1.5 pt-1">
+                                <div className="text-[10px] font-black tracking-widest text-amber-500 uppercase flex items-center gap-1.5">
+                                  <Zap size={11} />
+                                  <span>Quick Add Modifiers:</span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {contextualQuickAddSuggestions.map((sug) => (
                                     <button
-                                      key={opt}
+                                      key={sug.id}
                                       type="button"
-                                      onClick={() => handleToggleOption(group.category, opt)}
+                                      onClick={() => handleToggleQuickAddSuggestion(sug)}
                                       disabled={isLoading}
                                       className={cn(
-                                        "px-2 py-0.5 text-[10px] font-semibold rounded-md border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1",
-                                        isSelected
-                                          ? "bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 border-emerald-600 dark:border-emerald-500 shadow-sm ring-1 ring-emerald-400 font-bold"
-                                          : group.color === 'emerald'
-                                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/50 dark:border-emerald-800/40"
-                                            : group.color === 'amber'
-                                              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200/50 dark:border-amber-800/40"
-                                              : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200/50 dark:border-purple-800/40"
+                                        "px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1.5",
+                                        sug.active
+                                          ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 shadow-xs font-bold"
+                                          : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-700 hover:border-emerald-300"
                                       )}
                                     >
-                                      {isSelected && <Check size={10} className="stroke-[3]" />}
-                                      <span>{opt}</span>
+                                      {sug.active ? (
+                                        <>
+                                          <Check size={11} className="text-white stroke-[3]" />
+                                          <span>{sug.label}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="text-emerald-500 font-bold text-[12px]">+</span>
+                                          <span>{sug.label}</span>
+                                        </>
+                                      )}
                                     </button>
-                                  );
-                                })}
+                                  ))}
+                                </div>
                               </div>
-                            ))}
+                            )}
                           </div>
                         )}
                       </div>
@@ -1352,40 +1393,6 @@ export const ChatInterface: React.FC<Props> = ({
                 )}
               </AnimatePresence>
 
-              {/* Mobile Quick-Add Suggestions Carousel (Horizontally scrollable pills above docked input on <lg) */}
-              {contextualQuickAddSuggestions.length > 0 && (
-                <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
-                  <div className="flex items-center gap-1 text-[10px] font-black uppercase text-amber-500 shrink-0 pr-1">
-                    <Zap size={12} />
-                    <span>Quick Add:</span>
-                  </div>
-                  {contextualQuickAddSuggestions.map(sug => (
-                    <button
-                      key={sug.id}
-                      onClick={() => handleToggleQuickAddSuggestion(sug)}
-                      className={cn(
-                        "text-[11px] font-bold rounded-full border transition-all shrink-0 min-h-[38px] px-3.5 flex items-center gap-1.5 active:scale-95",
-                        sug.active
-                          ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 shadow-xs"
-                          : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-700 hover:border-emerald-300"
-                      )}
-                    >
-                      {sug.active ? (
-                        <>
-                          <Check size={12} className="text-white stroke-[3]" />
-                          <span>{sug.label}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-emerald-500 font-bold">+</span>
-                          <span>{sug.label}</span>
-                        </>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-
               {/* Top Row in Input Bar: Guidance / Quick Frameworks button */}
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500">
@@ -1510,12 +1517,13 @@ export const ChatInterface: React.FC<Props> = ({
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+                    if (e.key === 'Enter' && !e.shiftKey && !isMobileScreen) {
                       e.preventDefault();
                       handleSend();
                     }
                   }}
-                  placeholder="Describe your idea or request prompt refinements... (Shift+Enter for line break)"
+                  placeholder="Describe your idea..."
                   className={cn(
                     "w-full pl-24 py-2.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[44px] max-h-[220px] resize-none overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden leading-relaxed",
                     lastResult?.refinedPrompt ? "pr-24" : "pr-14"
