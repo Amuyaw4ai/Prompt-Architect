@@ -109,3 +109,33 @@ Application versions follow standard **Semantic Versioning** (`vMAJOR.MINOR.PATC
    - Bumping `MAJOR` resets `MINOR` and `PATCH` to `0`.
 4. **Maintenance & Release Tracking**:
    - Every version increment MUST be updated in `package.json` (`"version": "X.Y.Z"`) and tagged in Git (`git tag -a vX.Y.Z`).
+
+---
+
+## 7. Universal SPA Mobile Navigation Standard (`history.pushState` & `popstate`)
+
+### Problem Mandate: Preventing Mobile Hardware/Gesture Back Button App Closure
+In Single-Page Applications (SPAs built with React, Vue, Svelte, or Vite), internal state changes (opening modals, drawers, pop-ups, or switching tabs via `useState`) do not natively alter the browser's `window.history` stack. 
+
+When a mobile user uses their device's native Back swipe gesture or hardware Back button (`history.back()`), the browser pops the top entry off the stack—which is the website's initial page load URL itself—causing the browser to exit the website completely.
+
+### The Universal Best Practice Rule
+Whenever any modal, pop-up, drawer, or sub-view opens or navigates within an SPA:
+1. **Push History State Entry**: Push a state entry to `window.history` upon opening or navigating:
+   ```typescript
+   // On modal open or sub-view navigation:
+   window.history.pushState({ modalOpen: true }, '');
+   ```
+2. **Listen to `popstate` Event**: Intercept the device back gesture to gracefully close active modals or return to previous tabs without exiting the web app:
+   ```typescript
+   useEffect(() => {
+     const handlePopState = (event: PopStateEvent) => {
+       if (isModalOpen) {
+         setIsModalOpen(false); // Gracefully close modal instead of exiting web app
+       }
+     };
+     window.addEventListener('popstate', handlePopState);
+     return () => window.removeEventListener('popstate', handlePopState);
+   }, [isModalOpen]);
+   ```
+
