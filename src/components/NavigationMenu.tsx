@@ -187,7 +187,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                           )}
                         >
                           <Zap size={13} />
-                          <span>Gemini Live</span>
+                          <span>Cloud Intelligence</span>
                         </button>
 
                         <button
@@ -200,7 +200,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                           )}
                         >
                           <Cpu size={13} />
-                          <span>Local Engine</span>
+                          <span>Local Core</span>
                         </button>
                       </div>
                     </div>

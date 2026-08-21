@@ -660,7 +660,7 @@ export const ChatInterface: React.FC<Props> = ({
       }
 
       if (isFallback) {
-        assistantContent = "⚠️ **Live AI Engine Unavailable**: The Live AI service and all fallback retries were unreachable. Automatically processed your request using the **Offline Local Studio Engine**!\n\n" + assistantContent;
+        assistantContent = "⚡ **Cloud Intelligence unreachable** — Activated **Local Core**!\n\n" + assistantContent;
       }
       if (result.questions && result.questions.length > 0) {
         assistantContent += "\n\n**To make this even better, could you tell me:**\n" + 
@@ -826,7 +826,7 @@ export const ChatInterface: React.FC<Props> = ({
             fw.template,
             promptType
           );
-          transformedResult.explanation = "⚠️ **Live AI Engine Unavailable**: Transformed using Offline Local Studio Engine.\n\n" + transformedResult.explanation;
+          transformedResult.explanation = "⚡ **Cloud Intelligence unreachable** — Transformed using **Local Core**.\n\n" + transformedResult.explanation;
         }
       } else {
         // Subtle delay so cinematic scanning experience is clearly observable

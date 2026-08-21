@@ -181,7 +181,7 @@ export default function App() {
             <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-stone-100/70 dark:bg-slate-800/70 border border-stone-200/60 dark:border-slate-700/60 text-xs font-semibold text-stone-700 dark:text-slate-300">
               <span className={cn("w-2 h-2 rounded-full animate-pulse", isLocalMode ? "bg-amber-500" : "bg-emerald-500")} />
               <span className="text-[11px] font-bold">
-                {isLocalMode ? "Offline Engine" : "Gemini Live"}
+                {isLocalMode ? "Local Core" : "Cloud Intelligence"}
               </span>
             </div>
 
