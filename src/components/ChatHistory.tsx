@@ -88,9 +88,23 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <div className="w-12 h-12 border-4 border-emerald-100 dark:border-emerald-900/30 border-t-emerald-600 dark:border-t-emerald-500 rounded-full animate-spin" />
-        <p className="text-stone-400 dark:text-slate-500 font-medium">Loading your history...</p>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-stone-200/70 dark:border-slate-700/70 shadow-sm animate-pulse space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-slate-700/60" />
+                <div className="w-24 h-4 rounded-md bg-stone-100 dark:bg-slate-700/60" />
+              </div>
+              <div className="w-3/4 h-6 rounded-lg bg-stone-100 dark:bg-slate-700/60" />
+              <div className="w-full h-10 rounded-lg bg-stone-100 dark:bg-slate-700/60" />
+              <div className="flex justify-between items-center pt-2">
+                <div className="w-16 h-4 rounded-md bg-stone-100 dark:bg-slate-700/60" />
+                <div className="w-20 h-4 rounded-md bg-stone-100 dark:bg-slate-700/60" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

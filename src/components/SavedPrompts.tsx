@@ -154,9 +154,26 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <AnimatePresence mode="popLayout">
-          {sortedGroups.map((group) => {
+      {isLoading && prompts.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-stone-200/70 dark:border-slate-700/70 shadow-sm animate-pulse space-y-5">
+              <div className="flex justify-between items-start">
+                <div className="w-3/4 h-7 bg-stone-100 dark:bg-slate-700/60 rounded-xl" />
+                <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-slate-700/60" />
+              </div>
+              <div className="w-full h-24 bg-stone-100 dark:bg-slate-700/60 rounded-2xl" />
+              <div className="flex gap-2">
+                <div className="w-16 h-6 bg-stone-100 dark:bg-slate-700/60 rounded-lg" />
+                <div className="w-20 h-6 bg-stone-100 dark:bg-slate-700/60 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatePresence mode="popLayout">
+            {sortedGroups.map((group) => {
             // Sort versions within a group (newest first)
             const sortedVersions = [...group].sort((a, b) => b.createdAt - a.createdAt);
             const mainPrompt = sortedVersions[0]; // Most recent is the "main" one shown
@@ -332,6 +349,7 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
           })}
         </AnimatePresence>
       </div>
+      )}
 
       {!isLoading && prompts.length === 0 && (
         <div className="text-center py-20 bg-stone-50 dark:bg-slate-800/50 rounded-3xl border-2 border-dashed border-stone-200 dark:border-slate-700">
