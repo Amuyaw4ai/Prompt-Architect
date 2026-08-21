@@ -1691,15 +1691,15 @@ export const ChatInterface: React.FC<Props> = ({
                   aria-label={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
                 >
                   <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {editingPrompt ? <Save size={isRightPanelUltraCompact ? 15 : 13} className="shrink-0" /> : <Plus size={isRightPanelUltraCompact ? 15 : 13} className="shrink-0" />}
+                    {editingPrompt ? <Save size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" /> : <Plus size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" />}
                     {!isRightPanelUltraCompact && (
-                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
                         {editingPrompt ? 'Update' : 'Save'}
                       </span>
                     )}
                   </div>
                   {isRightPanelWide && (
-                    <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0">
+                    <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
                       Library
                     </span>
                   )}
@@ -1719,15 +1719,15 @@ export const ChatInterface: React.FC<Props> = ({
                   aria-label="Copy prompt"
                 >
                   <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'text' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="stroke-[3] shrink-0" /> : <Copy size={isRightPanelUltraCompact ? 15 : 13} className="shrink-0" />}
+                    {copiedType === 'text' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="stroke-[3] shrink-0" /> : <Copy size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" />}
                     {!isRightPanelUltraCompact && (
-                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
                         {copiedType === 'text' ? 'Copied!' : 'Copy'}
                       </span>
                     )}
                   </div>
                   {isRightPanelWide && (
-                    <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0">
+                    <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
                       Prompt
                     </span>
                   )}
@@ -1747,15 +1747,15 @@ export const ChatInterface: React.FC<Props> = ({
                   aria-label="Download prompt as Markdown"
                 >
                   <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'markdown' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileCode size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-500 shrink-0" />}
+                    {copiedType === 'markdown' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileCode size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-500 shrink-0" />}
                     {!isRightPanelUltraCompact && (
-                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
                         {copiedType === 'markdown' ? 'Saved' : 'MD'}
                       </span>
                     )}
                   </div>
                   {isRightPanelWide && (
-                    <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none truncate min-w-0">
+                    <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
                       Markdown
                     </span>
                   )}
@@ -1775,15 +1775,15 @@ export const ChatInterface: React.FC<Props> = ({
                   aria-label="Copy JSON structure"
                 >
                   <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'json' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <Braces size={isRightPanelUltraCompact ? 15 : 13} className="text-amber-500 shrink-0" />}
+                    {copiedType === 'json' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <Braces size={isRightPanelUltraCompact ? 15 : 14} className="text-amber-500 shrink-0" />}
                     {!isRightPanelUltraCompact && (
-                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
                         {copiedType === 'json' ? 'Copied' : isRightPanelWide ? 'Copy JSON' : 'JSON'}
                       </span>
                     )}
                   </div>
                   {isRightPanelWide && (
-                    <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none truncate min-w-0">
+                    <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
                       JSON Data
                     </span>
                   )}
@@ -1803,15 +1803,15 @@ export const ChatInterface: React.FC<Props> = ({
                   aria-label="Download JSON file"
                 >
                   <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'download' ? <Check size={isRightPanelUltraCompact ? 15 : 13} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileJson size={isRightPanelUltraCompact ? 15 : 13} className="text-blue-500 shrink-0" />}
+                    {copiedType === 'download' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileJson size={isRightPanelUltraCompact ? 15 : 14} className="text-blue-500 shrink-0" />}
                     {!isRightPanelUltraCompact && (
-                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
                         {copiedType === 'download' ? 'Saved' : isRightPanelWide ? 'Download' : 'Down'}
                       </span>
                     )}
                   </div>
                   {isRightPanelWide && (
-                    <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none truncate min-w-0">
+                    <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
                       JSON File
                     </span>
                   )}
