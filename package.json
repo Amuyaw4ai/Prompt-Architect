@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:better-sqlite3 --external:express --external:vite --external:@google/genai",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=cjs --outfile=dist/server.cjs --external:better-sqlite3 --external:vite",
     "build": "vite build && npm run build:server",
     "preview": "vite preview",
     "clean": "rm -rf dist",
