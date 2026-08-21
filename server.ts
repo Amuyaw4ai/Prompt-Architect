@@ -520,6 +520,13 @@ Please re-architect this prompt into the ${frameworkName} framework now.
   app.put("/api/prompts/:id", (req, res) => {
     const { id } = req.params;
     const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, versionNotes } = req.body;
+
+    if (title && originalIdea === undefined) {
+      const stmt = db.prepare(`UPDATE saved_prompts SET title = ? WHERE id = ?`);
+      stmt.run(title, id);
+      return res.json({ success: true });
+    }
+
     const stmt = db.prepare(`
       UPDATE saved_prompts 
       SET title = ?, original_idea = ?, refined_prompt = ?, type = ?, tags = ?, messages = ?, is_favorite = ?, version_notes = ?

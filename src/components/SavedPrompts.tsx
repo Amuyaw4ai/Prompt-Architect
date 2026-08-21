@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Tag, Calendar, Trash2, Edit3, Star, GitBranch, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Tag, Calendar, Trash2, Edit3, Star, GitBranch, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
 import { SavedPrompt, PromptType } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
@@ -16,6 +16,8 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({});
+  const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
+  const [editingTitleText, setEditingTitleText] = useState('');
 
   const fetchPrompts = async () => {
     setIsLoading(true);
@@ -96,6 +98,35 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const startEditingTitle = (e: React.MouseEvent, prompt: SavedPrompt) => {
+    e.stopPropagation();
+    setEditingTitleId(prompt.id);
+    setEditingTitleText(prompt.title);
+  };
+
+  const handleSaveTitle = async (id: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const cleanTitle = sanitizeInput(editingTitleText.trim());
+    if (!cleanTitle) return;
+
+    try {
+      await fetch(`/api/prompts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: cleanTitle })
+      });
+      setPrompts(prev => {
+        const updated = prev.map(p => p.id === id || p.parentId === id ? { ...p, title: cleanTitle } : p);
+        saveLocalPrompts(updated);
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error updating prompt title:', error);
+    } finally {
+      setEditingTitleId(null);
     }
   };
 
@@ -193,11 +224,43 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 dark:bg-emerald-500/10 blur-2xl rounded-full -mr-12 -mt-12 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/20 transition-colors" />
                 
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex-1 min-w-0 pr-2">
-                    <h3 className="text-xl font-black text-stone-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors tracking-tight leading-snug break-words mb-2">
-                      {mainPrompt.title}
-                    </h3>
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+                  <div className="flex-1 w-full min-w-0">
+                    {editingTitleId === mainPrompt.id ? (
+                      <div className="flex items-center gap-2 mb-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          value={editingTitleText}
+                          onChange={(e) => setEditingTitleText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveTitle(mainPrompt.id);
+                            if (e.key === 'Escape') setEditingTitleId(null);
+                          }}
+                          autoFocus
+                          className="flex-1 w-full px-3.5 py-1.5 bg-stone-50 dark:bg-slate-900 border-2 border-emerald-500 rounded-xl text-base font-bold text-stone-900 dark:text-slate-100 outline-none shadow-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => handleSaveTitle(mainPrompt.id, e)}
+                          className="p-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all cursor-pointer shrink-0"
+                          title="Save Title"
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setEditingTitleId(null); }}
+                          className="p-2 bg-stone-200 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-xl hover:bg-stone-300 transition-all cursor-pointer shrink-0"
+                          title="Cancel"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <h3 className="text-xl font-black text-stone-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors tracking-tight leading-snug break-words mb-2 w-full text-left">
+                        {mainPrompt.title}
+                      </h3>
+                    )}
                     
                     <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-500">
                       <div className="flex items-center gap-1">
@@ -219,11 +282,13 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                  <div className="flex items-center gap-2 self-end sm:self-start opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button 
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(mainPrompt.id, !!mainPrompt.isFavorite); }}
                       className={cn(
-                        "p-2 rounded-xl transition-all shadow-sm",
+                        "p-2 rounded-xl transition-all shadow-sm cursor-pointer",
                         mainPrompt.isFavorite 
                           ? "bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50" 
                           : "bg-stone-50 dark:bg-slate-700 text-stone-400 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-500 dark:hover:text-amber-400"
@@ -233,16 +298,18 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                       <Star size={16} className={mainPrompt.isFavorite ? "fill-current" : ""} />
                     </button>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); onEdit(mainPrompt); }}
-                      className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm"
-                      title="Edit/Reiterate"
+                      type="button"
+                      onClick={(e) => startEditingTitle(e, mainPrompt)}
+                      className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm cursor-pointer"
+                      title="Rename Title"
                     >
                       <Edit3 size={16} />
                     </button>
                     <button 
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); handleDelete(mainPrompt.id); }}
-                      className="p-2 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-600 dark:hover:bg-pink-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm"
-                      title="Delete"
+                      className="p-2 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl hover:bg-pink-600 dark:hover:bg-pink-500 hover:text-white dark:hover:text-slate-900 transition-all shadow-sm cursor-pointer"
+                      title="Delete Prompt"
                     >
                       <Trash2 size={16} />
                     </button>
