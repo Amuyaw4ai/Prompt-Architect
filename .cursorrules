@@ -1,4 +1,4 @@
-# Prompt Architect Studio - Cursor AI Rules & Guidelines
+# Prompt Architect Studio - Cursor AI Governance Rules & Guidelines
 
 ## 1. Project Architecture & Stack
 - **Frontend**: React 18, TypeScript, Tailwind CSS, Lucide Icons (`lucide-react`), Framer Motion (`framer-motion`), React Markdown (`react-markdown`).
@@ -15,20 +15,27 @@
 - **Main Column 2 (Rightmost Column - Architectural Output)**:
   - Preserves Quality Score Breakdown, Structural Reasoning, Interactive Clarifications, Contextual Modifiers, Framework Synthesizer, and Test Simulation Sandbox.
 
-## 3. Security & Code Integrity Rules
-- **API Secret Isolation**: `GEMINI_API_KEY` must remain strictly server-side in `process.env`. Never expose secrets in client-side components or bundles.
+## 3. Mandatory Security & Code Integrity Rules (`SECURE_VIBE_CODING_STANDARDS.md`)
+- **API Secret Isolation**: `GEMINI_API_KEY` must remain strictly server-side in `process.env`. Never expose secrets in client-side components or static bundles.
 - **Database Safety**: All SQLite queries in `server.ts` must use parameterized prepared statements (`db.prepare(...)`). Never concatenate raw user input into SQL strings.
-- **Version Control**: Do not commit `.env`, `prompts.db`, `prompts.db-journal`, `.antigravity/`, or `dist/`.
+- **Header Protection & Rate Limiting**: Enforce HTTP security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) and rate limiting middleware.
+- **Version Control & Exclusions**: Do not commit `.env`, `prompts.db`, `prompts.db-journal`, `.antigravity/`, or `dist/`.
 
-## 4. Code Style & TypeScript Standards
+## 4. Mandatory Containerization & Scaling Protocol (`CONTAINERIZATION_STANDARD.md`)
+- **Day 1 Project Initialization / Audit**: Automatically generate and verify the required governance suite:
+  - Security suite: `.cursorrules`, `SECURITY.md`, `SECURITY_AUDIT.md`, `.env.example`, `LICENSE`, `README.md`.
+  - Container suite: `Dockerfile` (multi-stage non-root), `.dockerignore`, `docker-compose.yml`, `CONTAINERIZATION_STANDARD.md`, `SECURE_VIBE_CODING_STANDARDS.md`.
+- **Hand-in-Hand Secret & Network Protection**:
+  - Mirror `.gitignore` exclusions inside `.dockerignore`.
+  - Enforce non-root execution (`USER node`) in `Dockerfile`.
+  - Bind ports safely without port exhaustion (`EXPOSE 3000`, `-p 3000:3000`).
+- **Production Scaling Deployment**: When scaling or publishing, consult `CONTAINERIZATION_STANDARD.md` and generate `DEPLOYMENT.md`, Cloud Run deploy commands, or Kubernetes manifests (`k8s/deployment.yaml`, `k8s/service.yaml`).
+
+## 5. Code Style & TypeScript Standards
 - Write clean, type-safe React functional components.
 - Use the `cn(...)` utility helper (`clsx` + `tailwind-merge`) for conditional Tailwind class names.
 - Provide defensive fallback states when calling backend APIs or generating content with Gemini models.
 
-## 5. User Interaction & Response Rules
-- **Step-by-Step Execution**: When the user provides multiple requests or questions in a prompt, address and execute them systematically one step at a time without bundling everything into an overwhelming summary. Prioritize accuracy, depth, and immediate implementation quality.
-
-## 6. Containerization & Deployment Lifecycle Protocol
-- **Initial Setup Protocol (Day 1)**: Every project must include `CONTAINERIZATION_STANDARD.md`, a multi-stage `Dockerfile`, a sanitized `.dockerignore`, and a `docker-compose.yml` for local testing alongside initial security files.
-- **Development Maintenance**: Any added dependencies, server port updates, or environment variables must be kept in sync across `Dockerfile` and `docker-compose.yml`.
-- **Deployment Protocol**: When publishing or scaling, refer to `CONTAINERIZATION_STANDARD.md` to produce Cloud Run execution commands, `DEPLOYMENT.md`, or Kubernetes manifests (`k8s/deployment.yaml`, `k8s/service.yaml`).
+## 6. User Interaction & Git Hygiene Rules
+- **Step-by-Step Execution**: Address multi-part user requests systematically one step at a time without bundling or skipping requirements.
+- **Git Commit & Push Hygiene**: After major updates or security/containerization milestones, run build checks, perform clean atomic git commits, and push live to remote GitHub (`origin main`).
