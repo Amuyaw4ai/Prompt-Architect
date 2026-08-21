@@ -43,5 +43,5 @@ USER node
 # Expose default application port space
 EXPOSE 8080 3000
 
-# Start full-stack server using direct node tsx runner
-CMD ["node", "node_modules/tsx/dist/cli.mjs", "server.ts"]
+# Start full-stack server using native compiled ESM bundle
+CMD ["node", "dist/server.js"]

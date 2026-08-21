@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:better-sqlite3 --external:express --external:vite --external:@google/genai",
+    "build": "vite build && npm run build:server",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
@@ -34,6 +35,7 @@
     "@types/prismjs": "^1.26.6",
     "@types/react-dom": "^19.2.4",
     "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.23.12",
     "typescript": "~5.8.2",
