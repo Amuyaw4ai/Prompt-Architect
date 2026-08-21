@@ -15,7 +15,7 @@ If you discover a security vulnerability or credential exposure risk in Prompt A
 
 Instead, please report security issues directly:
 
-1. **Email**: Send details to `security@prompt-architect.local` or open a private advisory on GitHub.
+1. **Email**: Send details to `princeamuyaw18@gmail.com` or open a private security advisory on GitHub.
 2. **Details to include**:
    - Type of issue (e.g. Secret leakage, XSS, SSRF, Rate limiting bypass, Dependency vulnerability).
    - Step-by-step instructions or proof-of-concept to reproduce.
