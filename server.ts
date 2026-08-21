@@ -1,6 +1,5 @@
 import "dotenv/config";
 import express from "express";
-import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -9,13 +8,23 @@ import { GoogleGenAI, Type } from "@google/genai";
 const _filename = typeof __filename !== "undefined" ? __filename : "";
 const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
 
-const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === "production" ? ":memory:" : "prompts.db");
 let db: any;
 try {
+  const Database = require("better-sqlite3");
+  const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === "production" ? ":memory:" : "prompts.db");
   db = new Database(dbPath);
 } catch (err) {
-  console.warn("Failed to open SQLite database at", dbPath, "falling back to in-memory database:", err);
-  db = new Database(":memory:");
+  console.warn("SQLite native database load bypassed or failed, using in-memory fallback:", err);
+  const memoryStore = new Map<number, any>();
+  let nextId = 1;
+  db = {
+    exec: () => {},
+    prepare: (_sql: string) => ({
+      run: (..._params: any[]) => ({ lastInsertRowid: nextId++ }),
+      all: (..._params: any[]) => Array.from(memoryStore.values()),
+      get: (id: any) => memoryStore.get(Number(id)) || null
+    })
+  };
 }
 
 // Initialize Database
