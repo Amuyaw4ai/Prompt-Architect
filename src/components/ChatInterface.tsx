@@ -648,7 +648,10 @@ export const ChatInterface: React.FC<Props> = ({
       const lowerUserQuery = fullContentForAI.trim().toLowerCase();
       const isConversationalQuery =
         lowerUserQuery.endsWith("?") ||
-        /^(hello|hi|hey|greetings|yo|how|why|what|who|where|explain|describe|tell|show|can you|could you|is there|are there|tips|help|support|tutorial|instructions|how to|what is)/i.test(lowerUserQuery);
+        /^(hello|hi|hey|greetings|yo|how|why|what|who|where|explain|describe|tell|show|can you|could you|is there|are there|tips|help|support|tutorial|instructions|how to|what is|thanks|thank you|awesome|great|good|who are you)/i.test(lowerUserQuery) ||
+        result.explanation === "Conversational response" ||
+        result.explanation.includes("Detected query format") ||
+        result.explanation.includes("Warm local greetings");
 
       if (isConversationalQuery) {
         assistantContent = result.refinedPrompt;
@@ -657,7 +660,7 @@ export const ChatInterface: React.FC<Props> = ({
       }
 
       if (isFallback) {
-        assistantContent = "⚠️ **Live Google AI is currently unconfigured or unavailable.** I have automatically processed your prompt instantly using our high-precision **Local Studio Engine** to prevent session breakages!\n\n" + assistantContent;
+        assistantContent = "⚠️ **Live AI Engine Unavailable**: The Live AI service and all fallback retries were unreachable. Automatically processed your request using the **Offline Local Studio Engine**!\n\n" + assistantContent;
       }
       if (result.questions && result.questions.length > 0) {
         assistantContent += "\n\n**To make this even better, could you tell me:**\n" + 
@@ -823,6 +826,7 @@ export const ChatInterface: React.FC<Props> = ({
             fw.template,
             promptType
           );
+          transformedResult.explanation = "⚠️ **Live AI Engine Unavailable**: Transformed using Offline Local Studio Engine.\n\n" + transformedResult.explanation;
         }
       } else {
         // Subtle delay so cinematic scanning experience is clearly observable

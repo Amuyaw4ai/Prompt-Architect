@@ -52,28 +52,27 @@ export function refinePromptLocally(
   const rawInput = initialPrompt.trim();
   const lowerInput = rawInput.toLowerCase();
 
-  // 1. Detect Conversational/Help-seeking Mode
-  const isQuestion = 
-    lowerInput.endsWith("?") || 
-    /^(how|why|what|who|where|explain|describe|tell|show|can you|could you|is there|are there|tips|help|support|tutorial|instructions|how to|what is)/i.test(lowerInput);
-  
+  // 1. Detect Conversational / Discussion / Help-seeking Mode
   const isGreeting = 
-    /^(hello|hi|hey|greetings|good morning|good afternoon|good evening|yo|sup\?)/i.test(lowerInput);
+    /^(hello|hi|hey|greetings|good morning|good afternoon|good evening|yo|sup\?|who are you|what can you do)/i.test(lowerInput);
 
   if (isGreeting) {
     return {
-      refinedPrompt: "Hello! Ready to transform simple ideas into professional-grade AI prompts? Feel free to write down a simple thought, insert placeholders, or upload a media file.",
-      explanation: "Warm local greetings. Provided introduction to system capabilities.",
+      refinedPrompt: "Hello! I am your **Prompt Architect Copilot**. Whether you want to chat about AI concepts, brainstorm creative directions, or transform simple ideas into professional-grade AI prompts, I'm here to help!\n\nWhat would you like to explore or build today?",
+      explanation: "Conversational response",
       suggestedTitle: "Hello Developer!",
-      suggestedTags: ["Greeting", "Local Engine", "Introduction"],
+      suggestedTags: ["Greeting", "Local Engine", "Copilot"],
       detectedType: type
     };
   }
 
-  if (isQuestion && type !== "text") {
-    // Try to match specific words in our knowledge base
+  const isConversationalIntent = 
+    lowerInput.endsWith("?") || 
+    /^(how|why|what|who|where|explain|describe|tell|show|can you|could you|is there|are there|tips|help|support|tutorial|instructions|how to|what is|thanks|thank you|awesome|great|good|opinion|compare)/i.test(lowerInput);
+
+  if (isConversationalIntent) {
     let answer = "";
-    let matchedTopic = "General Help Query";
+    let matchedTopic = "General Copilot Conversation";
 
     if (lowerInput.includes("negative")) {
       answer = KNOWLEDGE_BASE["negative prompt"];
@@ -84,21 +83,24 @@ export function refinePromptLocally(
     } else if (lowerInput.includes("midjourney")) {
       answer = KNOWLEDGE_BASE["midjourney"];
       matchedTopic = "Midjourney Style Guide";
-    } else if (lowerInput.includes("sora") || lowerInput.includes("veo") || lowerInput.includes("video")) {
+    } else if (lowerInput.includes("sora") || lowerInput.includes("veo")) {
       answer = KNOWLEDGE_BASE["sora"];
       matchedTopic = "Video Engineering Heuristics";
     } else if (lowerInput.includes("imagen") || lowerInput.includes("google")) {
       answer = KNOWLEDGE_BASE["imagen"];
       matchedTopic = "Google Imagen Formatting";
+    } else if (lowerInput.includes("thank") || lowerInput.includes("awesome") || lowerInput.includes("great") || lowerInput.includes("cool")) {
+      answer = "You're very welcome! I'm always here to help you refine ideas, brainstorm concepts, or craft master-level AI prompts. Let me know what we should work on next!";
+      matchedTopic = "Feedback & Thanks";
     } else {
-      answer = `**Direct Inquiry Answer:**\n\nBased on your question: *"${rawInput}"*, here is a quick, straight-to-the-point response:\n\n- To get high-end results, ensure your input contains a clear **Subject**, **Style**, and **Framing/Constraints**.\n- This Local engine uses rule-based heuristic templates to construct structural prompts locally instantly.\n- Adjust the parameters/variables of the generated prompt in the editor on the right to personalize it!\n\n${KNOWLEDGE_BASE["default_help"]}`;
+      answer = `**Copilot Response:**\n\nRegarding your question: *"${rawInput}"*\n\n- **Core Concept**: When building prompts, clarity on **Subject**, **Style**, **Lighting/Atmosphere**, and **Constraints** is key.\n- **Studio Advice**: You can use the **Prompt Editor** to fine-tune your variables or apply **Starter Frameworks** to structure your prompt.\n\n${KNOWLEDGE_BASE["default_help"]}`;
     }
 
     return {
       refinedPrompt: answer,
-      explanation: "Detected query format. Redirected to the offline technical knowledge library rather than writing a prompt template.",
+      explanation: "Conversational response",
       suggestedTitle: matchedTopic,
-      suggestedTags: ["Tutorial", "Q&A", "Parameters"],
+      suggestedTags: ["Discussion", "Q&A", "Copilot"],
       detectedType: type
     };
   }
