@@ -66,6 +66,8 @@ Whenever this document (or `Secure Vibe Coding Risk Management.pdf` and `CONTAIN
 When initializing or auditing any codebase, the AI Editor MUST automatically create and verify the following project-specific files:
 
 - [ ] **`.cursorrules`**: Project-level instructions equipping the AI assistant with tech stack rules, UI/UX guidelines, step-by-step execution preferences, and security/container governance.
+- [ ] **`.github/dependabot.yml`**: Automated dependency vulnerability scanning & pull requests for npm and Docker.
+- [ ] **`.github/workflows/codeql.yml`**: CodeQL Static Application Security Testing (SAST) workflow scanning for XSS, code injection, and unsafe data flows.
 - [ ] **`SECURITY.md`**: Public security policy outlining key isolation, vulnerability reporting, and threat mitigations.
 - [ ] **`SECURITY_AUDIT.md`**: Empirical audit log of scanned dependencies, rate limits, and header security fixes.
 - [ ] **`CONTAINERIZATION_STANDARD.md`**: Universal SOP for Port Space, Docker Compose, Cloud Run, and Kubernetes fleet scaling.
@@ -138,4 +140,22 @@ Whenever any modal, pop-up, drawer, or sub-view opens or navigates within an SPA
      return () => window.removeEventListener('popstate', handlePopState);
    }, [isModalOpen]);
    ```
+
+---
+
+## 8. GitHub Automated Security Governance (Dependabot & CodeQL)
+
+### Universal Requirement
+Every repository MUST contain automated security scanning pipelines configured in `.github/` to detect third-party package vulnerabilities and source code security flaws before deployment.
+
+### 1. Dependabot Configuration (`.github/dependabot.yml`)
+- **Package Ecosystems**: `npm` (node dependencies) and `docker` (container base images).
+- **Schedule**: Weekly vulnerability checks.
+- **Labels**: `security`, `dependencies`, `docker`.
+
+### 2. CodeQL SAST Analysis (`.github/workflows/codeql.yml`)
+- **Engine**: GitHub CodeQL (Static Application Security Testing).
+- **Triggers**: On push to `main`, on Pull Requests, and weekly cron schedule (`0 6 * * 1`).
+- **Scanned Vectors**: Cross-Site Scripting (XSS), SQL/Query Injection, Prototype Pollution, Unsafe Deserialization, Hardcoded Secrets, and Unhandled Exception flows.
+
 
