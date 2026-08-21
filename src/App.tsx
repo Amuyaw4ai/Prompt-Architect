@@ -11,6 +11,8 @@ import { cn } from './utils';
 
 import { NavigationMenu } from './components/NavigationMenu';
 import { PromptTypeSelector } from './components/PromptTypeSelector';
+import { CelebratoryMilestoneModal } from './components/CelebratoryMilestoneModal';
+import { shouldShowMilestoneCelebration } from './utils/persistence';
 
 type View = 'home' | 'architect' | 'saved' | 'templates' | 'history';
 
@@ -20,6 +22,7 @@ export default function App() {
   const [prefilledPrompt, setPrefilledPrompt] = useState<{content: string, type: PromptType} | null>(null);
   const [editingPrompt, setEditingPrompt] = useState<SavedPrompt | undefined>(undefined);
   const [currentSession, setCurrentSession] = useState<ChatSession | undefined>(undefined);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   
   const [isLocalMode, setIsLocalMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('prompt_architect_engine_mode');
@@ -52,6 +55,12 @@ export default function App() {
       localStorage.setItem('prompt_architect_theme', 'light');
     }
   }, [isDarkMode]);
+
+  useEffect(() => {
+    if (shouldShowMilestoneCelebration()) {
+      setShowMilestoneModal(true);
+    }
+  }, [currentView]);
 
   const handleToggleLocalMode = (isLocal: boolean) => {
     setIsLocalMode(isLocal);
@@ -447,6 +456,12 @@ export default function App() {
           </footer>
         </main>
       )}
+
+      {/* Celebratory 5-Prompt Progress Milestone Modal */}
+      <CelebratoryMilestoneModal
+        isOpen={showMilestoneModal}
+        onClose={() => setShowMilestoneModal(false)}
+      />
     </div>
   );
 }

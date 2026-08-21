@@ -113,7 +113,7 @@ const DOMAIN_RULES: DomainRule[] = [
   }
 ];
 
-// Fallback suggestions strictly aligned by modality when prompt text is short or generic
+// Fallback suggestions based solely on general modality when text is very short or generic
 const MODALITY_FALLBACKS: Record<PromptType, Array<{ label: string; tag: string; category: QuickAddSuggestion['category']; categoryName: string }>> = {
   video: [
     { label: 'Drone Shot', tag: 'sweeping cinematic drone shot', category: 'camera', categoryName: 'Camera' },
@@ -139,47 +139,44 @@ const MODALITY_FALLBACKS: Record<PromptType, Array<{ label: string; tag: string;
     { label: 'Concrete Examples', tag: 'Provide 2-3 real-world practical examples with before/after comparisons', category: 'context', categoryName: 'Examples' },
     { label: 'Pros & Cons Matrix', tag: 'Include a balanced Pros & Cons evaluation matrix', category: 'format', categoryName: 'Analysis' },
     { label: 'Key Takeaways Summary', tag: 'Conclude with a high-impact Key Takeaways executive summary', category: 'format', categoryName: 'Summary' },
-  ],
-  code: [
-    { label: 'Strict TypeScript Types', tag: 'Include full strict TypeScript type definitions with zero `any`', category: 'format', categoryName: 'Type Safety' },
-    { label: 'Unit Tests (Jest/Vitest)', tag: 'Include comprehensive unit test suites covering edge cases', category: 'format', categoryName: 'Testing' },
-    { label: 'Production Error Handling', tag: 'Implement resilient try-catch error boundaries and logging', category: 'context', categoryName: 'Reliability' },
-    { label: 'Clean Architecture & JSDoc', tag: 'Follow SOLID principles, clean architecture, and complete JSDoc annotations', category: 'style', categoryName: 'Code Quality' },
-    { label: 'Async/Await Performance', tag: 'Optimize with non-blocking async/await and memoization', category: 'specs', categoryName: 'Performance' },
-    { label: 'Security Sanitization', tag: 'Add input validation and OWASP-compliant security sanitization', category: 'specs', categoryName: 'Security' },
-  ],
-  audio: [
-    { label: 'Podcast Voice Spec', tag: 'Warm broadcast studio vocal cadence with 48kHz audio fidelity', category: 'format', categoryName: 'Voice' },
-    { label: 'Ambient Soundscape', tag: 'Rich atmospheric soundscape with spatial stereo panning', category: 'lighting', categoryName: 'Audio Environment' },
-    { label: 'Bilingual Voiceover', tag: 'Natural bilingual pronunciation and crystal clear diction', category: 'tone', categoryName: 'Diction' },
-    { label: 'Studio Noise Floor', tag: 'Zero background hum, crisp acoustic room reflection damping', category: 'specs', categoryName: 'Acoustics' },
   ]
 };
 
 /**
- * Dynamically computes contextual suggestions tailored strictly to the current modality and prompt.
- * Constrained strictly to 6-8 (max 10) high-impact suggestions to prevent decision fatigue and stale cross-modality chips.
+ * Checks whether a tag or its key identifier is currently included inside the prompt text.
+ */
+export function isTagInPrompt(promptText: string, tag: string, label: string): boolean {
+  if (!promptText || !tag) return false;
+  const pLower = promptText.toLowerCase();
+  const tLower = tag.toLowerCase();
+  const lLower = label.toLowerCase();
+
+  // Direct exact match
+  if (pLower.includes(tLower)) return true;
+
+  // Key phrase match for compound tags (e.g. "drone shot", "hyperrealistic", "slow motion")
+  if (lLower.length > 3 && pLower.includes(lLower)) return true;
+
+  // Sub-phrase match
+  const words = lLower.split(/\s+/).filter(w => w.length > 3);
+  if (words.length >= 2) {
+    const allPresent = words.every(w => pLower.includes(w));
+    if (allPresent) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Dynamically computes contextual suggestions tailored to the current prompt in the editor.
+ * Constrained strictly to 6-8 (max 10) high-impact suggestions to prevent decision fatigue.
  */
 export function getContextualSuggestions(promptText: string, promptType: PromptType): QuickAddSuggestion[] {
   const raw = promptText.trim();
-  const MAX_SUGGESTIONS = 8;
+  const MAX_SUGGESTIONS = 8; // Strictly between 6 and 10
   const suggestionsMap = new Map<string, QuickAddSuggestion>();
 
-  // 1. First populate with modality-specific fallbacks to guarantee instant, relevant chips
-  const fallbacks = MODALITY_FALLBACKS[promptType] || MODALITY_FALLBACKS.text;
-  for (const item of fallbacks) {
-    const active = isTagInPrompt(raw, item.tag, item.label);
-    suggestionsMap.set(item.label, {
-      id: `sug-${item.label.toLowerCase().replace(/\s+/g, '-')}`,
-      label: item.label,
-      tag: item.tag,
-      category: item.category,
-      categoryName: item.categoryName,
-      active
-    });
-  }
-
-  // 2. Rank matching domain rules by keyword relevance
+  // Rank domain rules by keyword relevance match count
   const scoredRules = DOMAIN_RULES.map(rule => {
     let score = 0;
     for (const rx of rule.keywords) {
@@ -192,19 +189,41 @@ export function getContextualSuggestions(promptText: string, promptType: PromptT
   .filter(r => r.score > 0)
   .sort((a, b) => b.score - a.score);
 
-  // 3. Inject matching domain rule suggestions
+  // 1. Fill from highest scoring domain rules
   for (const { rule } of scoredRules) {
     for (const item of rule.suggestions) {
-      if (suggestionsMap.size >= MAX_SUGGESTIONS + 4) break;
-      const active = isTagInPrompt(raw, item.tag, item.label);
-      suggestionsMap.set(item.label, {
-        id: `sug-${item.label.toLowerCase().replace(/\s+/g, '-')}`,
-        label: item.label,
-        tag: item.tag,
-        category: item.category,
-        categoryName: item.categoryName,
-        active
-      });
+      if (suggestionsMap.size >= MAX_SUGGESTIONS) break;
+      if (!suggestionsMap.has(item.label)) {
+        const active = isTagInPrompt(raw, item.tag, item.label);
+        suggestionsMap.set(item.label, {
+          id: `sug-${item.label.toLowerCase().replace(/\s+/g, '-')}`,
+          label: item.label,
+          tag: item.tag,
+          category: item.category,
+          categoryName: item.categoryName,
+          active
+        });
+      }
+    }
+    if (suggestionsMap.size >= MAX_SUGGESTIONS) break;
+  }
+
+  // 2. Add modality fallbacks if we have fewer than 6 suggestions to guarantee at least 6
+  if (suggestionsMap.size < 6) {
+    const fallbacks = MODALITY_FALLBACKS[promptType] || MODALITY_FALLBACKS.text;
+    for (const item of fallbacks) {
+      if (suggestionsMap.size >= MAX_SUGGESTIONS) break;
+      if (!suggestionsMap.has(item.label)) {
+        const active = isTagInPrompt(raw, item.tag, item.label);
+        suggestionsMap.set(item.label, {
+          id: `sug-${item.label.toLowerCase().replace(/\s+/g, '-')}`,
+          label: item.label,
+          tag: item.tag,
+          category: item.category,
+          categoryName: item.categoryName,
+          active
+        });
+      }
     }
   }
 

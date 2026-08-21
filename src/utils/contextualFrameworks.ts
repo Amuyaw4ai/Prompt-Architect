@@ -260,7 +260,7 @@ export const ALL_FRAMEWORKS: ContextualFramework[] = [
     id: 'clean-architecture-solid',
     name: 'Clean Architecture & SOLID Pattern',
     description: 'Enterprise software architecture blueprint enforcing separation of concerns, domain entities, and type safety.',
-    category: 'code',
+    category: 'text',
     domain: 'code',
     domainName: 'Software Architecture',
     keywords: [/code/i, /typescript/i, /javascript/i, /python/i, /react/i, /backend/i, /architecture/i, /refactor/i, /api/i, /solid/i, /clean code/i],
@@ -281,7 +281,7 @@ Context & Implementation Scope:
     id: 'defensive-security-guard',
     name: 'Defensive Security & Edge-Case Guard',
     description: 'Hardened security framework targeting sanitization, auth boundaries, rate limiting, and zero-trust validations.',
-    category: 'code',
+    category: 'text',
     domain: 'code',
     domainName: 'Software Architecture',
     keywords: [/security/i, /sanitize/i, /auth/i, /guard/i, /vulnerability/i, /validation/i, /rate limit/i, /owasp/i, /injection/i, /token/i],
@@ -299,7 +299,7 @@ Context & Implementation Scope:
     id: 'test-driven-development-tdd',
     name: 'Test-Driven Development (TDD) Blueprint',
     description: 'Comprehensive test suites covering unit test matrices, edge-case permutations, and integration mock fixtures.',
-    category: 'code',
+    category: 'text',
     domain: 'code',
     domainName: 'Software Architecture',
     keywords: [/test/i, /tdd/i, /unit test/i, /jest/i, /vitest/i, /mock/i, /coverage/i, /fixtures/i, /integration/i, /assert/i],
@@ -311,36 +311,6 @@ Context & Implementation Scope:
 2. **Edge Case & Boundary Matrix**: Null/undefined inputs, boundary integer thresholds, network latency timeouts, corrupt payloads.
 3. **Mocking & Isolation**: Self-contained mock factories and spies without external dependency coupling.
 4. **Executable Test Code**: Formatted in standard Vitest / Jest with descriptive 'describe' / 'it' blocks.`
-  },
-
-  // ==========================================
-  // AUDIO & VOICE SYNTHESIS
-  // ==========================================
-  {
-    id: 'podcast-voiceover-narration',
-    name: 'Podcast Voice & Vocal Narration Spec',
-    description: 'Warm broadcast studio vocal cadence, 48kHz acoustic clarity, natural breathing, and engaging diction.',
-    category: 'audio',
-    domain: 'general',
-    domainName: 'Audio Synthesis',
-    keywords: [/podcast/i, /voice/i, /narration/i, /voiceover/i, /speech/i, /audio/i, /diction/i, /vocal/i, /radio/i],
-    template: `Broadcast voice synthesis blueprint for [TOPIC/CHARACTER].
-- Voice & Tone: Warm, authoritative yet accessible vocal timbre, rich resonance, balanced pacing at 145 words per minute.
-- Acoustic Environment: Treated studio sound booth, zero room reverb, crisp 48kHz / 24-bit audio fidelity.
-- Punctuation & Cadence: Natural conversational breathing pauses, rhythmic emphasis on key insights, clear articulation.`
-  },
-  {
-    id: 'ambient-soundscape-synthesis',
-    name: 'Ambient Spatial Soundscape Design',
-    description: 'Immersive 3D spatial audio environment with layered ambient textures, acoustic depth, and smooth panning.',
-    category: 'audio',
-    domain: 'general',
-    domainName: 'Audio Synthesis',
-    keywords: [/soundscape/i, /ambient/i, /spatial/i, /3d audio/i, /binaural/i, /environment/i, /sound design/i, /foley/i],
-    template: `Spatial soundscape design specification for [SCENE/ENVIRONMENT].
-- Base Texture: Deep sub-bass hum layered with organic environmental wind turbulence and soft rain patter.
-- Spatial Placement: Binaural 3D stereo panning, distant thunder echoing across the left channel, close foliage rustle on the right.
-- Frequency Response: Warm low-end weight, pristine high-end air, dynamic headroom preventing acoustic clashing.`
   },
 
   // ==========================================

@@ -3,6 +3,7 @@ import { ChatSession } from '../types';
 import { Clock, MessageSquare, Trash2, ChevronRight, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
+import { getLocalChatSessions, saveLocalChatSessions } from '../utils/persistence';
 
 interface Props {
   onSelect: (session: ChatSession) => void;
@@ -16,17 +17,31 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchSessions = async () => {
+    // Hydrate instantly from persistent local device storage first!
+    const localSessions = getLocalChatSessions();
+    if (localSessions.length > 0) {
+      setSessions(localSessions);
+    }
+
     try {
       const res = await fetch('/api/sessions');
       const data = await res.json();
       if (Array.isArray(data)) {
-        setSessions(data);
-      } else {
-        setSessions([]);
+        if (data.length > 0) {
+          setSessions(data);
+          saveLocalChatSessions(data);
+        } else if (localSessions.length > 0) {
+          // Keep local sessions if server returned empty on container restart
+          setSessions(localSessions);
+        } else {
+          setSessions([]);
+        }
       }
     } catch (error) {
-      console.error('Error fetching sessions:', error);
-      setSessions([]);
+      console.error('Error fetching sessions, using local device storage:', error);
+      if (localSessions.length > 0) {
+        setSessions(localSessions);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -45,7 +60,11 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
     if (!confirmDeleteId) return;
     try {
       await fetch(`/api/sessions/${confirmDeleteId}`, { method: 'DELETE' });
-      setSessions(prev => prev.filter(s => s.id !== confirmDeleteId));
+      setSessions(prev => {
+        const updated = prev.filter(s => s.id !== confirmDeleteId);
+        saveLocalChatSessions(updated);
+        return updated;
+      });
       setConfirmDeleteId(null);
     } catch (error) {
       console.error('Error deleting session:', error);
@@ -60,6 +79,7 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
     try {
       await fetch('/api/sessions', { method: 'DELETE' });
       setSessions([]);
+      saveLocalChatSessions([]);
       setConfirmDeleteAll(false);
     } catch (error) {
       console.error('Error clearing history:', error);

@@ -3,6 +3,7 @@ import { Search, Tag, Calendar, Trash2, Edit3, Star, GitBranch, ChevronDown, Che
 import { SavedPrompt, PromptType } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
+import { getLocalSavedPrompts, saveLocalPrompts, sanitizeInput } from '../utils/persistence';
 
 interface Props {
   onEdit: (prompt: SavedPrompt) => void;
@@ -18,9 +19,16 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
 
   const fetchPrompts = async () => {
     setIsLoading(true);
+    // Hydrate instantly from persistent local device storage first!
+    const localData = getLocalSavedPrompts();
+    if (localData.length > 0) {
+      setPrompts(localData);
+    }
+
     try {
+      const cleanSearch = sanitizeInput(search);
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
+      if (cleanSearch) params.append('search', cleanSearch);
       if (filterType !== 'all' && filterType !== 'favorites') params.append('type', filterType);
       
       const res = await fetch(`/api/prompts?${params.toString()}`);
@@ -30,13 +38,23 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
         if (filterType === 'favorites') {
           filteredData = data.filter(p => p.isFavorite);
         }
-        setPrompts(filteredData);
-      } else {
-        setPrompts([]);
+        
+        // Reconcile and save to local storage
+        if (filteredData.length > 0) {
+          setPrompts(filteredData);
+          saveLocalPrompts(filteredData);
+        } else if (!cleanSearch && filterType === 'all' && localData.length > 0) {
+          // If server returned empty on cold restart, prioritize local phone data!
+          setPrompts(localData);
+        } else {
+          setPrompts(filteredData);
+        }
       }
     } catch (error) {
-      console.error('Error fetching prompts:', error);
-      setPrompts([]);
+      console.error('Error fetching prompts from server, using local device storage:', error);
+      if (localData.length > 0) {
+        setPrompts(localData);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +68,11 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
     if (confirmDeleteId === null) return;
     try {
       await fetch(`/api/prompts/${confirmDeleteId}`, { method: 'DELETE' });
-      setPrompts(prev => prev.filter(p => p.id !== confirmDeleteId));
+      setPrompts(prev => {
+        const updated = prev.filter(p => p.id !== confirmDeleteId);
+        saveLocalPrompts(updated);
+        return updated;
+      });
       setConfirmDeleteId(null);
     } catch (error) {
       console.error('Error deleting prompt:', error);
@@ -64,7 +86,11 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isFavorite: !currentStatus })
       });
-      setPrompts(prev => prev.map(p => p.id === id ? { ...p, isFavorite: !currentStatus } : p));
+      setPrompts(prev => {
+        const updated = prev.map(p => p.id === id ? { ...p, isFavorite: !currentStatus } : p);
+        saveLocalPrompts(updated);
+        return updated;
+      });
       if (filterType === 'favorites' && currentStatus) {
         setPrompts(prev => prev.filter(p => p.id !== id));
       }
