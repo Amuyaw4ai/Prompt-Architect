@@ -215,19 +215,26 @@ export const PromptEditor: React.FC<Props> = ({
 
           <button
             onClick={() => setIsPreview(!isPreview)}
-            className="font-bold rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/50 transition-all flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs shadow-2xs active:scale-95 cursor-pointer"
+            className={cn(
+              "font-bold rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/50 transition-all flex items-center justify-center gap-1.5 text-xs shadow-2xs active:scale-95 cursor-pointer",
+              totalVersions > 1 ? "p-2 sm:px-3 sm:py-1.5" : "px-3 py-1.5"
+            )}
             title={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
             aria-label={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
           >
             {isPreview ? (
               <>
                 <Pencil size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="font-extrabold uppercase tracking-tight text-[11px]">Edit Mode</span>
+                <span className={cn("font-extrabold uppercase tracking-tight text-[11px]", totalVersions > 1 ? "hidden sm:inline" : "inline")}>
+                  Edit Mode
+                </span>
               </>
             ) : (
               <>
                 <Eye size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="font-extrabold uppercase tracking-tight text-[11px]">Show Preview</span>
+                <span className={cn("font-extrabold uppercase tracking-tight text-[11px]", totalVersions > 1 ? "hidden sm:inline" : "inline")}>
+                  Show Preview
+                </span>
               </>
             )}
           </button>
