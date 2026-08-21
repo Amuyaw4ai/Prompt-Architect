@@ -26,7 +26,6 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV=production
-ENV PORT=3000
 
 # Install production dependencies only
 COPY package*.json ./
@@ -41,11 +40,7 @@ COPY --from=builder /app/src/utils/contextualFrameworks.ts ./src/utils/contextua
 USER node
 
 # Expose default application port space
-EXPOSE 3000
-
-# Healthcheck to ensure container availability
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+EXPOSE 8080 3000
 
 # Start full-stack server
 CMD ["npx", "tsx", "server.ts"]
