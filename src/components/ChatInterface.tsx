@@ -315,6 +315,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string, url: string, name?: string } | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
   const [showFrameworks, setShowFrameworks] = useState(false);
+  const [showQuickAddModifiers, setShowQuickAddModifiers] = useState(false);
   const [isTransformingFramework, setIsTransformingFramework] = useState(false);
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
   const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video' | 'all'>('current');
@@ -1207,39 +1208,57 @@ export const ChatInterface: React.FC<Props> = ({
                             )}
 
                             {contextualQuickAddSuggestions.length > 0 && (
-                              <div className="space-y-1.5 pt-1">
-                                <div className="text-[10px] font-black tracking-widest text-amber-500 uppercase flex items-center gap-1.5">
+                              <div className="space-y-1.5 pt-1 border-t border-stone-200/40 dark:border-slate-700/40 mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowQuickAddModifiers(!showQuickAddModifiers)}
+                                  className="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-amber-500 uppercase hover:text-amber-600 dark:hover:text-amber-400 transition-colors py-1 cursor-pointer"
+                                >
                                   <Zap size={11} />
-                                  <span>Quick Add Modifiers:</span>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {contextualQuickAddSuggestions.map((sug) => (
-                                    <button
-                                      key={sug.id}
-                                      type="button"
-                                      onClick={() => handleToggleQuickAddSuggestion(sug)}
-                                      disabled={isLoading}
-                                      className={cn(
-                                        "px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1.5",
-                                        sug.active
-                                          ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 shadow-xs font-bold"
-                                          : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-700 hover:border-emerald-300"
-                                      )}
+                                  <span>Quick Add Modifiers</span>
+                                  <span className="text-[9px] font-bold text-stone-400 dark:text-slate-500 font-mono">
+                                    ({contextualQuickAddSuggestions.filter(s => s.active).length > 0 ? `${contextualQuickAddSuggestions.filter(s => s.active).length} active` : 'optional'})
+                                  </span>
+                                  <ChevronDown size={12} className={cn("transition-transform duration-200 ml-0.5", showQuickAddModifiers ? "rotate-180" : "")} />
+                                </button>
+
+                                <AnimatePresence>
+                                  {showQuickAddModifiers && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      className="flex flex-wrap items-center gap-1.5 pt-1 overflow-hidden"
                                     >
-                                      {sug.active ? (
-                                        <>
-                                          <Check size={11} className="text-white stroke-[3]" />
-                                          <span>{sug.label}</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <span className="text-emerald-500 font-bold text-[12px]">+</span>
-                                          <span>{sug.label}</span>
-                                        </>
-                                      )}
-                                    </button>
-                                  ))}
-                                </div>
+                                      {contextualQuickAddSuggestions.map((sug) => (
+                                        <button
+                                          key={sug.id}
+                                          type="button"
+                                          onClick={() => handleToggleQuickAddSuggestion(sug)}
+                                          disabled={isLoading}
+                                          className={cn(
+                                            "px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1.5",
+                                            sug.active
+                                              ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 shadow-xs font-bold"
+                                              : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-700 hover:border-emerald-300"
+                                          )}
+                                        >
+                                          {sug.active ? (
+                                            <>
+                                              <Check size={11} className="text-white stroke-[3]" />
+                                              <span>{sug.label}</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <span className="text-emerald-500 font-bold text-[12px]">+</span>
+                                              <span>{sug.label}</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
                             )}
                           </div>

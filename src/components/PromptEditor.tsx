@@ -123,8 +123,8 @@ export const PromptEditor: React.FC<Props> = ({
   const getFinalPrompt = () => {
     let final = value;
     Object.entries(variables).forEach(([name, val]) => {
-      if (val && val.trim()) {
-        final = final.replaceAll(`[${name}]`, val);
+      if (val.trim()) {
+        final = final.replace(new RegExp(`\\[${name}\\]`, 'g'), val);
       }
     });
     return final;
@@ -215,22 +215,19 @@ export const PromptEditor: React.FC<Props> = ({
 
           <button
             onClick={() => setIsPreview(!isPreview)}
-            className={cn(
-              "font-bold rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/50 dark:border-emerald-800/40 transition-colors flex items-center justify-center gap-1.5",
-              isCompact ? "p-1.5 text-xs" : "text-[10px] px-2.5 py-1"
-            )}
+            className="font-bold rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/50 transition-all flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs shadow-2xs active:scale-95 cursor-pointer"
             title={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
             aria-label={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
           >
             {isPreview ? (
               <>
-                <Pencil size={12} />
-                <span className="hidden sm:inline">Edit</span>
+                <Pencil size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-extrabold uppercase tracking-tight text-[11px]">Edit Mode</span>
               </>
             ) : (
               <>
-                <Eye size={12} />
-                <span className="hidden sm:inline">Preview</span>
+                <Eye size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-extrabold uppercase tracking-tight text-[11px]">Show Preview</span>
               </>
             )}
           </button>
