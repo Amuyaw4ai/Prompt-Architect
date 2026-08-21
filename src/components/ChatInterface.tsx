@@ -316,6 +316,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
   const [showFrameworks, setShowFrameworks] = useState(false);
   const [showQuickAddModifiers, setShowQuickAddModifiers] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isTransformingFramework, setIsTransformingFramework] = useState(false);
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
   const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video' | 'all'>('current');
@@ -1556,21 +1557,54 @@ export const ChatInterface: React.FC<Props> = ({
                   ref={textFileInputRef}
                   onChange={handleTextFileUpload}
                 />
-                <div className="absolute left-1.5 bottom-1.5 flex items-center gap-1 z-10">
+
+                {/* Unified Add Context Button */}
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20">
                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="min-h-[38px] min-w-[38px] p-2 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white/90 dark:bg-slate-800/90 rounded-xl flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60"
-                    title="Upload image or media"
+                    type="button"
+                    onClick={() => setShowAttachMenu(!showAttachMenu)}
+                    className="h-9 px-2.5 text-stone-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center gap-1.5 border border-stone-200 dark:border-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold text-xs"
+                    title="Add Context (Upload image, media, or document)"
                   >
-                    <ImagePlus size={16} />
+                    <Paperclip size={15} className="text-emerald-600 dark:text-emerald-400" />
+                    <span className="hidden min-[400px]:inline text-[11px]">Context</span>
                   </button>
-                  <button
-                    onClick={() => textFileInputRef.current?.click()}
-                    className="min-h-[38px] min-w-[38px] p-2 text-stone-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-white/90 dark:bg-slate-800/90 rounded-xl flex items-center justify-center border border-stone-200/60 dark:border-slate-700/60"
-                    title="Attach text context (.txt, .md, .csv)"
-                  >
-                    <Paperclip size={16} />
-                  </button>
+
+                  {/* Add Context Popover Menu */}
+                  <AnimatePresence>
+                    {showAttachMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        className="absolute bottom-11 left-0 z-50 bg-white dark:bg-slate-800 rounded-2xl border border-stone-200 dark:border-slate-700 shadow-2xl p-1.5 min-w-[190px] space-y-1"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAttachMenu(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-slate-700/80 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-all text-left cursor-pointer"
+                        >
+                          <ImagePlus size={15} className="text-emerald-500 shrink-0" />
+                          <span>Upload Image / Media</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAttachMenu(false);
+                            textFileInputRef.current?.click();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-slate-700/80 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-all text-left cursor-pointer"
+                        >
+                          <Paperclip size={15} className="text-emerald-500 shrink-0" />
+                          <span>Attach Document / File</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <textarea
@@ -1586,31 +1620,16 @@ export const ChatInterface: React.FC<Props> = ({
                     }
                   }}
                   placeholder="Describe your idea..."
-                  className={cn(
-                    "w-full pl-24 py-2.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[44px] max-h-[220px] resize-none overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden leading-relaxed",
-                    lastResult?.refinedPrompt ? "pr-24" : "pr-14"
-                  )}
+                  className="w-full pl-24 min-[400px]:pl-28 pr-14 py-2.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[46px] max-h-[220px] resize-none overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden leading-relaxed"
                   disabled={isLoading}
                 />
 
-                <div className="absolute right-1.5 bottom-1.5 flex gap-1.5 z-10">
-                  {lastResult?.refinedPrompt && (
-                    <button
-                      onClick={() => {
-                        const final = getFinalPrompt();
-                        handleSend(`Please refine this prompt further:\n\n${final}`);
-                      }}
-                      disabled={isLoading}
-                      className="min-h-[38px] min-w-[38px] p-2 bg-stone-200 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-stone-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 flex items-center justify-center"
-                      title="Refine Current Prompt"
-                    >
-                      <Sparkles size={16} />
-                    </button>
-                  )}
+                {/* Streamlined Centered Send Button */}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20">
                   <button
                     onClick={() => handleSend()}
                     disabled={(!input.trim() && selectedOptions.length === 0 && !selectedImage && attachedFiles.length === 0) || isLoading}
-                    className="min-h-[38px] min-w-[38px] p-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center"
+                    className="h-9 w-9 p-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center cursor-pointer"
                     title="Send Message (Enter)"
                   >
                     <Send size={16} />
