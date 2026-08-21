@@ -27,6 +27,9 @@ FROM node:20-slim AS production
 
 WORKDIR /app
 
+# Install build tools to compile native C++ modules in runtime container
+RUN apt-get update && apt-get install -y python3 make g++ gcc && rm -rf /var/lib/apt/lists/*
+
 # Set production environment
 ENV NODE_ENV=production
 
@@ -34,6 +37,9 @@ ENV NODE_ENV=production
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+
+# Rebuild native better-sqlite3 module for production runtime container environment
+RUN npm rebuild better-sqlite3 --build-from-source
 
 # Security Hardening: Run as unprivileged node user
 USER node
