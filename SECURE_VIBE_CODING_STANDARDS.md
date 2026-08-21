@@ -87,3 +87,7 @@ When initializing or auditing any codebase, the AI Editor MUST automatically cre
    - `git status` shows zero tracked `.env` or credential files.
    - All secret keys remain strictly in `process.env`.
    - The application builds cleanly and passes all build checks.
+4. **Deployment Checkpoint Protocol**:
+   - Local Git commits & GitHub pushes preserve progress after every edit.
+   - Live cloud deployments (e.g. `gcloud run deploy`) are batched into milestone checkpoints (e.g., after 5–10 accumulated edits/tasks).
+   - Exception: Trigger a live deployment immediately ONLY when a complete, standalone major feature or finite milestone update has been executed.

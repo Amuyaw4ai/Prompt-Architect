@@ -36,6 +36,10 @@
 - Use the `cn(...)` utility helper (`clsx` + `tailwind-merge`) for conditional Tailwind class names.
 - Provide defensive fallback states when calling backend APIs or generating content with Gemini models.
 
-## 6. User Interaction & Git Hygiene Rules
+## 6. Deployment Checkpoint & Git Hygiene Rules
 - **Step-by-Step Execution**: Address multi-part user requests systematically one step at a time without bundling or skipping requirements.
-- **Git Commit & Push Hygiene**: After major updates or security/containerization milestones, run build checks, perform clean atomic git commits, and push live to remote GitHub (`origin main`).
+- **Git Commit & Push Hygiene**: After major updates or fixes, run build checks, perform clean atomic git commits, and push live to remote GitHub (`origin main`).
+- **Cloud Run Deployment Checkpoint Protocol**:
+  - Do NOT deploy to Google Cloud Run (`gcloud run deploy`) for every minor style or UI tweak.
+  - Batch smaller UI/styling edits into milestone checkpoints (deploy after accumulating 5–10 completed tasks/edits).
+  - Exception: Trigger Cloud Run deployment immediately ONLY when a complete, standalone major feature or critical milestone update has been executed.
