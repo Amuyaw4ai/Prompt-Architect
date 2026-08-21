@@ -981,6 +981,27 @@ export const ChatInterface: React.FC<Props> = ({
     }
   };
 
+  const mobileTabOrder: ('chat' | 'editor' | 'output')[] = ['chat', 'editor', 'output'];
+  const currentTabIdx = mobileTabOrder.indexOf(currentMobileTab || 'chat');
+  const prevTabIdxRef = useRef(currentTabIdx);
+  const slideDirection = currentTabIdx >= prevTabIdxRef.current ? 1 : -1;
+
+  useEffect(() => {
+    prevTabIdxRef.current = currentTabIdx;
+  }, [currentTabIdx]);
+
+  const handleSwipeLeft = () => {
+    if (currentTabIdx < 2 && onMobileTabChange) {
+      onMobileTabChange(mobileTabOrder[currentTabIdx + 1]);
+    }
+  };
+
+  const handleSwipeRight = () => {
+    if (currentTabIdx > 0 && onMobileTabChange) {
+      onMobileTabChange(mobileTabOrder[currentTabIdx - 1]);
+    }
+  };
+
   const isExpired = currentSession && (Date.now() - currentSession.createdAt) > 3600000;
 
   return (
@@ -1030,80 +1051,98 @@ export const ChatInterface: React.FC<Props> = ({
                         <input type="radio" name="saveMode" value="new_prompt" checked={saveMode === 'new_prompt'} onChange={() => setSaveMode('new_prompt')} className="hidden" />
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Save as New Prompt</span>
-                          <span className="text-xs text-stone-500 dark:text-slate-400">Completely separate entry</span>
+                          <span className="text-xs text-stone-500 dark:text-slate-400">Create a completely separate prompt entry</span>
                         </div>
                       </label>
                     </div>
                   </div>
                 )}
-
+                
                 <div>
-                  <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Title</label>
+                  <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Prompt Title</label>
                   <input 
-                    type="text" 
+                    type="text"
                     value={saveData.title}
-                    onChange={e => setSaveData(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-5 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
-                    placeholder="e.g. Cyberpunk Portrait"
+                    onChange={e => setSaveData({ ...saveData, title: e.target.value })}
+                    placeholder={lastResult?.suggestedTitle || "My Awesome Prompt"}
+                    className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100 font-semibold"
                   />
                 </div>
-                
-                {(saveMode === 'new_version' || saveMode === 'update') && (
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Tags (Comma separated)</label>
+                  <input 
+                    type="text"
+                    value={saveData.tags}
+                    onChange={e => setSaveData({ ...saveData, tags: e.target.value })}
+                    placeholder="e.g. Midjourney, Cinematic, Portrait"
+                    className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100"
+                  />
+                </div>
+
+                {saveMode === 'new_version' && (
                   <div>
-                    <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Version Notes (Optional)</label>
-                    <input 
-                      type="text" 
+                    <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Version Notes / Changes</label>
+                    <textarea 
                       value={saveData.versionNotes}
-                      onChange={e => setSaveData(prev => ({ ...prev, versionNotes: e.target.value }))}
-                      className="w-full px-5 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
-                      placeholder="e.g. Adjusted lighting to be more cinematic"
+                      onChange={e => setSaveData({ ...saveData, versionNotes: e.target.value })}
+                      placeholder="e.g. Adjusted lighting and camera angle for v2"
+                      rows={2}
+                      className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100 resize-none"
                     />
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Tags (comma separated)</label>
-                  <input 
-                    type="text" 
-                    value={saveData.tags}
-                    onChange={e => setSaveData(prev => ({ ...prev, tags: e.target.value }))}
-                    className="w-full px-5 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-100 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500"
-                    placeholder="e.g. neon, portrait, cinematic"
-                  />
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    onClick={() => setShowSaveModal(false)}
+                    className="flex-1 py-4 text-sm font-bold text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSave}
+                    className="flex-1 py-4 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl text-sm font-bold shadow-xl shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all"
+                  >
+                    Save Prompt
+                  </button>
                 </div>
-              </div>
-              <div className="flex gap-4 mt-10">
-                <button 
-                  onClick={() => setShowSaveModal(false)}
-                  className="flex-1 py-4 text-sm font-bold text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSave}
-                  className="flex-1 py-4 bg-stone-900 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl text-sm font-bold hover:bg-stone-800 dark:hover:bg-emerald-400 transition-all shadow-lg shadow-stone-200 dark:shadow-none"
-                >
-                  {saveMode === 'update' ? 'Update' : 'Save'} Prompt
-                </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Content Area - 3 Column Layout */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+      {/* Main Content Area - 3 Column Layout with Mobile Touch Swipe & Sliding Transitions */}
+      <div 
+        className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative touch-pan-y"
+        onTouchStart={(e) => {
+          (window as any)._touchStartX = e.touches[0].clientX;
+        }}
+        onTouchEnd={(e) => {
+          const startX = (window as any)._touchStartX;
+          if (startX !== undefined) {
+            const endX = e.changedTouches[0].clientX;
+            const diff = startX - endX;
+            if (diff > 50) {
+              handleSwipeLeft(); // Swipe Left -> Next Tab (Chat -> Editor -> Output)
+            } else if (diff < -50) {
+              handleSwipeRight(); // Swipe Right -> Prev Tab (Output -> Editor -> Chat)
+            }
+          }
+        }}
+      >
         
         {/* Joint Container for Left Column (Chat) & Middle Column (Prompt Editor) with floating input bar */}
         <div className={cn(
-          "relative flex-col lg:flex-row flex-1 min-w-0 h-full min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700",
+          "relative flex-col lg:flex-row flex-1 min-w-0 h-full min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700 transition-all duration-300",
           currentMobileTab === 'output' ? 'hidden lg:flex' : 'flex'
         )}>
           
-          {/* Left Column: Chat conversation without avatars, faint opaque user bubble, no box for AI */}
+          {/* Left Column: Chat conversation */}
           <div className={cn(
-            "flex-col min-w-0 h-full min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80 overflow-hidden",
-            currentMobileTab === 'chat' ? 'flex flex-1 w-full' : 'hidden lg:flex lg:w-1/2 lg:flex-1'
+            "flex-col min-w-0 h-full min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80 overflow-hidden transition-all duration-300",
+            currentMobileTab === 'chat' ? 'flex flex-1 w-full animate-in fade-in slide-in-from-left-4' : 'hidden lg:flex lg:w-1/2 lg:flex-1'
           )}>
             <div 
               ref={scrollRef}
