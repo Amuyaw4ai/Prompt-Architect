@@ -1019,15 +1019,15 @@ export const ChatInterface: React.FC<Props> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-slate-900/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-6"
+            className="fixed inset-0 z-[100] bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-800 p-5 sm:p-8 rounded-[2rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-[94%] sm:w-full max-w-md max-h-[85vh] overflow-y-auto my-auto"
             >
-              <h3 className="text-3xl font-black mb-2 tracking-tight text-stone-900 dark:text-slate-100">Save Prompt</h3>
-              <p className="text-stone-500 dark:text-slate-400 mb-8">Add this masterpiece to your library.</p>
+              <h3 className="text-2xl sm:text-3xl font-black mb-1 tracking-tight text-stone-900 dark:text-slate-100">Save Prompt</h3>
+              <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mb-6">Add this masterpiece to your library.</p>
               
               <div className="space-y-6">
                 {editingPrompt && (
