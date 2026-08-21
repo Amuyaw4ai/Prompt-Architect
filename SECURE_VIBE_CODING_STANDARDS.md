@@ -1,5 +1,5 @@
 # Master Security & Containerization Governance Framework
-> **Secure Vibe Coding & Production Infrastructure Standard (v2.3)**
+> **Secure Vibe Coding & Production Infrastructure Standard (v2.4)**
 
 ---
 
@@ -17,6 +17,7 @@ Whenever this document (or `Secure Vibe Coding Risk Management.pdf` and `CONTAIN
 | **`v2.1`** | Added Section 7: Universal SPA Mobile Navigation Standard (`history.pushState`). | Mobile Web / React SPAs |
 | **`v2.2`** | Added Section 8: GitHub Automated Security Governance (Dependabot & CodeQL). | GitHub Repositories |
 | **`v2.3`** | Added Section 8.1: Dependabot PR Handling Protocol (4-Step Engineering Workflow). | Security & Dependency Management |
+| **`v2.4`** | Added Section 9: Autonomous Sub-Agent Roster & Delegation Protocol. | Multi-Agent Operations |
 
 ---
 
@@ -203,5 +204,37 @@ The AI Assistant MUST NEVER auto-merge Dependabot PRs without local verification
    git push origin main
    ```
 
+---
 
+## 9. Autonomous Sub-Agent Roster & Delegation Protocol
 
+### Universal Mandate
+To maintain high velocity, clean primary conversation context, and prevent model cognitive overload during active pair-programming, repetitive or background maintenance activities MUST be delegated to specialized sub-agents (`invoke_subagent`).
+
+```
+  ┌────────────────────────────────────────────────────────┐
+  │              PRIMARY MOTHER AGENT                     │
+  │     (Active Interaction, Code Architecture & UI)      │
+  └──────────────────────────┬─────────────────────────────┘
+                             │ Delegates Background Tasks
+           ┌─────────────────┼─────────────────┐
+           ▼                 ▼                 ▼
+   [dependabot-auditor] [codeql-sentinel] [cloud-deployer]
+```
+
+### Specialized Sub-Agent Roster
+1. **`dependabot-auditor`**:
+   - **Role**: Automated Dependency & Security Auditor.
+   - **Task**: Scans open Dependabot PRs, verifies package compatibility, executes the 4-Step Engineering Workflow (`checkout` -> `npm install` -> `npm run build` -> `git merge`), and returns a 1-line execution log.
+2. **`codeql-sentinel`**:
+   - **Role**: Static Code Vulnerability & Lint Auditor.
+   - **Task**: Inspects CodeQL security alerts, verifies TypeScript/JavaScript data sanitization, checks XSS & SQL safety, and auto-resolves security lints.
+3. **`cloud-deployer`**:
+   - **Role**: Milestone Release & Production Infrastructure Manager.
+   - **Task**: Executes milestone checkpoint deployments (`package.json` version bumping, Git release tagging `vX.Y.Z`, pushing to `main`, and deploying revisions to Google Cloud Run).
+4. **`sync-verifier`**:
+   - **Role**: Cross-Device Hydration & DB Schema Auditor.
+   - **Task**: Verifies local device storage hydration (`localStorage` <-> SQLite), tests API endpoint contract validity, and verifies DB schema migrations.
+5. **`bundle-optimizer`**:
+   - **Role**: Production Bundle & Performance Specialist.
+   - **Task**: Analyzes production bundle chunk sizes (`vite build`), checks Tailwind CSS compilation efficiency, and optimizes minification.

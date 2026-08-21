@@ -49,3 +49,23 @@
   - `MINOR` increments ONLY after releasing a Standalone Major Feature / Milestone Update, resetting `PATCH` to `0` (`v1.0.14` -> `v1.1.0`). `v1.9.0` increments to `v1.10.0`.
   - `MAJOR` increments ONLY after Architectural Overhauls or Breaking Redesigns (`v1.4.2` -> `v2.0.0`), resetting `MINOR` and `PATCH` to `0`.
   - Always update `package.json` (`"version": "X.Y.Z"`) and tag Git releases (`git tag -a vX.Y.Z`).
+
+## 7. Autonomous Sub-Agent Roster & Delegation Protocol
+To keep the primary conversation context clean, token-efficient, and focused on active feature implementation, repetitive or background maintenance activities MUST be delegated to specialized sub-agents (`invoke_subagent`):
+
+1. **`dependabot-auditor`**:
+   - **Role**: Automated Dependency & Security Auditor.
+   - **Task**: Audits open Dependabot PRs weekly, checks package compatibility, executes the 4-Step Engineering Workflow (`checkout` -> `npm install` -> `npm run build` -> `git merge`), and reports status.
+2. **`codeql-sentinel`**:
+   - **Role**: SAST & Static Code Vulnerability Scanner.
+   - **Task**: Analyzes CodeQL security alerts, scans TypeScript/JavaScript for XSS, hardcoded credentials, or unsafe queries, and auto-resolves security linting errors.
+3. **`cloud-deployer`**:
+   - **Role**: Release & Cloud Infrastructure Deployment Manager.
+   - **Task**: Executes milestone checkpoint releases (version bumping in `package.json`, Git release tagging `vX.Y.Z`, pushing to `main`, and deploying container revisions to Google Cloud Run).
+4. **`sync-verifier`**:
+   - **Role**: Storage Hydration & Data Contract Integrity Auditor.
+   - **Task**: Verifies local device storage reconciliation (`localStorage` <-> SQLite), tests API endpoint contracts in `server.ts`, and verifies DB schema migrations.
+5. **`bundle-optimizer`**:
+   - **Role**: Performance & Vite Asset Compression Specialist.
+   - **Task**: Analyzes production bundle chunk sizes (`vite build`), checks Tailwind CSS compilation efficiency, and optimizes minification.
+
