@@ -91,3 +91,21 @@ When initializing or auditing any codebase, the AI Editor MUST automatically cre
    - Local Git commits & GitHub pushes preserve progress after every edit.
    - Live cloud deployments (e.g. `gcloud run deploy`) are batched into milestone checkpoints (e.g., after 5–10 accumulated edits/tasks).
    - Exception: Trigger a live deployment immediately ONLY when a complete, standalone major feature or finite milestone update has been executed.
+
+---
+
+## 6. Semantic Versioning Standard (`vMAJOR.MINOR.PATCH`)
+
+Application versions follow standard **Semantic Versioning** (`vMAJOR.MINOR.PATCH`), where version numbers are integer counters (not decimals):
+
+1. **`PATCH` (e.g., `v1.0.9` -> `v1.0.10`)**:
+   - Incremented after completing a **Checkpoint Batch** of minor UI edits, styling polish, or bug fixes (every 5–10 accumulated tasks/edits).
+   - Note: Numbers increment infinitely as integers. `v1.0.9` becomes `v1.0.10` (not `v1.1.0`).
+2. **`MINOR` (e.g., `v1.0.10` -> `v1.1.0` or `v1.9.0` -> `v1.10.0`)**:
+   - Incremented ONLY when releasing a **Standalone Major Feature / Milestone Update** (e.g., new page, template detail modal, audio support).
+   - Bumping `MINOR` resets `PATCH` to `0` (e.g., `v1.0.14` -> `v1.1.0`).
+3. **`MAJOR` (e.g., `v1.4.2` -> `v2.0.0`)**:
+   - Incremented ONLY after **Architectural Overhauls / Ground-Up Redesigns / Breaking Changes**.
+   - Bumping `MAJOR` resets `MINOR` and `PATCH` to `0`.
+4. **Maintenance & Release Tracking**:
+   - Every version increment MUST be updated in `package.json` (`"version": "X.Y.Z"`) and tagged in Git (`git tag -a vX.Y.Z`).

@@ -36,10 +36,16 @@
 - Use the `cn(...)` utility helper (`clsx` + `tailwind-merge`) for conditional Tailwind class names.
 - Provide defensive fallback states when calling backend APIs or generating content with Gemini models.
 
-## 6. Deployment Checkpoint & Git Hygiene Rules
+## 6. Deployment Checkpoint, Versioning & Git Hygiene Rules
 - **Step-by-Step Execution**: Address multi-part user requests systematically one step at a time without bundling or skipping requirements.
 - **Git Commit & Push Hygiene**: After major updates or fixes, run build checks, perform clean atomic git commits, and push live to remote GitHub (`origin main`).
 - **Cloud Run Deployment Checkpoint Protocol**:
   - Do NOT deploy to Google Cloud Run (`gcloud run deploy`) for every minor style or UI tweak.
   - Batch smaller UI/styling edits into milestone checkpoints (deploy after accumulating 5–10 completed tasks/edits).
   - Exception: Trigger Cloud Run deployment immediately ONLY when a complete, standalone major feature or critical milestone update has been executed.
+- **Semantic Versioning (`vMAJOR.MINOR.PATCH`)**:
+  - Version numbers are integer counters (e.g. `v1.0.9` -> `v1.0.10`).
+  - `PATCH` increments after every Checkpoint Batch of 5–10 minor edits (`v1.0.9` -> `v1.0.10`).
+  - `MINOR` increments ONLY after releasing a Standalone Major Feature / Milestone Update, resetting `PATCH` to `0` (`v1.0.14` -> `v1.1.0`). `v1.9.0` increments to `v1.10.0`.
+  - `MAJOR` increments ONLY after Architectural Overhauls or Breaking Redesigns (`v1.4.2` -> `v2.0.0`), resetting `MINOR` and `PATCH` to `0`.
+  - Always update `package.json` (`"version": "X.Y.Z"`) and tag Git releases (`git tag -a vX.Y.Z`).
