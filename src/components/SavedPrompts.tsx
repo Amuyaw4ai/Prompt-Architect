@@ -194,17 +194,12 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 dark:bg-emerald-500/10 blur-2xl rounded-full -mr-12 -mt-12 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/20 transition-colors" />
                 
                 <div className="flex justify-between items-start mb-6">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-black text-stone-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors tracking-tight">{mainPrompt.title}</h3>
-                      {hasVersions && (
-                        <span className="px-2 py-0.5 bg-stone-100 dark:bg-slate-700 text-stone-500 dark:text-slate-400 rounded-full text-[10px] font-bold flex items-center gap-1">
-                          <GitBranch size={10} />
-                          {sortedVersions.length} Versions
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-500">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <h3 className="text-xl font-black text-stone-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors tracking-tight leading-snug break-words mb-2">
+                      {mainPrompt.title}
+                    </h3>
+                    
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-500">
                       <div className="flex items-center gap-1">
                         <Calendar size={12} />
                         {new Date(mainPrompt.createdAt).toLocaleDateString()}
@@ -216,6 +211,12 @@ export const SavedPrompts: React.FC<Props> = ({ onEdit }) => {
                       )}>
                         {mainPrompt.type}
                       </span>
+                      {hasVersions && (
+                        <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50 rounded-full font-bold flex items-center gap-1">
+                          <GitBranch size={10} />
+                          {sortedVersions.length} Versions
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
