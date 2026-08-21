@@ -5,12 +5,12 @@
 # ------------------------------------------
 # Stage 1: Build Frontend & Native Dependencies
 # ------------------------------------------
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 # Install build tools required for native C++ modules like better-sqlite3
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y python3 make g++ gcc && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies (cached layer)
 COPY package*.json ./
@@ -23,7 +23,7 @@ RUN npm run build
 # ------------------------------------------
 # Stage 2: Minimal Production Runtime
 # ------------------------------------------
-FROM node:20-alpine AS production
+FROM node:20-slim AS production
 
 WORKDIR /app
 
@@ -34,8 +34,6 @@ ENV NODE_ENV=production
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.ts ./server.ts
-COPY --from=builder /app/src ./src
 
 # Security Hardening: Run as unprivileged node user
 USER node
@@ -43,5 +41,5 @@ USER node
 # Expose default application port space
 EXPOSE 8080 3000
 
-# Start full-stack server using native compiled ESM bundle
-CMD ["node", "dist/server.js"]
+# Start full-stack server using native compiled CommonJS bundle
+CMD ["node", "dist/server.cjs"]
