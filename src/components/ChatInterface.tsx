@@ -1860,8 +1860,8 @@ export const ChatInterface: React.FC<Props> = ({
             )}
 
             {/* Contextual Suggestive Frameworks Bar */}
-            <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
-              <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+            <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <BookTemplate size={13} className="text-emerald-500 shrink-0" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400 truncate">
@@ -1873,7 +1873,7 @@ export const ChatInterface: React.FC<Props> = ({
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-0.5 bg-stone-100/80 dark:bg-slate-900/60 p-0.5 rounded-lg border border-stone-200/50 dark:border-slate-700/50">
+                <div className="flex items-center gap-0.5 bg-stone-100/80 dark:bg-slate-900/60 p-0.5 rounded-lg border border-stone-200/50 dark:border-slate-700/50 overflow-x-auto no-scrollbar max-w-full shrink-0">
                   {[
                     { id: 'current', label: isRightPanelCompact ? 'Top' : 'Suggested' },
                     { id: 'video', label: isRightPanelCompact ? 'Vid' : 'Video' },
@@ -1887,7 +1887,7 @@ export const ChatInterface: React.FC<Props> = ({
                         key={tab.id}
                         onClick={() => setActiveFrameworkCategory(tab.id as any)}
                         className={cn(
-                          "text-[10px] font-bold uppercase px-2 py-1 rounded-md transition-all min-h-[32px] flex items-center justify-center",
+                          "text-[10px] font-bold uppercase px-1.5 sm:px-2 py-1 rounded-md transition-all min-h-[30px] flex items-center justify-center whitespace-nowrap",
                           isActive
                             ? "bg-emerald-600 dark:bg-emerald-500 text-white shadow-2xs"
                             : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
@@ -1900,8 +1900,8 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Horizontal carousel on mobile, flex-wrap on desktop */}
-              <div className="flex overflow-x-auto lg:overflow-visible lg:flex-wrap no-scrollbar gap-2 py-1 -mx-1 px-1 lg:mx-0 lg:px-0">
+              {/* 2-column grid layout on mobile (<lg), flex-wrap on desktop (lg:) */}
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:flex lg:flex-wrap gap-2 py-1">
                 {contextualFrameworksData.suggested.map((fw: ContextualFramework) => {
                   const isTransformingThis = isTransformingFramework && transformingFrameworkName === fw.name;
                   const isContextMatch = (fw.score || 0) > 2;
@@ -1913,7 +1913,7 @@ export const ChatInterface: React.FC<Props> = ({
                       onClick={() => handleApplyFramework(fw)} 
                       title={`${fw.name} — ${fw.description}`}
                       className={cn(
-                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left shrink-0 min-h-[38px] px-3.5",
+                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left min-h-[38px] px-3.5 w-full lg:w-auto",
                         isTransformingThis
                           ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
                           : isContextMatch
@@ -1922,10 +1922,10 @@ export const ChatInterface: React.FC<Props> = ({
                       )}
                     >
                       <Sparkles size={12} className={cn("shrink-0", isTransformingThis ? "text-white animate-spin" : isContextMatch ? "text-emerald-500" : "text-stone-400 dark:text-slate-400 group-hover:text-emerald-500")} />
-                      <span className="font-semibold">{fw.name}</span>
+                      <span className="font-semibold truncate">{fw.name}</span>
                       {fw.domainName && !isRightPanelCompact && (
                         <span className={cn(
-                          "text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0",
+                          "text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0 ml-auto hidden sm:inline-block lg:inline-block",
                           isTransformingThis
                             ? "bg-emerald-700/50 text-emerald-100"
                             : isContextMatch
@@ -1942,7 +1942,7 @@ export const ChatInterface: React.FC<Props> = ({
             </div>
 
             {/* Contextual Suggestive Quick Add */}
-            <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm">
+            <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between gap-2 mb-2.5">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <Zap size={13} className="text-amber-500 shrink-0" />
@@ -1950,15 +1950,10 @@ export const ChatInterface: React.FC<Props> = ({
                     {isRightPanelCompact ? 'Quick Add:' : 'Contextual Quick Add:'}
                   </span>
                 </div>
-                {!isRightPanelCompact && (
-                  <span className="text-[9px] font-medium text-stone-400 dark:text-slate-500 truncate">
-                    Click to insert • Click active to remove
-                  </span>
-                )}
               </div>
 
-              {/* Horizontal carousel on mobile, flex-wrap on desktop */}
-              <div className="flex overflow-x-auto lg:overflow-visible lg:flex-wrap no-scrollbar gap-2 py-1 -mx-1 px-1 lg:mx-0 lg:px-0">
+              {/* 2-column grid layout on mobile (<lg), flex-wrap on desktop (lg:) */}
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:flex lg:flex-wrap gap-2 py-1">
                 {contextualQuickAddSuggestions.map(sug => {
                   return (
                     <button 
@@ -1966,7 +1961,7 @@ export const ChatInterface: React.FC<Props> = ({
                       onClick={() => handleToggleQuickAddSuggestion(sug)} 
                       title={sug.active ? `Remove "${sug.label}" from prompt` : `Insert "${sug.label}" into prompt`}
                       className={cn(
-                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 shrink-0 min-h-[38px] px-3.5",
+                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 min-h-[38px] px-3.5 w-full lg:w-auto text-left",
                         sug.active
                           ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500 shadow-xs shadow-emerald-600/30 hover:bg-emerald-700 dark:hover:bg-emerald-600"
                           : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
@@ -1974,8 +1969,8 @@ export const ChatInterface: React.FC<Props> = ({
                     >
                       {sug.active ? (
                         <>
-                          <Check size={12} className="text-white stroke-[3]" />
-                          <span>{sug.label}</span>
+                          <Check size={12} className="text-white stroke-[3] shrink-0" />
+                          <span className="truncate">{sug.label}</span>
                         </>
                       ) : (
                         <>
