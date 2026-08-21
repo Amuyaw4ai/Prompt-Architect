@@ -479,8 +479,8 @@ Please re-architect this prompt into the ${frameworkName} framework now.
     
     const rootId = currentPrompt.parent_id || currentPrompt.id;
     
-    // Fetch all prompts in this family
-    const rows = db.prepare("SELECT * FROM saved_prompts WHERE id = ? OR parent_id = ? ORDER BY created_at DESC").all(rootId, rootId);
+    // Fetch all prompts in this family (chronological order: v1 -> v2 -> v3)
+    const rows = db.prepare("SELECT * FROM saved_prompts WHERE id = ? OR parent_id = ? ORDER BY created_at ASC").all(rootId, rootId);
     
     const result = rows.map((row: any) => {
       let tags = [];

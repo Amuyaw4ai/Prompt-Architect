@@ -350,11 +350,37 @@ export const ChatInterface: React.FC<Props> = ({
       fetch(`/api/prompts/${editingPrompt.id}/versions`)
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data)) {
+          if (Array.isArray(data) && data.length > 0) {
             setPromptVersions(data);
+            const historyFromVersions: PromptResult[] = data.map(v => ({
+              refinedPrompt: v.refinedPrompt,
+              explanation: v.versionNotes || `Saved Version ${v.id}`,
+              suggestedTitle: v.title
+            }));
+            setResultHistory(historyFromVersions);
+            // Find index of selected editingPrompt, defaulting to latest (last)
+            const selectedIdx = data.findIndex(v => v.id === editingPrompt.id);
+            setCurrentResultIndex(selectedIdx >= 0 ? selectedIdx : historyFromVersions.length - 1);
+          } else {
+            const singleRes: PromptResult = {
+              refinedPrompt: editingPrompt.refinedPrompt,
+              explanation: editingPrompt.versionNotes || 'Saved prompt loaded from library.',
+              suggestedTitle: editingPrompt.title
+            };
+            setResultHistory([singleRes]);
+            setCurrentResultIndex(0);
           }
         })
-        .catch(console.error);
+        .catch(err => {
+          console.error('Error fetching prompt versions:', err);
+          const singleRes: PromptResult = {
+            refinedPrompt: editingPrompt.refinedPrompt,
+            explanation: editingPrompt.versionNotes || 'Saved prompt loaded from library.',
+            suggestedTitle: editingPrompt.title
+          };
+          setResultHistory([singleRes]);
+          setCurrentResultIndex(0);
+        });
     } else {
       setPromptVersions([]);
     }
