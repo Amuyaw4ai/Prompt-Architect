@@ -1,5 +1,5 @@
 # Master Security & Containerization Governance Framework
-> **Secure Vibe Coding & Production Infrastructure Standard (v2.2)**
+> **Secure Vibe Coding & Production Infrastructure Standard (v2.3)**
 
 ---
 
@@ -16,6 +16,7 @@ Whenever this document (or `Secure Vibe Coding Risk Management.pdf` and `CONTAIN
 | **`v2.0`** | Added Production Infrastructure, Containerization SOP & Cloud Run standards. | Docker / Cloud Run |
 | **`v2.1`** | Added Section 7: Universal SPA Mobile Navigation Standard (`history.pushState`). | Mobile Web / React SPAs |
 | **`v2.2`** | Added Section 8: GitHub Automated Security Governance (Dependabot & CodeQL). | GitHub Repositories |
+| **`v2.3`** | Added Section 8.1: Dependabot PR Handling Protocol (4-Step Engineering Workflow). | Security & Dependency Management |
 
 ---
 
@@ -176,5 +177,31 @@ Every repository MUST contain automated security scanning pipelines configured i
 - **Engine**: GitHub CodeQL (Static Application Security Testing).
 - **Triggers**: On push to `main`, on Pull Requests, and weekly cron schedule (`0 6 * * 1`).
 - **Scanned Vectors**: Cross-Site Scripting (XSS), SQL/Query Injection, Prototype Pollution, Unsafe Deserialization, Hardcoded Secrets, and Unhandled Exception flows.
+
+### 3. Dependabot PR Handling Protocol (The 4-Step Engineering Workflow)
+The AI Assistant MUST NEVER auto-merge Dependabot PRs without local verification. When open Dependabot PRs exist, the AI Assistant MUST execute the following 4-step engineering workflow for recommended updates:
+
+```
+ ┌──────────────────────────────────────────────────────────┐
+ │ Step 1: Switch to the Dependabot branch in Git           │
+ │ Step 2: Install updated package (`npm install`)          │
+ │ Step 3: Run Build Test (`npm run build`) to prove 0 bugs │
+ │ Step 4: Merge branch into `main` and push to GitHub      │
+ └──────────────────────────────────────────────────────────┘
+```
+
+1. **Step 1: Checkout Dependabot Branch**:
+   ```bash
+   git checkout dependabot/<ecosystem>/<package-name>
+   ```
+2. **Step 2: Install Updated Package**: Run `npm install` to update local package binaries and freeze secure hashes in `package-lock.json`.
+3. **Step 3: Empirical Build Verification**: Run `npm run build` locally. If compilation fails or introduces breaking changes, DO NOT merge. Keep PR open as a proposal for manual migration.
+4. **Step 4: Merge & Push to Production**: Once `npm run build` passes with 0 errors:
+   ```bash
+   git checkout main
+   git merge dependabot/<ecosystem>/<package-name> -m "chore(deps): merge Dependabot PR updating <package> to <version>"
+   git push origin main
+   ```
+
 
 
