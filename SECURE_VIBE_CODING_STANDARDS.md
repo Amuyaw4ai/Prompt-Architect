@@ -1,5 +1,5 @@
 # Master Security & Containerization Governance Framework
-> **Secure Vibe Coding & Production Infrastructure Standard (v2.0)**
+> **Secure Vibe Coding & Production Infrastructure Standard (v2.2)**
 
 ---
 
@@ -8,6 +8,14 @@
 This document establishes the universal **Method of Operation (SOP)** combining **Secure Vibe Coding Risk Management** and **Universal Containerization Standards**. 
 
 Whenever this document (or `Secure Vibe Coding Risk Management.pdf` and `CONTAINERIZATION_STANDARD.md`) is added to any software repository, the AI Editor & Assistant MUST automatically execute the **3-Phase Lifecycle Protocol** outlined below.
+
+### 📋 Document Revision History
+| Document Version | Scope & Major Enhancements | Target Environment |
+| :--- | :--- | :--- |
+| **`v1.0`** | Initial consolidation of Secure Vibe Coding Risk Management SOP. | General Web Projects |
+| **`v2.0`** | Added Production Infrastructure, Containerization SOP & Cloud Run standards. | Docker / Cloud Run |
+| **`v2.1`** | Added Section 7: Universal SPA Mobile Navigation Standard (`history.pushState`). | Mobile Web / React SPAs |
+| **`v2.2`** | Added Section 8: GitHub Automated Security Governance (Dependabot & CodeQL). | GitHub Repositories |
 
 ---
 
