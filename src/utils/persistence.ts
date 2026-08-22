@@ -123,3 +123,57 @@ export function markMilestoneCelebrationShown(): void {
     console.warn('Failed to mark milestone as shown:', err);
   }
 }
+
+// -------------------------------------------------------------
+// WORKSPACE COLUMN LAYOUT PERSISTENCE
+// -------------------------------------------------------------
+
+export interface WorkspaceLayoutConfig {
+  rightPanelWidth: number;
+  leftPanelRatio: number;
+}
+
+const LAYOUT_KEYS = {
+  RIGHT_PANEL_WIDTH: 'prompt_architect_right_panel_width_v1',
+  LEFT_PANEL_RATIO: 'prompt_architect_left_panel_ratio_v1'
+};
+
+export function getSavedWorkspaceLayout(): WorkspaceLayoutConfig {
+  let rightPanelWidth = 450;
+  let leftPanelRatio = 0.5;
+
+  try {
+    const savedWidth = localStorage.getItem(LAYOUT_KEYS.RIGHT_PANEL_WIDTH);
+    if (savedWidth) {
+      const parsed = parseInt(savedWidth, 10);
+      if (!isNaN(parsed) && parsed >= 280 && parsed <= 850) {
+        rightPanelWidth = parsed;
+      }
+    }
+
+    const savedRatio = localStorage.getItem(LAYOUT_KEYS.LEFT_PANEL_RATIO);
+    if (savedRatio) {
+      const parsed = parseFloat(savedRatio);
+      if (!isNaN(parsed) && parsed >= 0.25 && parsed <= 0.75) {
+        leftPanelRatio = parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to read workspace layout from local device storage:', err);
+  }
+
+  return { rightPanelWidth, leftPanelRatio };
+}
+
+export function saveWorkspaceLayout(config: Partial<WorkspaceLayoutConfig>): void {
+  try {
+    if (typeof config.rightPanelWidth === 'number') {
+      localStorage.setItem(LAYOUT_KEYS.RIGHT_PANEL_WIDTH, config.rightPanelWidth.toString());
+    }
+    if (typeof config.leftPanelRatio === 'number') {
+      localStorage.setItem(LAYOUT_KEYS.LEFT_PANEL_RATIO, config.leftPanelRatio.toString());
+    }
+  } catch (err) {
+    console.warn('Failed to save workspace layout config:', err);
+  }
+}

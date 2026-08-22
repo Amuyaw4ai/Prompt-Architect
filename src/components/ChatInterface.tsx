@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { cn, calculatePromptScore } from '../utils';
 import { PromptEditor } from './PromptEditor';
+import { getSavedWorkspaceLayout, saveWorkspaceLayout } from '../utils/persistence';
 
 const ALL_VARIABLE_SUGGESTIONS: Record<string, string[]> = {
   'SUBJECT': [
@@ -356,17 +357,24 @@ export const ChatInterface: React.FC<Props> = ({
   const [isTransformingFramework, setIsTransformingFramework] = useState(false);
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
   const [activeFrameworkCategory, setActiveFrameworkCategory] = useState<'current' | 'text' | 'image' | 'video' | 'all'>('current');
-  const [rightPanelWidth, setRightPanelWidth] = useState(450);
+  
+  // Resizable Workspace Column Persistence States
+  const [rightPanelWidth, setRightPanelWidth] = useState<number>(() => getSavedWorkspaceLayout().rightPanelWidth);
+  const [leftPanelRatio, setLeftPanelRatio] = useState<number>(() => getSavedWorkspaceLayout().leftPanelRatio);
   const isRightPanelCompact = rightPanelWidth <= 380;
   const isRightPanelUltraCompact = rightPanelWidth <= 340;
   const isRightPanelWide = rightPanelWidth >= 520;
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDraggingRight, setIsDraggingRight] = useState(false);
+  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
+  const jointContainerRef = useRef<HTMLDivElement>(null);
+
   const [promptVersions, setPromptVersions] = useState<SavedPrompt[]>([]);
   const [showVersionsDropdown, setShowVersionsDropdown] = useState(false);
   const versionsDropdownRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textFileInputRef = useRef<HTMLInputElement>(null);  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const textFileInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const lastXRef = useRef<number | null>(null);
   const isSendingRef = useRef(false);
   const hasProcessedInitialInputRef = useRef(false);
@@ -444,29 +452,40 @@ export const ChatInterface: React.FC<Props> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle dragging for resizable pane
+  // Handle dragging & layout persistence for dual resizable columns
   useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDragging) return;
-      
-      const currentX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      
-      if (lastXRef.current !== null) {
-        const deltaX = currentX - lastXRef.current;
-        setRightPanelWidth(prev => {
-          const newWidth = prev - deltaX;
-          return Math.min(Math.max(newWidth, 280), 850);
-        });
+      if (isDraggingLeft && jointContainerRef.current) {
+        const rect = jointContainerRef.current.getBoundingClientRect();
+        const currentX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const relativeX = currentX - rect.left;
+        const ratio = relativeX / rect.width;
+        const clampedRatio = Math.min(Math.max(ratio, 0.25), 0.75);
+        setLeftPanelRatio(clampedRatio);
+        saveWorkspaceLayout({ leftPanelRatio: clampedRatio });
       }
-      lastXRef.current = currentX;
+
+      if (isDraggingRight) {
+        const currentX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        if (lastXRef.current !== null) {
+          const deltaX = currentX - lastXRef.current;
+          setRightPanelWidth(prev => {
+            const newWidth = Math.min(Math.max(prev - deltaX, 280), 850);
+            saveWorkspaceLayout({ rightPanelWidth: newWidth });
+            return newWidth;
+          });
+        }
+        lastXRef.current = currentX;
+      }
     };
 
     const handleUp = () => {
-      setIsDragging(false);
+      setIsDraggingLeft(false);
+      setIsDraggingRight(false);
       lastXRef.current = null;
     };
 
-    if (isDragging) {
+    if (isDraggingLeft || isDraggingRight) {
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('touchmove', handleMove, { passive: false });
       document.addEventListener('mouseup', handleUp);
@@ -487,7 +506,7 @@ export const ChatInterface: React.FC<Props> = ({
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     };
-  }, [isDragging]);
+  }, [isDraggingLeft, isDraggingRight]);
 
   // Session Management
   const saveSession = async (msgs: Message[], type: PromptType, history?: PromptResult[], index?: number) => {
@@ -1108,16 +1127,22 @@ export const ChatInterface: React.FC<Props> = ({
       >
         
         {/* Joint Container for Left Column (Chat) & Middle Column (Prompt Editor) with floating input bar */}
-        <div className={cn(
-          "relative flex-col lg:flex-row flex-1 min-w-0 h-full min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700 transition-all duration-300",
-          currentMobileTab === 'output' ? 'hidden lg:flex' : 'flex'
-        )}>
+        <div 
+          ref={jointContainerRef}
+          className={cn(
+            "relative flex-col lg:flex-row flex-1 min-w-0 h-full min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700 transition-all duration-300",
+            currentMobileTab === 'output' ? 'hidden lg:flex' : 'flex'
+          )}
+        >
           
           {/* Left Column: Chat conversation */}
-          <div className={cn(
-            "flex-col min-w-0 h-full min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80 overflow-hidden transition-all duration-300",
-            currentMobileTab === 'chat' ? 'flex flex-1 w-full animate-in fade-in slide-in-from-left-4' : 'hidden lg:flex lg:w-1/2 lg:flex-1'
-          )}>
+          <div 
+            className={cn(
+              "flex-col min-w-0 h-full min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80 overflow-hidden transition-all duration-300",
+              currentMobileTab === 'chat' ? 'flex flex-1 w-full animate-in fade-in slide-in-from-left-4' : 'hidden lg:flex lg:flex-1'
+            )}
+            style={{ flex: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${leftPanelRatio} 1 0%` : undefined }}
+          >
             <div 
               ref={scrollRef}
               className="flex-1 h-full min-h-0 overflow-y-auto p-5 sm:p-6 pb-20 lg:pb-28 space-y-6 scroll-smooth bg-stone-50/20 dark:bg-slate-900/20 no-scrollbar [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent_100%)]"
@@ -1295,11 +1320,30 @@ export const ChatInterface: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Left Resizer Handle (Chat vs Editor) */}
+          <div 
+            className="hidden lg:flex w-1.5 cursor-col-resize bg-stone-200/80 dark:bg-slate-700/80 hover:bg-emerald-500 active:bg-emerald-600 z-20 items-center justify-center group transition-colors shrink-0"
+            onMouseDown={(e) => {
+              setIsDraggingLeft(true);
+              lastXRef.current = e.clientX;
+            }}
+            onTouchStart={(e) => {
+              setIsDraggingLeft(true);
+              lastXRef.current = e.touches[0].clientX;
+            }}
+            title="Drag to resize Chat vs Prompt Editor columns"
+          >
+            <div className="h-8 w-0.5 bg-stone-400 dark:bg-slate-500 rounded-full group-hover:bg-white" />
+          </div>
+
           {/* Middle Column: The prompt editor */}
-          <div className={cn(
-            "flex-col min-w-0 h-full p-4 sm:p-5 bg-stone-50/40 dark:bg-slate-900/30 overflow-hidden",
-            currentMobileTab === 'editor' ? 'flex flex-1 w-full min-h-0' : 'hidden lg:flex lg:w-1/2 lg:flex-1 lg:min-h-0'
-          )}>
+          <div 
+            className={cn(
+              "flex-col min-w-0 h-full p-4 sm:p-5 bg-stone-50/40 dark:bg-slate-900/30 overflow-hidden",
+              currentMobileTab === 'editor' ? 'flex flex-1 w-full min-h-0' : 'hidden lg:flex lg:flex-1 lg:min-h-0'
+            )}
+            style={{ flex: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${1 - leftPanelRatio} 1 0%` : undefined }}
+          >
             <div className="flex-1 h-full min-h-0 flex flex-col overflow-hidden">
               <PromptEditor
                 value={lastResult?.refinedPrompt || ''}
@@ -1612,13 +1656,14 @@ export const ChatInterface: React.FC<Props> = ({
         <div 
           className="hidden lg:flex w-1.5 cursor-col-resize bg-stone-200 dark:bg-slate-700 hover:bg-emerald-500 active:bg-emerald-600 z-20 items-center justify-center group transition-colors"
           onMouseDown={(e) => {
-            setIsDragging(true);
+            setIsDraggingRight(true);
             lastXRef.current = e.clientX;
           }}
           onTouchStart={(e) => {
-            setIsDragging(true);
+            setIsDraggingRight(true);
             lastXRef.current = e.touches[0].clientX;
           }}
+          title="Drag to resize Architectural Output column"
         >
           <div className="h-8 w-0.5 bg-stone-400 dark:bg-slate-500 rounded-full group-hover:bg-white" />
         </div>
