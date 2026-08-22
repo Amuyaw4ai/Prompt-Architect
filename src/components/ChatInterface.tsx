@@ -1083,6 +1083,8 @@ export const ChatInterface: React.FC<Props> = ({
     }
   }, [showSaveModal, showFrameworks, showQuickAddModifiers, showAttachMenu]);
 
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
   const handleSwipeLeft = () => {
     if (currentTabIdx < 2 && onMobileTabChange) {
       onMobileTabChange(mobileTabOrder[currentTabIdx + 1]);
@@ -1092,6 +1094,43 @@ export const ChatInterface: React.FC<Props> = ({
   const handleSwipeRight = () => {
     if (currentTabIdx > 0 && onMobileTabChange) {
       onMobileTabChange(mobileTabOrder[currentTabIdx - 1]);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const start = touchStartRef.current;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = endX - start.x;
+    const deltaY = endY - start.y;
+    const deltaTime = Math.max(1, Date.now() - start.time);
+    touchStartRef.current = null;
+
+    // Isolate vertical list scrolling: if user is scrolling up/down, ignore tab swipe
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 0.75) {
+      return;
+    }
+
+    const velocityX = Math.abs(deltaX) / deltaTime; // px/ms
+
+    // Fast flick gesture (>0.22 px/ms) or drag distance (>30px) triggers instant tab transition
+    if (Math.abs(deltaX) > 30 || velocityX > 0.22) {
+      if (deltaX < 0) {
+        handleSwipeLeft(); // Next tab
+      } else {
+        handleSwipeRight(); // Prev tab
+      }
     }
   };
 
@@ -1105,25 +1144,11 @@ export const ChatInterface: React.FC<Props> = ({
         </div>
       )}
 
-
-      {/* Main Content Area - 3 Column Layout with Mobile Touch Swipe & Sliding Transitions */}
+      {/* Main Content Area - 3 Column Layout with High-Speed Touch Swipe */}
       <div 
         className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative touch-pan-y"
-        onTouchStart={(e) => {
-          (window as any)._touchStartX = e.touches[0].clientX;
-        }}
-        onTouchEnd={(e) => {
-          const startX = (window as any)._touchStartX;
-          if (startX !== undefined) {
-            const endX = e.changedTouches[0].clientX;
-            const diff = startX - endX;
-            if (diff > 50) {
-              handleSwipeLeft(); // Swipe Left -> Next Tab (Chat -> Editor -> Output)
-            } else if (diff < -50) {
-              handleSwipeRight(); // Swipe Right -> Prev Tab (Output -> Editor -> Chat)
-            }
-          }
-        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         
         {/* Joint Container for Left Column (Chat) & Middle Column (Prompt Editor) with floating input bar */}
@@ -1138,8 +1163,8 @@ export const ChatInterface: React.FC<Props> = ({
           {/* Left Column: Chat conversation */}
           <div 
             className={cn(
-              "flex-col min-w-0 h-full min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80 overflow-hidden transition-all duration-300",
-              currentMobileTab === 'chat' ? 'flex flex-1 w-full animate-in fade-in slide-in-from-left-4' : 'hidden lg:flex lg:flex-1'
+              "flex-col min-w-0 h-full min-h-0 border-b lg:border-b-0 lg:border-r border-stone-100 dark:border-slate-700/80 overflow-hidden",
+              currentMobileTab === 'chat' ? 'flex flex-1 w-full' : 'hidden lg:flex lg:flex-1'
             )}
             style={{ flex: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${leftPanelRatio} 1 0%` : undefined }}
           >

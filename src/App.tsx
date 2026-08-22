@@ -254,66 +254,64 @@ export default function App() {
       {/* Mobile Segmented Tab Switcher (Sticky below header on <lg screens in architect view) */}
       {currentView === 'architect' && (
         <div className="lg:hidden shrink-0 px-2 sm:px-4 py-1.5 bg-stone-100/95 dark:bg-slate-800/95 border-b border-stone-200/80 dark:border-slate-700/80 backdrop-blur-md z-40">
-          <div className="flex items-center justify-between bg-stone-200/70 dark:bg-slate-900/70 p-1 rounded-xl gap-1">
-            <button
-              onClick={() => setActiveMobileTab('chat')}
-              className={cn(
-                "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
-                activeMobileTab === 'chat'
-                  ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-stone-200/50 dark:border-slate-700/50"
-                  : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
-              )}
-            >
-              <MessageSquare size={13} />
-              <span>Chat</span>
-              {mobileStats.messageCount > 0 && (
-                <span className="px-1.5 py-0.2 bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 text-[10px] font-mono rounded-full font-bold">
-                  {mobileStats.messageCount}
-                </span>
-              )}
-            </button>
-            
-            <button
-              onClick={() => setActiveMobileTab('editor')}
-              className={cn(
-                "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
-                activeMobileTab === 'editor'
-                  ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-stone-200/50 dark:border-slate-700/50"
-                  : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
-              )}
-            >
-              <FileCode size={13} />
-              <span className="hidden xs:inline">Prompt</span>
-              <span>Editor</span>
-              {mobileStats.wordCount > 0 && (
-                <span className="px-1.5 py-0.2 bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 text-[10px] font-mono rounded-full font-bold">
-                  {mobileStats.wordCount}w
-                </span>
-              )}
-            </button>
-            
-            <button
-              onClick={() => setActiveMobileTab('output')}
-              className={cn(
-                "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
-                activeMobileTab === 'output'
-                  ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-stone-200/50 dark:border-slate-700/50"
-                  : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
-              )}
-            >
-              <Sparkles size={13} />
-              <span>Output</span>
-              {mobileStats.score > 0 && (
-                <span className={cn(
-                  "px-1.5 py-0.2 text-[10px] font-mono rounded-full font-bold",
-                  mobileStats.score >= 80 ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" :
-                  mobileStats.score >= 50 ? "bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400" :
-                  "bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400"
-                )}>
-                  {mobileStats.score}%
-                </span>
-              )}
-            </button>
+          <div className="flex items-center justify-between bg-stone-200/70 dark:bg-slate-900/70 p-1 rounded-xl gap-1 relative">
+            {[
+              { 
+                id: 'chat', 
+                label: 'Chat', 
+                icon: MessageSquare, 
+                badge: mobileStats.messageCount > 0 ? `${mobileStats.messageCount}` : null,
+                badgeStyle: 'bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300'
+              },
+              { 
+                id: 'editor', 
+                label: 'Prompt Editor', 
+                icon: FileCode, 
+                badge: mobileStats.wordCount > 0 ? `${mobileStats.wordCount}w` : null,
+                badgeStyle: 'bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300'
+              },
+              { 
+                id: 'output', 
+                label: 'Output', 
+                icon: Sparkles, 
+                badge: mobileStats.score > 0 ? `${mobileStats.score}%` : null,
+                badgeStyle: mobileStats.score >= 80 ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" :
+                            mobileStats.score >= 50 ? "bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400" :
+                            "bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400"
+              }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeMobileTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveMobileTab(tab.id as any)}
+                  className={cn(
+                    "relative flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 z-10 cursor-pointer min-h-[34px]",
+                    isActive
+                      ? "text-emerald-600 dark:text-emerald-400 font-extrabold"
+                      : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeMobileTabIndicator"
+                      transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.5 }}
+                      className="absolute inset-0 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-stone-200/50 dark:border-slate-700/50 z-0"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <Icon size={13} />
+                    <span>{tab.label}</span>
+                    {tab.badge && (
+                      <span className={cn("px-1.5 py-0.2 text-[10px] font-mono rounded-full font-bold", tab.badgeStyle)}>
+                        {tab.badge}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
