@@ -1876,24 +1876,29 @@ export const ChatInterface: React.FC<Props> = ({
 
             {/* Contextual Suggestive Frameworks Bar */}
             <div className="mb-4 p-3.5 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-emerald-100/60 dark:border-emerald-800/40 shadow-sm overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+              {/* Standalone Header Row */}
+              <div className="flex items-center justify-between gap-2 mb-2.5">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <BookTemplate size={13} className="text-emerald-500 shrink-0" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-500 dark:text-slate-400 truncate">
-                    {isRightPanelCompact ? 'Frameworks:' : 'Contextual Frameworks:'}
+                  <span className="text-[11px] font-black uppercase tracking-widest text-stone-600 dark:text-slate-300 whitespace-nowrap">
+                    Contextual Frameworks
                   </span>
-                  {contextualFrameworksData.suggested.some(f => (f.score || 0) > 2) && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 shrink-0">
-                      {isRightPanelCompact ? 'Matched' : 'Prompt Matched'}
-                    </span>
-                  )}
                 </div>
-                <div className="flex items-center gap-0.5 bg-stone-100/80 dark:bg-slate-900/60 p-0.5 rounded-lg border border-stone-200/50 dark:border-slate-700/50 overflow-x-auto no-scrollbar max-w-full shrink-0">
+                {contextualFrameworksData.suggested.some(f => (f.score || 0) > 2) && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 shrink-0 whitespace-nowrap">
+                    Prompt Matched
+                  </span>
+                )}
+              </div>
+
+              {/* Modalities Selectors Placed Beneath Header */}
+              <div className="mb-3">
+                <div className="flex items-center gap-1 bg-stone-100/80 dark:bg-slate-900/60 p-1 rounded-xl border border-stone-200/50 dark:border-slate-700/50 overflow-x-auto scrollbar-none w-full">
                   {[
-                    { id: 'current', label: isRightPanelCompact ? 'Top' : 'Suggested' },
-                    { id: 'video', label: isRightPanelCompact ? 'Vid' : 'Video' },
-                    { id: 'image', label: isRightPanelCompact ? 'Img' : 'Image' },
-                    { id: 'text', label: isRightPanelCompact ? 'Txt' : 'Text/Code' },
+                    { id: 'current', label: 'Suggested' },
+                    { id: 'video', label: 'Video' },
+                    { id: 'image', label: 'Image' },
+                    { id: 'text', label: 'Text/Code' },
                     { id: 'all', label: 'All' },
                   ].map(tab => {
                     const isActive = activeFrameworkCategory === tab.id;
@@ -1902,7 +1907,7 @@ export const ChatInterface: React.FC<Props> = ({
                         key={tab.id}
                         onClick={() => setActiveFrameworkCategory(tab.id as any)}
                         className={cn(
-                          "text-[10px] font-bold uppercase px-1.5 sm:px-2 py-1 rounded-md transition-all min-h-[30px] flex items-center justify-center whitespace-nowrap",
+                          "flex-1 text-[10px] font-bold uppercase px-2 py-1 rounded-lg transition-all min-h-[28px] flex items-center justify-center whitespace-nowrap",
                           isActive
                             ? "bg-emerald-600 dark:bg-emerald-500 text-white shadow-2xs"
                             : "text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200"
