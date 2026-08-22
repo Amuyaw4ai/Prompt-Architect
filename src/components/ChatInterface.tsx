@@ -373,7 +373,6 @@ export const ChatInterface: React.FC<Props> = ({
   const versionsDropdownRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textFileInputRef = useRef<HTMLInputElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const lastXRef = useRef<number | null>(null);
   const isSendingRef = useRef(false);
@@ -594,42 +593,67 @@ export const ChatInterface: React.FC<Props> = ({
     }
   }, [messages]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      const base64Data = base64String.split(',')[1];
-      
-      setSelectedImage({
-        data: base64Data,
-        mimeType: file.type,
-        url: base64String, // Store full base64 for persistence & preview
-        name: file.name
-      });
-    };
-    reader.readAsDataURL(file);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleTextFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUnifiedFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAttachedFiles(prev => [...prev, { name: file.name, content: reader.result as string }]);
-      };
-      reader.readAsText(file);
+      const mimeType = (file.type || '').toLowerCase();
+      const fileName = (file.name || '').toLowerCase();
+
+      const isImage = mimeType.startsWith('image/') || /\.(jpeg|jpg|png|gif|webp)$/i.test(fileName);
+      const isVideo = mimeType.startsWith('video/') || /\.(mp4|webm|mov)$/i.test(fileName);
+      const isAudio = mimeType.startsWith('audio/') || /\.(mp3|wav|ogg)$/i.test(fileName);
+
+      if (isImage || isVideo || isAudio) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          const base64Data = base64String.split(',')[1];
+
+          let effectiveMime = file.type;
+          if (!effectiveMime) {
+            if (/\.(jpg|jpeg)$/i.test(fileName)) effectiveMime = 'image/jpeg';
+            else if (/\.png$/i.test(fileName)) effectiveMime = 'image/png';
+            else if (/\.gif$/i.test(fileName)) effectiveMime = 'image/gif';
+            else if (/\.webp$/i.test(fileName)) effectiveMime = 'image/webp';
+            else if (/\.mp4$/i.test(fileName)) effectiveMime = 'video/mp4';
+            else if (/\.webm$/i.test(fileName)) effectiveMime = 'video/webm';
+            else if (/\.mov$/i.test(fileName)) effectiveMime = 'video/quicktime';
+            else if (/\.mp3$/i.test(fileName)) effectiveMime = 'audio/mpeg';
+            else if (/\.wav$/i.test(fileName)) effectiveMime = 'audio/wav';
+            else if (/\.ogg$/i.test(fileName)) effectiveMime = 'audio/ogg';
+          }
+
+          setSelectedImage({
+            data: base64Data,
+            mimeType: effectiveMime,
+            url: base64String,
+            name: file.name
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Document File (PDF, DOCX, TXT, CSV)
+        if (/\.(txt|csv)$/i.test(fileName) || mimeType === 'text/plain' || mimeType === 'text/csv') {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setAttachedFiles(prev => [...prev, { name: file.name, content: reader.result as string }]);
+          };
+          reader.readAsText(file);
+        } else {
+          // PDF or DOCX file
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setAttachedFiles(prev => [...prev, { name: file.name, content: reader.result as string }]);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
     });
-    
-    if (textFileInputRef.current) {
-      textFileInputRef.current.value = '';
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -1580,67 +1604,24 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="relative flex items-center group">
                 <input
                   type="file"
-                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                />
-                <input
-                  type="file"
-                  accept=".txt,.md,.csv,.json"
+                  accept=".jpeg,.jpg,.png,.gif,.webp,.mp4,.webm,.mov,.mp3,.wav,.ogg,.pdf,.docx,.txt,.csv"
                   multiple
                   className="hidden"
-                  ref={textFileInputRef}
-                  onChange={handleTextFileUpload}
+                  ref={fileInputRef}
+                  onChange={handleUnifiedFileUpload}
                 />
 
-                {/* Unified Add Context Button */}
+                {/* Direct 1-Click Add File or Media Button */}
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20">
                   <button
                     type="button"
-                    onClick={() => setShowAttachMenu(!showAttachMenu)}
+                    onClick={() => fileInputRef.current?.click()}
                     className="h-9 px-2.5 text-stone-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center gap-1.5 border border-stone-200 dark:border-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold text-xs"
-                    title="Add Context (Upload image, media, or document)"
+                    title="Add File or Media (Images, Videos, Audio, Documents)"
                   >
                     <Paperclip size={15} className="text-emerald-600 dark:text-emerald-400" />
                     <span className="hidden min-[400px]:inline text-[11px]">Context</span>
                   </button>
-
-                  {/* Add Context Popover Menu */}
-                  <AnimatePresence>
-                    {showAttachMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        className="absolute bottom-11 left-0 z-50 bg-white dark:bg-slate-800 rounded-2xl border border-stone-200 dark:border-slate-700 shadow-2xl p-1.5 min-w-[190px] space-y-1"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAttachMenu(false);
-                            fileInputRef.current?.click();
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-slate-700/80 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-all text-left cursor-pointer"
-                        >
-                          <ImagePlus size={15} className="text-emerald-500 shrink-0" />
-                          <span>Upload Image / Media</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAttachMenu(false);
-                            textFileInputRef.current?.click();
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-slate-700/80 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-all text-left cursor-pointer"
-                        >
-                          <Paperclip size={15} className="text-emerald-500 shrink-0" />
-                          <span>Attach Document / File</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
 
                 <textarea
