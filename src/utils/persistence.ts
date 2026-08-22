@@ -30,7 +30,22 @@ export function getLocalSavedPrompts(): SavedPrompt[] {
     const raw = localStorage.getItem(STORAGE_KEYS.SAVED_PROMPTS);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((p: any) => {
+      let resultHistory = p.resultHistory || p.result_history;
+      if (typeof resultHistory === 'string') {
+        try { resultHistory = JSON.parse(resultHistory); } catch (e) {}
+      }
+      let messages = p.messages;
+      if (typeof messages === 'string') {
+        try { messages = JSON.parse(messages); } catch (e) {}
+      }
+      return {
+        ...p,
+        messages: Array.isArray(messages) ? messages : [],
+        resultHistory: Array.isArray(resultHistory) ? resultHistory : undefined
+      };
+    });
   } catch (err) {
     console.warn('Failed to load saved prompts from local device storage:', err);
     return [];

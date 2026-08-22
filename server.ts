@@ -602,19 +602,22 @@ Please re-architect this prompt into the ${frameworkName} framework now.
       let tags = [];
       let messages = [];
       let resultHistory = [];
-      try { tags = row.tags ? JSON.parse(row.tags) : []; } catch (e) {}
-      try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
-      try { resultHistory = row.result_history ? JSON.parse(row.result_history) : []; } catch (e) {}
+      try { tags = row.tags ? (typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags) : []; } catch (e) {}
+      try { messages = row.messages ? (typeof row.messages === 'string' ? JSON.parse(row.messages) : row.messages) : []; } catch (e) {}
+      try { resultHistory = row.result_history ? (typeof row.result_history === 'string' ? JSON.parse(row.result_history) : row.result_history) : []; } catch (e) {}
       
+      const cleaned = { ...row };
+      delete cleaned.result_history;
+      delete cleaned.parent_id;
+      delete cleaned.derived_from_id;
+
       return {
-        ...row,
-        parentId: row.parent_id,
-        derivedFromId: row.derived_from_id,
+        ...cleaned,
         versionNotes: row.version_notes,
         tags,
         messages,
         resultHistory,
-        currentResultIndex: row.current_result_index,
+        currentResultIndex: typeof row.current_result_index === 'number' ? row.current_result_index : 0,
         originalIdea: row.original_idea,
         refinedPrompt: row.refined_prompt,
         isFavorite: row.is_favorite === 1,

@@ -347,23 +347,41 @@ export const ChatInterface: React.FC<Props> = ({
 
   useEffect(() => {
     if (editingPrompt) {
-      if (editingPrompt.resultHistory && editingPrompt.resultHistory.length > 0) {
-        setResultHistory(editingPrompt.resultHistory);
-        const idx = typeof editingPrompt.currentResultIndex === 'number' && editingPrompt.currentResultIndex >= 0
-          ? editingPrompt.currentResultIndex
-          : editingPrompt.resultHistory.length - 1;
-        setCurrentResultIndex(idx);
+      const tryParseArray = (val: any): any[] | null => {
+        if (Array.isArray(val)) return val;
+        if (typeof val === 'string' && val.trim().length > 0) {
+          try {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) return parsed;
+          } catch (e) {}
+        }
+        return null;
+      };
+
+      const parsedHistory = tryParseArray(editingPrompt.resultHistory) || tryParseArray((editingPrompt as any).result_history);
+      let historyToUse: PromptResult[] = [];
+
+      if (parsedHistory && parsedHistory.length > 0) {
+        historyToUse = parsedHistory;
       } else {
         const singleRes: PromptResult = {
           refinedPrompt: editingPrompt.refinedPrompt,
           explanation: editingPrompt.versionNotes || 'Saved prompt loaded from library.',
           suggestedTitle: editingPrompt.title
         };
-        setResultHistory([singleRes]);
-        setCurrentResultIndex(0);
+        historyToUse = [singleRes];
       }
-      if (editingPrompt.messages && editingPrompt.messages.length > 0) {
-        setMessages(editingPrompt.messages);
+
+      setResultHistory(historyToUse);
+
+      const idx = typeof editingPrompt.currentResultIndex === 'number' && editingPrompt.currentResultIndex >= 0
+        ? Math.min(editingPrompt.currentResultIndex, historyToUse.length - 1)
+        : historyToUse.length - 1;
+      setCurrentResultIndex(idx);
+
+      const parsedMsgs = tryParseArray(editingPrompt.messages) || [];
+      if (parsedMsgs.length > 0) {
+        setMessages(parsedMsgs);
       }
     }
   }, [editingPrompt]);
