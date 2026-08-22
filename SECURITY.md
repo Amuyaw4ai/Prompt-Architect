@@ -40,3 +40,8 @@ The server enforces essential HTTP security headers:
 ### 3. Rate Limiting & Input Validation
 - Server endpoints (`/api/refine`, `/api/transform`) impose body size limits (`50mb` max for base64 multi-modal assets) and sanitized error handlers to prevent internal detail disclosure.
 - SQLite query parameters are bound safely to prevent SQL injection.
+
+### 4. Multi-Modal Upload Ceilings & Product Governance
+- Uploads are bound by Free Tier size ceilings: **10 MB** (Images/Documents), **25 MB** (Videos), **15 MB** (Audio).
+- Oversized uploads trigger an immediate Pro Upgrade alert blocking invalid model payloads.
+- Governance standards and monetization roadmaps are maintained in [`SECURE_VIBE_CODING_STANDARDS.md`](file:///C:/Users/princ/antigravity/Prompt-Architect/SECURE_VIBE_CODING_STANDARDS.md) and [`PRODUCT_ROADMAP_AND_MONETIZATION.md`](file:///C:/Users/princ/antigravity/Prompt-Architect/PRODUCT_ROADMAP_AND_MONETIZATION.md).

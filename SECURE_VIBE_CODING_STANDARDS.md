@@ -18,6 +18,7 @@ Whenever this document (or `Secure Vibe Coding Risk Management.pdf` and `CONTAIN
 | **`v2.2`** | Added Section 8: GitHub Automated Security Governance (Dependabot & CodeQL). | GitHub Repositories |
 | **`v2.3`** | Added Section 8.1: Dependabot PR Handling Protocol (4-Step Engineering Workflow). | Security & Dependency Management |
 | **`v2.4`** | Added Section 9: Autonomous Sub-Agent Roster & Delegation Protocol. | Multi-Agent Operations |
+| **`v2.5`** | Added Section 10: Multi-Modal Upload Security & Tiered Payload Governance. | Multi-Modal Uploads & Monetization |
 
 ---
 
@@ -179,6 +180,7 @@ Every repository MUST contain automated security scanning pipelines configured i
 - **Triggers**: On push to `main`, on Pull Requests, and weekly cron schedule (`0 6 * * 1`).
 - **Scanned Vectors**: Cross-Site Scripting (XSS), SQL/Query Injection, Prototype Pollution, Unsafe Deserialization, Hardcoded Secrets, and Unhandled Exception flows.
 
+
 ### 3. Dependabot PR Handling Protocol (The 4-Step Engineering Workflow)
 The AI Assistant MUST NEVER auto-merge Dependabot PRs without local verification. When open Dependabot PRs exist, the AI Assistant MUST execute the following 4-step engineering workflow for recommended updates:
 
@@ -238,3 +240,30 @@ To maintain high velocity, clean primary conversation context, and prevent model
 5. **`bundle-optimizer`**:
    - **Role**: Production Bundle & Performance Specialist.
    - **Task**: Analyzes production bundle chunk sizes (`vite build`), checks Tailwind CSS compilation efficiency, and optimizes minification.
+
+---
+
+## 10. Multi-Modal Upload Security & Tiered Payload Governance
+
+### 10.1 Streamlined 1-Click File Browser Security
+To prevent workflow friction while maintaining strict security:
+1. **Single File Picker Action**: The `Context` button on the input bar directly invokes the device's native file-selection dialog without secondary popover menus.
+2. **Whitelisted Accept Filters**: The hidden file input MUST enforce strict format whitelisting (`accept=".jpeg,.jpg,.png,.gif,.webp,.mp4,.webm,.mov,.mp3,.wav,.ogg,.pdf,.docx,.txt,.csv"`).
+
+### 10.2 Format-Specific Free Tier Size Ceilings
+To prevent LLM API payload overloading, memory exhaustion attacks, and server-side Denial of Service (DoS), client and server upload handlers MUST enforce hard category ceiling boundaries:
+
+| Asset Category | Supported Formats | Free Tier Ceiling | Action on Limit Exceeded |
+| :--- | :--- | :--- | :--- |
+| **Images** | JPEG, PNG, GIF, WebP | **10 MB** | Reject upload & show Pro Upgrade Toast |
+| **Videos** | MP4, WebM, MOV | **25 MB** | Reject upload & show Pro Upgrade Toast |
+| **Audio** | MP3, WAV, OGG | **15 MB** | Reject upload & show Pro Upgrade Toast |
+| **Documents** | PDF, DOCX, TXT, CSV | **10 MB** | Reject upload & show Pro Upgrade Toast |
+
+### 10.3 Monetization & Pro Upgrade Toast Governance
+When a user attempts to attach a file exceeding the Free Tier ceiling:
+1. **Immediate Execution Block**: The oversized payload is discarded before FileReader parsing or network transfer begins.
+2. **Pro Upgrade Toast Banner**: Display a prominent amber/emerald banner notifying the user of the exact category limit and offering a 1-click **Upgrade** CTA for 100MB+ uploads & priority compute.
+
+### 10.4 Product Roadmap & Feature Backlog Tracking
+All monetization opportunities and delegated future features MUST be actively recorded and maintained in the project's master tracking document: [`PRODUCT_ROADMAP_AND_MONETIZATION.md`](file:///C:/Users/princ/antigravity/Prompt-Architect/PRODUCT_ROADMAP_AND_MONETIZATION.md).
