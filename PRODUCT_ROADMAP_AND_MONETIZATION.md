@@ -54,3 +54,4 @@ The following features and updates have been delegated for future release iterat
   * Added desktop resizable column persistence saving split dimensions to browser storage.
   * Refactored mobile swipe gesture engine with high-speed velocity detection and vertical list scroll protection.
   * Streamlined context attachment button into a single 1-click file picker supporting Images, Videos, Audio, and Documents with active free-tier size enforcement.
+  * Implemented **Instant Diagnostic Scoring & Prompt Health Auditor** with spin-the-wheel gauge animation, 5-point industry standards breakdown, and 1-click conversion funnel into the Architectural Studio.

@@ -21,6 +21,7 @@ interface NavigationMenuProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   hasActiveSession: boolean;
+  onOpenDiagnostic?: () => void;
 }
 
 export const NavigationMenu: React.FC<NavigationMenuProps> = ({
@@ -32,7 +33,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   onNewChat,
   isDarkMode,
   onToggleDarkMode,
-  hasActiveSession
+  hasActiveSession,
+  onOpenDiagnostic
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -136,9 +138,32 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     </button>
                   </div>
 
-                  {/* Section 1: TOP APPEARANCE & THEME CONTROL (Prominently placed at the top) */}
+                  {/* Section 1: TOP APPEARANCE & THEME CONTROL */}
                   <div className="space-y-2">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-400 px-1">
+                    {onOpenDiagnostic && (
+                      <button
+                        onClick={() => {
+                          setIsOpen(false);
+                          onOpenDiagnostic();
+                        }}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-slate-900/80 border border-emerald-500/40 text-emerald-300 hover:text-white text-xs font-bold transition-all shadow-md cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <ShieldCheck size={18} />
+                          </div>
+                          <div className="text-left">
+                            <div className="text-xs font-black text-white">Instant Prompt Audit</div>
+                            <div className="text-[10px] text-emerald-400/80 font-medium">5-Point Industry Diagnostic Scoring</div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-emerald-400 uppercase font-mono px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 font-bold">
+                          Free
+                        </span>
+                      </button>
+                    )}
+
+                    <div className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-slate-400 px-1 pt-1">
                       Appearance & Theme
                     </div>
 
