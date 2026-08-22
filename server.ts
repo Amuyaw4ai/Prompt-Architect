@@ -205,6 +205,7 @@ db.exec(`
     result_history TEXT,
     current_result_index INTEGER,
     editing_prompt_id INTEGER,
+    is_favorite INTEGER DEFAULT 0,
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
@@ -224,6 +225,9 @@ try {
 } catch (e) {}
 try {
   db.exec("ALTER TABLE chat_sessions ADD COLUMN editing_prompt_id INTEGER;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE chat_sessions ADD COLUMN is_favorite INTEGER DEFAULT 0;");
 } catch (e) {}
 try {
   db.exec("ALTER TABLE saved_prompts ADD COLUMN is_favorite INTEGER DEFAULT 0;");
@@ -723,6 +727,7 @@ Please re-architect this prompt into the ${frameworkName} framework now.
         resultHistory,
         currentResultIndex: row.current_result_index,
         editingPromptId: row.editing_prompt_id,
+        isFavorite: row.is_favorite === 1,
         updatedAt: row.updated_at * 1000,
         createdAt: row.created_at * 1000
       };
@@ -746,30 +751,47 @@ Please re-architect this prompt into the ${frameworkName} framework now.
       currentType: row.current_type,
       resultHistory,
       currentResultIndex: row.current_result_index,
+      isFavorite: row.is_favorite === 1,
       updatedAt: row.updated_at * 1000,
       createdAt: row.created_at * 1000
     });
   });
 
   app.post("/api/sessions", (req, res) => {
-    const { id, title, messages, currentType, resultHistory, currentResultIndex, editingPromptId } = req.body;
+    const { id, title, messages, currentType, resultHistory, currentResultIndex, editingPromptId, isFavorite } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO chat_sessions (id, title, messages, current_type, result_history, current_result_index, editing_prompt_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO chat_sessions (id, title, messages, current_type, result_history, current_result_index, editing_prompt_id, is_favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, editingPromptId || null);
+    stmt.run(id, title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, editingPromptId || null, isFavorite ? 1 : 0);
     res.json({ success: true });
   });
 
   app.put("/api/sessions/:id", (req, res) => {
     const { id } = req.params;
-    const { title, messages, currentType, resultHistory, currentResultIndex, editingPromptId } = req.body;
+    const { title, messages, currentType, resultHistory, currentResultIndex, editingPromptId, isFavorite } = req.body;
     const stmt = db.prepare(`
       UPDATE chat_sessions 
-      SET title = ?, messages = ?, current_type = ?, result_history = ?, current_result_index = ?, editing_prompt_id = ?, updated_at = strftime('%s', 'now')
+      SET title = ?, messages = ?, current_type = ?, result_history = ?, current_result_index = ?, editing_prompt_id = ?, is_favorite = ?, updated_at = strftime('%s', 'now')
       WHERE id = ?
     `);
-    stmt.run(title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, editingPromptId || null, id);
+    stmt.run(title, JSON.stringify(messages), currentType, JSON.stringify(resultHistory || []), currentResultIndex || 0, editingPromptId || null, isFavorite ? 1 : 0, id);
+    res.json({ success: true });
+  });
+
+  app.put("/api/sessions/:id/favorite", (req, res) => {
+    const { id } = req.params;
+    const { isFavorite } = req.body;
+    const stmt = db.prepare("UPDATE chat_sessions SET is_favorite = ? WHERE id = ?");
+    stmt.run(isFavorite ? 1 : 0, id);
+    res.json({ success: true });
+  });
+
+  app.put("/api/sessions/:id/title", (req, res) => {
+    const { id } = req.params;
+    const { title } = req.body;
+    const stmt = db.prepare("UPDATE chat_sessions SET title = ? WHERE id = ?");
+    stmt.run(title, id);
     res.json({ success: true });
   });
 

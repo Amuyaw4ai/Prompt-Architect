@@ -27,6 +27,7 @@ export interface ChatSession {
   resultHistory?: PromptResult[];
   currentResultIndex?: number;
   editingPromptId?: number;
+  isFavorite?: boolean;
   updatedAt: number;
   createdAt: number;
 }

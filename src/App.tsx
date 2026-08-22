@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChatInterface } from './components/ChatInterface';
-import { SavedPrompts } from './components/SavedPrompts';
 import { TemplatesGallery } from './components/TemplatesGallery';
 import { ChatHistory } from './components/ChatHistory';
 import { Home } from './components/Home';
@@ -14,7 +13,7 @@ import { PromptTypeSelector } from './components/PromptTypeSelector';
 import { CelebratoryMilestoneModal } from './components/CelebratoryMilestoneModal';
 import { shouldShowMilestoneCelebration } from './utils/persistence';
 
-type View = 'home' | 'architect' | 'saved' | 'templates' | 'history';
+type View = 'home' | 'architect' | 'templates' | 'history';
 
 export default function App() {
   const [promptType, setPromptType] = useState<PromptType>('image');
@@ -366,21 +365,6 @@ export default function App() {
               </motion.div>
             )}
 
-            {currentView === 'saved' && (
-              <motion.div
-                key="saved"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <div className="mb-12">
-                  <h2 className="text-4xl font-black text-stone-900 dark:text-slate-100 mb-3 tracking-tight">Prompt Library</h2>
-                  <p className="text-lg text-stone-500 dark:text-slate-400">Your collection of refined architectural masterpieces.</p>
-                </div>
-                <SavedPrompts onEdit={handleEditPrompt} />
-              </motion.div>
-            )}
-
             {currentView === 'history' && (
               <motion.div
                 key="history"
@@ -388,9 +372,9 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <div className="mb-12">
-                  <h2 className="text-4xl font-black text-stone-900 dark:text-slate-100 mb-3 tracking-tight">Chat History</h2>
-                  <p className="text-lg text-stone-500 dark:text-slate-400">Pick up where you left off in your architectural journeys.</p>
+                <div className="mb-8">
+                  <h2 className="text-4xl font-black text-stone-900 dark:text-slate-100 mb-3 tracking-tight">History & Workspaces</h2>
+                  <p className="text-lg text-stone-500 dark:text-slate-400">Search, star favorites, rename, and continue your prompt sessions with full version history.</p>
                 </div>
                 <ChatHistory onSelect={handleSelectSession} currentSessionId={currentSession?.id} />
               </motion.div>

@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
 
-type View = 'home' | 'architect' | 'saved' | 'templates' | 'history';
+type View = 'home' | 'architect' | 'templates' | 'history';
 
 interface NavigationMenuProps {
   currentView: View;
@@ -40,8 +40,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     { id: 'home', label: 'Home', description: 'Overview & quick start', icon: <HomeIcon size={18} /> },
     { id: 'architect', label: 'Architect Workspace', description: '3-Column prompt studio', icon: <Terminal size={18} /> },
     { id: 'templates', label: 'Templates', description: 'Pre-designed blueprints', icon: <Layout size={18} /> },
-    { id: 'history', label: 'History', description: 'Past prompt iterations', icon: <History size={18} /> },
-    { id: 'saved', label: 'Prompt Library', description: 'Saved collections', icon: <Bookmark size={18} /> },
+    { id: 'history', label: 'History & Workspace', description: 'Past sessions, versions & favorites', icon: <History size={18} /> },
   ];
 
   // Lock body scroll when drawer is open

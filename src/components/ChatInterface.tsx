@@ -1049,76 +1049,7 @@ export const ChatInterface: React.FC<Props> = ({
           Session Expired (1 Hour Limit) - Please start a new chat for fresh context
         </div>
       )}
-      {/* Save Modal */}
-      <AnimatePresence>
-        {showSaveModal && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white dark:bg-slate-800 p-5 sm:p-8 rounded-[2rem] border border-stone-200 dark:border-slate-700 shadow-2xl w-[94%] sm:w-full max-w-md max-h-[85vh] overflow-y-auto my-auto"
-            >
-              <h3 className="text-2xl sm:text-3xl font-black mb-1 tracking-tight text-stone-900 dark:text-slate-100">Save Prompt</h3>
-              <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mb-6">Add this masterpiece to your library.</p>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Prompt Title</label>
-                  <input 
-                    type="text"
-                    value={saveData.title}
-                    onChange={e => setSaveData({ ...saveData, title: e.target.value })}
-                    placeholder={lastResult?.suggestedTitle || "My Awesome Prompt"}
-                    className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100 font-semibold"
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Tags (Comma separated)</label>
-                  <input 
-                    type="text"
-                    value={saveData.tags}
-                    onChange={e => setSaveData({ ...saveData, tags: e.target.value })}
-                    placeholder="e.g. Midjourney, Cinematic, Portrait"
-                    className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Version Notes / Description</label>
-                  <textarea 
-                    value={saveData.versionNotes}
-                    onChange={e => setSaveData({ ...saveData, versionNotes: e.target.value })}
-                    placeholder="e.g. Iterations include lighting and composition adjustments"
-                    rows={2}
-                    className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100 resize-none"
-                  />
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button 
-                    onClick={() => setShowSaveModal(false)}
-                    className="flex-1 py-4 text-sm font-bold text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleSave}
-                    className="flex-1 py-4 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-2xl text-sm font-bold shadow-xl shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all"
-                  >
-                    Save Prompt
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Main Content Area - 3 Column Layout with Mobile Touch Swipe & Sliding Transitions */}
       <div 
@@ -1756,41 +1687,8 @@ export const ChatInterface: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Dynamic Responsive Action Toolbar (5 Columns) */}
-              <div className="grid grid-cols-5 gap-1.5 w-full min-w-0">
-                {/* 1. SAVE / UPDATE */}
-                <button
-                  onClick={() => {
-                    if (!editingPrompt && lastResult) {
-                      setSaveData({
-                        title: lastResult.suggestedTitle || '',
-                        tags: lastResult.suggestedTags ? lastResult.suggestedTags.join(', ') : '',
-                        versionNotes: ''
-                      });
-                    }
-                    setShowSaveModal(true);
-                  }}
-                  className={cn(
-                    "flex flex-col items-center justify-center bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold border border-emerald-100 dark:border-emerald-800/50 shadow-2xs hover:shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group min-w-0 overflow-hidden",
-                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1"
-                  )}
-                  title={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
-                  aria-label={editingPrompt ? "Update saved prompt" : "Save prompt to library"}
-                >
-                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {editingPrompt ? <Save size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" /> : <Plus size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" />}
-                    {!isRightPanelUltraCompact && (
-                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
-                        {editingPrompt ? 'Update' : 'Save'}
-                      </span>
-                    )}
-                  </div>
-                  {isRightPanelWide && (
-                    <span className="text-[9px] text-stone-400 dark:text-slate-500 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
-                      Library
-                    </span>
-                  )}
-                </button>
+              {/* Dynamic Responsive Action Toolbar (4 Columns) */}
+              <div className="grid grid-cols-4 gap-1.5 w-full min-w-0">
 
                 {/* 2. COPY PROMPT */}
                 <button
