@@ -355,6 +355,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [showFrameworks, setShowFrameworks] = useState(false);
   const [showQuickAddModifiers, setShowQuickAddModifiers] = useState(false);
   const [uploadErrorNotice, setUploadErrorNotice] = useState<string | null>(null);
+  const [showStatsModal, setShowStatsModal] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isTransformingFramework, setIsTransformingFramework] = useState(false);
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
@@ -1671,7 +1672,7 @@ export const ChatInterface: React.FC<Props> = ({
 
                 {/* Direct 1-Click Add File or Media Button */}
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20">
-                  <Tooltip content="Add File or Media (Images, Videos, Audio, Documents)" position="top">
+                  <Tooltip content="Add Context" position="top">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -1750,12 +1751,25 @@ export const ChatInterface: React.FC<Props> = ({
             <div className="flex flex-col gap-2.5 mb-4">
               <div className="w-full flex items-center justify-between gap-2 min-w-0 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0 shadow-2xs">
-                    {getFinalPrompt().length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">CHARS</span>
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
-                    {getFinalPrompt().split(/\s+/).filter(Boolean).length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">WORDS</span>
-                  </div>
+                  <Tooltip content="Total Characters" position="top">
+                    <button
+                      type="button"
+                      onClick={() => setShowStatsModal(true)}
+                      className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-slate-700 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0 shadow-2xs cursor-pointer transition-colors"
+                    >
+                      {getFinalPrompt().length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">CHARS</span>
+                    </button>
+                  </Tooltip>
+
+                  <Tooltip content="Total Words" position="top">
+                    <button
+                      type="button"
+                      onClick={() => setShowStatsModal(true)}
+                      className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-slate-700 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs cursor-pointer transition-colors"
+                    >
+                      {getFinalPrompt().split(/\s+/).filter(Boolean).length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">WORDS</span>
+                    </button>
+                  </Tooltip>
                 </div>
 
                 <div 
@@ -2121,6 +2135,65 @@ export const ChatInterface: React.FC<Props> = ({
           </motion.div>
         </div>
       </div>
+
+      {/* Word & Character Count Detail Pop-up Modal */}
+      <AnimatePresence>
+        {showStatsModal && (
+          <div 
+            className="fixed inset-0 z-[1000] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={() => setShowStatsModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-xs sm:max-w-sm bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center pb-2 border-b border-stone-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs">
+                    📊
+                  </div>
+                  <h3 className="font-extrabold text-stone-900 dark:text-slate-100 text-sm">Prompt Text Details</h3>
+                </div>
+                <button 
+                  onClick={() => setShowStatsModal(false)}
+                  className="p-1 text-stone-400 hover:text-stone-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
+                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Total Characters</span>
+                  <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">{getFinalPrompt().length}</span>
+                </div>
+
+                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
+                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Total Words</span>
+                  <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{getFinalPrompt().split(/\s+/).filter(Boolean).length}</span>
+                </div>
+
+                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
+                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Reading Time</span>
+                  <span className="text-xs font-extrabold text-stone-700 dark:text-slate-300 mt-1">
+                    ~{Math.max(1, Math.ceil(getFinalPrompt().split(/\s+/).filter(Boolean).length / 200))} min read
+                  </span>
+                </div>
+
+                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
+                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Prompt Rating</span>
+                  <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
+                    {calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? 'Masterpiece' : calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? 'Advanced' : 'Basic'}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
