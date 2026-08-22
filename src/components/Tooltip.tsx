@@ -90,7 +90,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
             exit={initialMotion[position]}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "absolute z-50 pointer-events-none whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-900/95 dark:bg-slate-950/95 text-stone-100 dark:text-slate-100 text-[11px] font-semibold tracking-wide border border-emerald-500/30 dark:border-emerald-500/40 shadow-xl shadow-stone-950/20 backdrop-blur-md flex items-center gap-1.5",
+              "absolute z-[9999] pointer-events-none whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-900/95 dark:bg-slate-950/95 text-stone-100 dark:text-slate-100 text-[11px] font-semibold tracking-wide border border-emerald-500/30 dark:border-emerald-500/40 shadow-xl shadow-stone-950/20 backdrop-blur-md flex items-center gap-1.5",
               positionClasses[position],
               className
             )}

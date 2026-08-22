@@ -223,29 +223,30 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
         {/* Filter Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {[
-            { id: 'all', label: 'All History', icon: Clock },
-            { id: 'favorites', label: 'Favorites', icon: Star },
-            { id: 'text', label: 'Text / Chat', icon: MessageSquare },
-            { id: 'image', label: 'Image Prompts', icon: ImageIcon },
-            { id: 'video', label: 'Video Motion', icon: Video },
-            { id: 'code', label: 'Code Dev', icon: Code },
+            { id: 'all', label: 'All History', tooltip: 'Show all architect sessions', icon: Clock },
+            { id: 'favorites', label: 'Favorites', tooltip: 'Show starred favorite sessions', icon: Star },
+            { id: 'text', label: 'Text / Chat', tooltip: 'Filter by Text & Reasoning sessions', icon: MessageSquare },
+            { id: 'image', label: 'Image Prompts', tooltip: 'Filter by Image Generation prompts', icon: ImageIcon },
+            { id: 'video', label: 'Video Motion', tooltip: 'Filter by Video & Motion prompts', icon: Video },
+            { id: 'code', label: 'Code Dev', tooltip: 'Filter by Code & Technical prompts', icon: Code },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = filterType === tab.id;
             return (
-              <button
-                key={tab.id}
-                onClick={() => setFilterType(tab.id as any)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap",
-                  isActive
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-200 dark:shadow-none"
-                    : "bg-stone-50 dark:bg-slate-900 text-stone-600 dark:text-slate-400 hover:bg-stone-100 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Icon size={14} className={isActive ? "text-white" : "text-stone-400 dark:text-slate-500"} />
-                <span>{tab.label}</span>
-              </button>
+              <Tooltip key={tab.id} content={tab.tooltip} position="top">
+                <button
+                  onClick={() => setFilterType(tab.id as any)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer",
+                    isActive
+                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-200 dark:shadow-none"
+                      : "bg-stone-50 dark:bg-slate-900 text-stone-600 dark:text-slate-400 hover:bg-stone-100 dark:hover:bg-slate-700/50"
+                  )}
+                >
+                  <Icon size={14} className={isActive ? "text-white" : "text-stone-400 dark:text-slate-500"} />
+                  <span>{tab.label}</span>
+                </button>
+              </Tooltip>
             );
           })}
         </div>
@@ -282,24 +283,26 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
               <div>
                 {/* Header row: Modality icon, favorites star, delete button */}
                 <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center",
-                      session.currentType === 'image' ? "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400" :
-                      session.currentType === 'video' ? "bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400" :
-                      session.currentType === 'code' ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" :
-                      "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-                    )}>
-                      {session.currentType === 'image' ? <ImageIcon size={20} /> :
-                       session.currentType === 'video' ? <Video size={20} /> :
-                       session.currentType === 'code' ? <Code size={20} /> :
-                       <MessageSquare size={20} />}
-                    </div>
+                  <Tooltip content={`Session Modality: ${(session.currentType || 'text').toUpperCase()}`} position="right">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center",
+                        session.currentType === 'image' ? "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400" :
+                        session.currentType === 'video' ? "bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400" :
+                        session.currentType === 'code' ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" :
+                        "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                      )}>
+                        {session.currentType === 'image' ? <ImageIcon size={20} /> :
+                         session.currentType === 'video' ? <Video size={20} /> :
+                         session.currentType === 'code' ? <Code size={20} /> :
+                         <MessageSquare size={20} />}
+                      </div>
 
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md bg-stone-100 dark:bg-slate-700/60 text-stone-600 dark:text-slate-300">
-                      {session.currentType || 'text'}
-                    </span>
-                  </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md bg-stone-100 dark:bg-slate-700/60 text-stone-600 dark:text-slate-300">
+                        {session.currentType || 'text'}
+                      </span>
+                    </div>
+                  </Tooltip>
 
                   <div className="flex items-center gap-1">
                     {/* Favorite Star Toggle */}

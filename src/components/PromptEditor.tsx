@@ -190,7 +190,7 @@ export const PromptEditor: React.FC<Props> = ({
         <div className="flex items-center gap-2 shrink-0">
           {totalVersions > 1 && (
             <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-stone-200 dark:border-slate-700 shadow-2xs">
-              <Tooltip content={`Previous Version (${currentVersionIndex > 0 ? currentVersionIndex : 1}/${totalVersions})`} position="top">
+              <Tooltip content={`Previous Version (${currentVersionIndex > 0 ? currentVersionIndex : 1}/${totalVersions})`} position="bottom">
                 <button 
                   type="button"
                   onClick={onPreviousVersion}
@@ -203,7 +203,7 @@ export const PromptEditor: React.FC<Props> = ({
               <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1 select-none">
                 {currentVersionIndex + 1} / {totalVersions}
               </span>
-              <Tooltip content={`Next Version (${currentVersionIndex + 2 <= totalVersions ? currentVersionIndex + 2 : totalVersions}/${totalVersions})`} position="top">
+              <Tooltip content={`Next Version (${currentVersionIndex + 2 <= totalVersions ? currentVersionIndex + 2 : totalVersions}/${totalVersions})`} position="bottom">
                 <button 
                   type="button"
                   onClick={onNextVersion}
@@ -216,7 +216,7 @@ export const PromptEditor: React.FC<Props> = ({
             </div>
           )}
 
-          <Tooltip content={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"} position="top">
+          <Tooltip content={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"} position="bottom">
             <button
               onClick={() => setIsPreview(!isPreview)}
               className={cn(

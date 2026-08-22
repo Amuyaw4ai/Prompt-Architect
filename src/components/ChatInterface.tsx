@@ -1832,116 +1832,120 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="grid grid-cols-4 gap-1.5 w-full min-w-0">
 
                 {/* 2. COPY PROMPT */}
-                <button
-                  onClick={copyToClipboard}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-xl font-bold transition-all shadow-2xs group min-w-0 overflow-hidden",
-                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
-                    copiedType === 'text'
-                      ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                      : "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-400"
-                  )}
-                  title={copiedType === 'text' ? "Copied prompt to clipboard!" : "Copy prompt text to clipboard"}
-                  aria-label="Copy prompt"
-                >
-                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'text' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="stroke-[3] shrink-0" /> : <Copy size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" />}
-                    {!isRightPanelUltraCompact && (
-                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
-                        {copiedType === 'text' ? 'Copied!' : 'Copy'}
+                <Tooltip content={copiedType === 'text' ? "Copied prompt to clipboard!" : "Copy prompt text to clipboard"} position="top">
+                  <button
+                    onClick={copyToClipboard}
+                    className={cn(
+                      "flex flex-col items-center justify-center rounded-xl font-bold transition-all shadow-2xs group min-w-0 overflow-hidden cursor-pointer w-full",
+                      isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
+                      copiedType === 'text'
+                        ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                        : "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-400"
+                    )}
+                    aria-label="Copy prompt"
+                  >
+                    <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                      {copiedType === 'text' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="stroke-[3] shrink-0" /> : <Copy size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" />}
+                      {!isRightPanelUltraCompact && (
+                        <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                          {copiedType === 'text' ? 'Copied!' : 'Copy'}
+                        </span>
+                      )}
+                    </div>
+                    {isRightPanelWide && (
+                      <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
+                        Prompt
                       </span>
                     )}
-                  </div>
-                  {isRightPanelWide && (
-                    <span className="text-[9px] text-emerald-100 dark:text-slate-900/80 font-medium tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
-                      Prompt
-                    </span>
-                  )}
-                </button>
+                  </button>
+                </Tooltip>
 
                 {/* 3. DOWNLOAD MARKDOWN */}
-                <button
-                  onClick={handleDownloadMarkdown}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden",
-                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
-                    copiedType === 'markdown'
-                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
-                      : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
-                  )}
-                  title={copiedType === 'markdown' ? "Saved Markdown file!" : "Download prompt as Markdown (.md) document"}
-                  aria-label="Download prompt as Markdown"
-                >
-                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'markdown' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileCode size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-500 shrink-0" />}
-                    {!isRightPanelUltraCompact && (
-                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
-                        {copiedType === 'markdown' ? 'Saved' : 'MD'}
+                <Tooltip content={copiedType === 'markdown' ? "Saved Markdown file!" : "Download prompt as Markdown (.md) document"} position="top">
+                  <button
+                    onClick={handleDownloadMarkdown}
+                    className={cn(
+                      "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden cursor-pointer w-full",
+                      isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
+                      copiedType === 'markdown'
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
+                        : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                    )}
+                    aria-label="Download prompt as Markdown"
+                  >
+                    <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                      {copiedType === 'markdown' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileCode size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-500 shrink-0" />}
+                      {!isRightPanelUltraCompact && (
+                        <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                          {copiedType === 'markdown' ? 'Saved' : 'MD'}
+                        </span>
+                      )}
+                    </div>
+                    {isRightPanelWide && (
+                      <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
+                        Markdown
                       </span>
                     )}
-                  </div>
-                  {isRightPanelWide && (
-                    <span className="text-[9px] font-mono font-medium text-stone-400 dark:text-slate-500 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
-                      Markdown
-                    </span>
-                  )}
-                </button>
+                  </button>
+                </Tooltip>
 
                 {/* 4. COPY JSON */}
-                <button
-                  onClick={copyAsJSON}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden",
-                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
-                    copiedType === 'json'
-                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
-                      : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
-                  )}
-                  title={copiedType === 'json' ? "Copied JSON structure!" : "Copy prompt formatted as JSON structure"}
-                  aria-label="Copy JSON structure"
-                >
-                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'json' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <Braces size={isRightPanelUltraCompact ? 15 : 14} className="text-amber-500 shrink-0" />}
-                    {!isRightPanelUltraCompact && (
-                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
-                        {copiedType === 'json' ? 'Copied' : isRightPanelWide ? 'Copy JSON' : 'JSON'}
+                <Tooltip content={copiedType === 'json' ? "Copied JSON structure!" : "Copy prompt formatted as JSON structure"} position="top">
+                  <button
+                    onClick={copyAsJSON}
+                    className={cn(
+                      "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden cursor-pointer w-full",
+                      isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
+                      copiedType === 'json'
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
+                        : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                    )}
+                    aria-label="Copy JSON structure"
+                  >
+                    <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                      {copiedType === 'json' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <Braces size={isRightPanelUltraCompact ? 15 : 14} className="text-amber-500 shrink-0" />}
+                      {!isRightPanelUltraCompact && (
+                        <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                          {copiedType === 'json' ? 'Copied' : isRightPanelWide ? 'Copy JSON' : 'JSON'}
+                        </span>
+                      )}
+                    </div>
+                    {isRightPanelWide && (
+                      <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
+                        JSON Data
                       </span>
                     )}
-                  </div>
-                  {isRightPanelWide && (
-                    <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
-                      JSON Data
-                    </span>
-                  )}
-                </button>
+                  </button>
+                </Tooltip>
 
                 {/* 5. DOWNLOAD JSON */}
-                <button
-                  onClick={handleDownloadJSON}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden",
-                    isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
-                    copiedType === 'download'
-                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
-                      : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
-                  )}
-                  title={copiedType === 'download' ? "Saved JSON file!" : "Download prompt and settings as .json file"}
-                  aria-label="Download JSON file"
-                >
-                  <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
-                    {copiedType === 'download' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileJson size={isRightPanelUltraCompact ? 15 : 14} className="text-blue-500 shrink-0" />}
-                    {!isRightPanelUltraCompact && (
-                      <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
-                        {copiedType === 'download' ? 'Saved' : isRightPanelWide ? 'Download' : 'Down'}
+                <Tooltip content={copiedType === 'download' ? "Saved JSON file!" : "Download prompt and settings as .json file"} position="top">
+                  <button
+                    onClick={handleDownloadJSON}
+                    className={cn(
+                      "flex flex-col items-center justify-center rounded-xl border transition-all shadow-2xs group min-w-0 overflow-hidden cursor-pointer w-full",
+                      isRightPanelUltraCompact ? "h-9 p-1" : isRightPanelWide ? "py-2 px-1.5" : "py-1.5 px-1",
+                      copiedType === 'download'
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
+                        : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                    )}
+                    aria-label="Download JSON file"
+                  >
+                    <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
+                      {copiedType === 'download' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileJson size={isRightPanelUltraCompact ? 15 : 14} className="text-blue-500 shrink-0" />}
+                      {!isRightPanelUltraCompact && (
+                        <span className="hidden min-[480px]:inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-tight truncate min-w-0">
+                          {copiedType === 'download' ? 'Saved' : isRightPanelWide ? 'Download' : 'Down'}
+                        </span>
+                      )}
+                    </div>
+                    {isRightPanelWide && (
+                      <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
+                        JSON File
                       </span>
                     )}
-                  </div>
-                  {isRightPanelWide && (
-                    <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 tracking-tight mt-0.5 leading-none truncate min-w-0 hidden sm:inline-block">
-                      JSON File
-                    </span>
-                  )}
-                </button>
+                  </button>
+                </Tooltip>
               </div>
             </div>
 
@@ -2038,35 +2042,35 @@ export const ChatInterface: React.FC<Props> = ({
                   const isContextMatch = (fw.score || 0) > 2;
 
                   return (
-                    <button 
-                      key={fw.id} 
-                      disabled={isTransformingFramework}
-                      onClick={() => handleApplyFramework(fw)} 
-                      title={`${fw.name} — ${fw.description}`}
-                      className={cn(
-                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left min-h-[38px] px-3.5 w-full lg:w-auto",
-                        isTransformingThis
-                          ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
-                          : isContextMatch
-                            ? "bg-emerald-50/70 dark:bg-emerald-950/30 text-stone-800 dark:text-slate-100 border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/50 hover:border-emerald-400"
-                            : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700 disabled:opacity-50 disabled:pointer-events-none"
-                      )}
-                    >
-                      <Sparkles size={12} className={cn("shrink-0", isTransformingThis ? "text-white animate-spin" : isContextMatch ? "text-emerald-500" : "text-stone-400 dark:text-slate-400 group-hover:text-emerald-500")} />
-                      <span className="font-semibold truncate">{fw.name}</span>
-                      {fw.domainName && !isRightPanelCompact && (
-                        <span className={cn(
-                          "text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0 ml-auto hidden sm:inline-block lg:inline-block",
+                    <Tooltip key={fw.id} content={`${fw.name} — ${fw.description}`} position="top">
+                      <button 
+                        disabled={isTransformingFramework}
+                        onClick={() => handleApplyFramework(fw)} 
+                        className={cn(
+                          "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 group text-left min-h-[38px] px-3.5 w-full lg:w-auto cursor-pointer",
                           isTransformingThis
-                            ? "bg-emerald-700/50 text-emerald-100"
+                            ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20"
                             : isContextMatch
-                              ? "bg-emerald-200/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200"
-                              : "bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400"
-                        )}>
-                          {fw.domainName}
-                        </span>
-                      )}
-                    </button>
+                              ? "bg-emerald-50/70 dark:bg-emerald-950/30 text-stone-800 dark:text-slate-100 border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/50 hover:border-emerald-400"
+                              : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700 disabled:opacity-50 disabled:pointer-events-none"
+                        )}
+                      >
+                        <Sparkles size={12} className={cn("shrink-0", isTransformingThis ? "text-white animate-spin" : isContextMatch ? "text-emerald-500" : "text-stone-400 dark:text-slate-400 group-hover:text-emerald-500")} />
+                        <span className="font-semibold truncate">{fw.name}</span>
+                        {fw.domainName && !isRightPanelCompact && (
+                          <span className={cn(
+                            "text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0 ml-auto hidden sm:inline-block lg:inline-block",
+                            isTransformingThis
+                              ? "bg-emerald-700/50 text-emerald-100"
+                              : isContextMatch
+                                ? "bg-emerald-200/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200"
+                                : "bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400"
+                          )}>
+                            {fw.domainName}
+                          </span>
+                        )}
+                      </button>
+                    </Tooltip>
                   );
                 })}
               </div>
@@ -2087,29 +2091,29 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:flex lg:flex-wrap gap-2 py-1">
                 {contextualQuickAddSuggestions.map(sug => {
                   return (
-                    <button 
-                      key={sug.id} 
-                      onClick={() => handleToggleQuickAddSuggestion(sug)} 
-                      title={sug.active ? `Remove "${sug.label}" from prompt` : `Insert "${sug.label}" into prompt`}
-                      className={cn(
-                        "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 min-h-[38px] px-3.5 w-full lg:w-auto text-left",
-                        sug.active
-                          ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500 shadow-xs shadow-emerald-600/30 hover:bg-emerald-700 dark:hover:bg-emerald-600"
-                          : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
-                      )}
-                    >
-                      {sug.active ? (
-                        <>
-                          <Check size={12} className="text-white stroke-[3] shrink-0" />
-                          <span className="truncate">{sug.label}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-emerald-500 font-bold">+</span>
-                          <span>{sug.label}</span>
-                        </>
-                      )}
-                    </button>
+                    <Tooltip key={sug.id} content={sug.active ? `Remove "${sug.label}" from prompt` : `Insert "${sug.label}" into prompt`} position="top">
+                      <button 
+                        onClick={() => handleToggleQuickAddSuggestion(sug)} 
+                        className={cn(
+                          "text-[11px] font-bold rounded-xl border transition-all shadow-2xs active:scale-95 flex items-center gap-1.5 min-h-[38px] px-3.5 w-full lg:w-auto text-left cursor-pointer",
+                          sug.active
+                            ? "bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500 shadow-xs shadow-emerald-600/30 hover:bg-emerald-700 dark:hover:bg-emerald-600"
+                            : "bg-white dark:bg-slate-700/80 text-stone-700 dark:text-slate-200 border-stone-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                        )}
+                      >
+                        {sug.active ? (
+                          <>
+                            <Check size={12} className="text-white stroke-[3] shrink-0" />
+                            <span className="truncate">{sug.label}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={12} className="text-stone-400 dark:text-slate-400 shrink-0" />
+                            <span className="truncate">{sug.label}</span>
+                          </>
+                        )}
+                      </button>
+                    </Tooltip>
                   );
                 })}
               </div>
