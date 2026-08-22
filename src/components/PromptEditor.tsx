@@ -216,7 +216,7 @@ export const PromptEditor: React.FC<Props> = ({
             </div>
           )}
 
-          <Tooltip content={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"} position="bottom">
+          <Tooltip content={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"} position="bottom-right">
             <button
               onClick={() => setIsPreview(!isPreview)}
               className={cn(

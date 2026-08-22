@@ -355,7 +355,6 @@ export const ChatInterface: React.FC<Props> = ({
   const [showFrameworks, setShowFrameworks] = useState(false);
   const [showQuickAddModifiers, setShowQuickAddModifiers] = useState(false);
   const [uploadErrorNotice, setUploadErrorNotice] = useState<string | null>(null);
-  const [showStatsModal, setShowStatsModal] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isTransformingFramework, setIsTransformingFramework] = useState(false);
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
@@ -1670,16 +1669,16 @@ export const ChatInterface: React.FC<Props> = ({
                   onChange={handleUnifiedFileUpload}
                 />
 
-                {/* Direct 1-Click Add File or Media Button */}
+                {/* Direct 1-Click Upload Context Icon Button */}
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20">
-                  <Tooltip content="Add Context" position="top">
+                  <Tooltip content="Upload context" position="top-left">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="h-9 px-2.5 text-stone-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center gap-1.5 border border-stone-200 dark:border-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold text-xs"
+                      className="h-9 w-9 p-2 text-stone-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center border border-stone-200 dark:border-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold"
+                      aria-label="Upload context"
                     >
-                      <Paperclip size={15} className="text-emerald-600 dark:text-emerald-400" />
-                      <span className="hidden min-[400px]:inline text-[11px]">Context</span>
+                      <Paperclip size={16} className="text-emerald-600 dark:text-emerald-400" />
                     </button>
                   </Tooltip>
                 </div>
@@ -1697,7 +1696,7 @@ export const ChatInterface: React.FC<Props> = ({
                     }
                   }}
                   placeholder="Describe your idea..."
-                  className="w-full pl-24 min-[400px]:pl-28 pr-14 py-2.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[46px] max-h-[220px] resize-none overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden leading-relaxed"
+                  className="w-full pl-13 pr-14 py-2.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 outline-none transition-all text-sm font-medium shadow-inner text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 min-h-[46px] max-h-[220px] resize-none overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden leading-relaxed"
                   disabled={isLoading}
                 />
 
@@ -1751,25 +1750,12 @@ export const ChatInterface: React.FC<Props> = ({
             <div className="flex flex-col gap-2.5 mb-4">
               <div className="w-full flex items-center justify-between gap-2 min-w-0 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                  <Tooltip content="Total Characters" position="top">
-                    <button
-                      type="button"
-                      onClick={() => setShowStatsModal(true)}
-                      className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-slate-700 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0 shadow-2xs cursor-pointer transition-colors"
-                    >
-                      {getFinalPrompt().length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">CHARS</span>
-                    </button>
-                  </Tooltip>
-
-                  <Tooltip content="Total Words" position="top">
-                    <button
-                      type="button"
-                      onClick={() => setShowStatsModal(true)}
-                      className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-slate-700 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs cursor-pointer transition-colors"
-                    >
-                      {getFinalPrompt().split(/\s+/).filter(Boolean).length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">WORDS</span>
-                    </button>
-                  </Tooltip>
+                  <div className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono shrink-0 shadow-2xs">
+                    {getFinalPrompt().length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">CHARS</span>
+                  </div>
+                  <div className="flex items-center gap-1 px-2 py-1 bg-stone-100/80 dark:bg-slate-800/80 border border-stone-200/50 dark:border-slate-700/50 rounded-lg text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
+                    {getFinalPrompt().split(/\s+/).filter(Boolean).length} <span className="text-stone-400 dark:text-slate-500 font-sans font-medium text-[9px]">WORDS</span>
+                  </div>
                 </div>
 
                 <div 
@@ -1846,7 +1832,7 @@ export const ChatInterface: React.FC<Props> = ({
               <div className="grid grid-cols-4 gap-1.5 w-full min-w-0">
 
                 {/* 2. COPY PROMPT */}
-                <Tooltip content={copiedType === 'text' ? "Copied prompt to clipboard!" : "Copy prompt text to clipboard"} position="top">
+                <Tooltip content={copiedType === 'text' ? "Copied!" : "Copy to clipboard"} position="top-left">
                   <button
                     onClick={copyToClipboard}
                     className={cn(
@@ -1856,7 +1842,7 @@ export const ChatInterface: React.FC<Props> = ({
                         ? "bg-emerald-600 dark:bg-emerald-500 text-white"
                         : "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-400"
                     )}
-                    aria-label="Copy prompt"
+                    aria-label="Copy to clipboard"
                   >
                     <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
                       {copiedType === 'text' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="stroke-[3] shrink-0" /> : <Copy size={isRightPanelUltraCompact ? 15 : 14} className="shrink-0" />}
@@ -1875,7 +1861,7 @@ export const ChatInterface: React.FC<Props> = ({
                 </Tooltip>
 
                 {/* 3. DOWNLOAD MARKDOWN */}
-                <Tooltip content={copiedType === 'markdown' ? "Saved Markdown file!" : "Download prompt as Markdown (.md) document"} position="top">
+                <Tooltip content={copiedType === 'markdown' ? "Saved MD!" : "Download as Markdown"} position="top">
                   <button
                     onClick={handleDownloadMarkdown}
                     className={cn(
@@ -1885,7 +1871,7 @@ export const ChatInterface: React.FC<Props> = ({
                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                         : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                     )}
-                    aria-label="Download prompt as Markdown"
+                    aria-label="Download as Markdown"
                   >
                     <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
                       {copiedType === 'markdown' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileCode size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-500 shrink-0" />}
@@ -1904,7 +1890,7 @@ export const ChatInterface: React.FC<Props> = ({
                 </Tooltip>
 
                 {/* 4. COPY JSON */}
-                <Tooltip content={copiedType === 'json' ? "Copied JSON structure!" : "Copy prompt formatted as JSON structure"} position="top">
+                <Tooltip content={copiedType === 'json' ? "Copied JSON!" : "Copy as JSON"} position="top">
                   <button
                     onClick={copyAsJSON}
                     className={cn(
@@ -1914,7 +1900,7 @@ export const ChatInterface: React.FC<Props> = ({
                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                         : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                     )}
-                    aria-label="Copy JSON structure"
+                    aria-label="Copy as JSON"
                   >
                     <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
                       {copiedType === 'json' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <Braces size={isRightPanelUltraCompact ? 15 : 14} className="text-amber-500 shrink-0" />}
@@ -1933,7 +1919,7 @@ export const ChatInterface: React.FC<Props> = ({
                 </Tooltip>
 
                 {/* 5. DOWNLOAD JSON */}
-                <Tooltip content={copiedType === 'download' ? "Saved JSON file!" : "Download prompt and settings as .json file"} position="top">
+                <Tooltip content={copiedType === 'download' ? "Saved JSON!" : "Download as JSON"} position="top-right">
                   <button
                     onClick={handleDownloadJSON}
                     className={cn(
@@ -1943,7 +1929,7 @@ export const ChatInterface: React.FC<Props> = ({
                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-600"
                         : "bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-300 border-stone-200 dark:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800/50"
                     )}
-                    aria-label="Download JSON file"
+                    aria-label="Download as JSON"
                   >
                     <div className="flex items-center justify-center gap-1 w-full min-w-0 px-0.5">
                       {copiedType === 'download' ? <Check size={isRightPanelUltraCompact ? 15 : 14} className="text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" /> : <FileJson size={isRightPanelUltraCompact ? 15 : 14} className="text-blue-500 shrink-0" />}
@@ -2056,7 +2042,7 @@ export const ChatInterface: React.FC<Props> = ({
                   const isContextMatch = (fw.score || 0) > 2;
 
                   return (
-                    <Tooltip key={fw.id} content={`${fw.name} — ${fw.description}`} position="top">
+                    <Tooltip key={fw.id} content={`Apply ${fw.name}`} position="top">
                       <button 
                         disabled={isTransformingFramework}
                         onClick={() => handleApplyFramework(fw)} 
@@ -2135,65 +2121,6 @@ export const ChatInterface: React.FC<Props> = ({
           </motion.div>
         </div>
       </div>
-
-      {/* Word & Character Count Detail Pop-up Modal */}
-      <AnimatePresence>
-        {showStatsModal && (
-          <div 
-            className="fixed inset-0 z-[1000] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
-            onClick={() => setShowStatsModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xs sm:max-w-sm bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-center pb-2 border-b border-stone-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs">
-                    📊
-                  </div>
-                  <h3 className="font-extrabold text-stone-900 dark:text-slate-100 text-sm">Prompt Text Details</h3>
-                </div>
-                <button 
-                  onClick={() => setShowStatsModal(false)}
-                  className="p-1 text-stone-400 hover:text-stone-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
-                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Total Characters</span>
-                  <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">{getFinalPrompt().length}</span>
-                </div>
-
-                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
-                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Total Words</span>
-                  <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{getFinalPrompt().split(/\s+/).filter(Boolean).length}</span>
-                </div>
-
-                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
-                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Reading Time</span>
-                  <span className="text-xs font-extrabold text-stone-700 dark:text-slate-300 mt-1">
-                    ~{Math.max(1, Math.ceil(getFinalPrompt().split(/\s+/).filter(Boolean).length / 200))} min read
-                  </span>
-                </div>
-
-                <div className="p-3 bg-stone-50 dark:bg-slate-800/60 rounded-2xl border border-stone-200/60 dark:border-slate-700/60 flex flex-col">
-                  <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider">Prompt Rating</span>
-                  <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
-                    {calculatePromptScore(getFinalPrompt(), promptType).score >= 80 ? 'Masterpiece' : calculatePromptScore(getFinalPrompt(), promptType).score >= 50 ? 'Advanced' : 'Basic'}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
