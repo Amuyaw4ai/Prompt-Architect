@@ -1,0 +1,49 @@
+name: Automated Release & Semantic Tagging
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Build Verification
+        run: npm run build
+
+      - name: Extract Tag Name
+        id: tag_name
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Generate Changelog & Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: "Prompt Architect ${{ env.TAG }}"
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

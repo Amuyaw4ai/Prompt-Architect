@@ -81,3 +81,16 @@ kubectl apply -f k8s/service.yaml
 kubectl get pods -l app=prompt-architect
 kubectl get service prompt-architect-service
 ```
+
+---
+
+## 5. Automated GitHub Release & Version Tagging (Tier 4)
+
+To automatically generate published GitHub Releases with changelogs:
+
+### Push Version Tag
+```bash
+git tag -a v1.0.4 -m "Release v1.0.4: Production UI polish, single-line tooltips & security enhancements"
+git push origin v1.0.4
+```
+Pushing the tag triggers `.github/workflows/release.yml`, executing build verification and publishing a formal Release entry on GitHub.

@@ -45,3 +45,7 @@ The server enforces essential HTTP security headers:
 - Uploads are bound by Free Tier size ceilings: **10 MB** (Images/Documents), **25 MB** (Videos), **15 MB** (Audio).
 - Oversized uploads trigger an immediate Pro Upgrade alert blocking invalid model payloads.
 - Governance standards and monetization roadmaps are maintained in [`SECURE_VIBE_CODING_STANDARDS.md`](file:///C:/Users/princ/antigravity/Prompt-Architect/SECURE_VIBE_CODING_STANDARDS.md) and [`PRODUCT_ROADMAP_AND_MONETIZATION.md`](file:///C:/Users/princ/antigravity/Prompt-Architect/PRODUCT_ROADMAP_AND_MONETIZATION.md).
+
+### 5. Automated CI/CD Release & Semantic Tag Governance
+- All version tagging (`vX.Y.Z`) triggers automated GitHub Release build verification (`.github/workflows/release.yml`) enforcing code compilation checks before publishing formal release entries.
+- Documented in Section 11 of [`SECURE_VIBE_CODING_STANDARDS.md`](file:///C:/Users/princ/antigravity/Prompt-Architect/SECURE_VIBE_CODING_STANDARDS.md).

@@ -1,5 +1,5 @@
 # Master Security & Containerization Governance Framework
-> **Secure Vibe Coding & Production Infrastructure Standard (v2.4)**
+> **Secure Vibe Coding & Production Infrastructure Standard (v2.6)**
 
 ---
 
@@ -19,6 +19,7 @@ Whenever this document (or `Secure Vibe Coding Risk Management.pdf` and `CONTAIN
 | **`v2.3`** | Added Section 8.1: Dependabot PR Handling Protocol (4-Step Engineering Workflow). | Security & Dependency Management |
 | **`v2.4`** | Added Section 9: Autonomous Sub-Agent Roster & Delegation Protocol. | Multi-Agent Operations |
 | **`v2.5`** | Added Section 10: Multi-Modal Upload Security & Tiered Payload Governance. | Multi-Modal Uploads & Monetization |
+| **`v2.6`** | Added Section 11: Automated Versioning, Semantic Tagging & GitHub Release Governance. | CI/CD Releases & GitHub Automation |
 
 ---
 
@@ -79,6 +80,7 @@ When initializing or auditing any codebase, the AI Editor MUST automatically cre
 - [ ] **`.cursorrules`**: Project-level instructions equipping the AI assistant with tech stack rules, UI/UX guidelines, step-by-step execution preferences, and security/container governance.
 - [ ] **`.github/dependabot.yml`**: Automated dependency vulnerability scanning & pull requests for npm and Docker.
 - [ ] **`.github/workflows/codeql.yml`**: CodeQL Static Application Security Testing (SAST) workflow scanning for XSS, code injection, and unsafe data flows.
+- [ ] **`.github/workflows/release.yml`**: Automated GitHub Release & Semantic Version Tagging workflow publishing formal release entries upon git tag push.
 - [ ] **`SECURITY.md`**: Public security policy outlining key isolation, vulnerability reporting, and threat mitigations.
 - [ ] **`SECURITY_AUDIT.md`**: Empirical audit log of scanned dependencies, rate limits, and header security fixes.
 - [ ] **`CONTAINERIZATION_STANDARD.md`**: Universal SOP for Port Space, Docker Compose, Cloud Run, and Kubernetes fleet scaling.
@@ -180,7 +182,6 @@ Every repository MUST contain automated security scanning pipelines configured i
 - **Triggers**: On push to `main`, on Pull Requests, and weekly cron schedule (`0 6 * * 1`).
 - **Scanned Vectors**: Cross-Site Scripting (XSS), SQL/Query Injection, Prototype Pollution, Unsafe Deserialization, Hardcoded Secrets, and Unhandled Exception flows.
 
-
 ### 3. Dependabot PR Handling Protocol (The 4-Step Engineering Workflow)
 The AI Assistant MUST NEVER auto-merge Dependabot PRs without local verification. When open Dependabot PRs exist, the AI Assistant MUST execute the following 4-step engineering workflow for recommended updates:
 
@@ -267,3 +268,24 @@ When a user attempts to attach a file exceeding the Free Tier ceiling:
 
 ### 10.4 Product Roadmap & Feature Backlog Tracking
 All monetization opportunities and delegated future features MUST be actively recorded and maintained in the project's master tracking document: [`PRODUCT_ROADMAP_AND_MONETIZATION.md`](file:///C:/Users/princ/antigravity/Prompt-Architect/PRODUCT_ROADMAP_AND_MONETIZATION.md).
+
+---
+
+## 11. Automated Versioning, Semantic Tagging & GitHub Release Governance
+
+### 11.1 Automated GitHub Release Workflow (`.github/workflows/release.yml`)
+To guarantee that git version tags (`vX.Y.Z`) automatically generate published GitHub Releases:
+1. **Trigger Configuration**: The release workflow MUST execute on pushes matching tag patterns `v*.*.*` or `v*` and support manual `workflow_dispatch`.
+2. **Permissions**: The workflow MUST declare `permissions: { contents: write }` to enable release creation.
+3. **Build & Release Steps**:
+   - Checkout full git depth (`actions/checkout@v4` with `fetch-depth: 0`).
+   - Setup Node environment and run build verification (`npm ci && npm run build`).
+   - Extract tag name and execute `softprops/action-gh-release@v2` with `generate_release_notes: true`.
+
+### 11.2 Milestone Release Protocol
+Whenever `package.json` version is incremented and a git tag is created:
+```bash
+git tag -a v1.0.4 -m "Release v1.0.4: Production UI polish, single-line tooltips & security enhancements"
+git push origin v1.0.4
+```
+Pushing the tag triggers `.github/workflows/release.yml` on GitHub, automatically populating the repository's **Releases** tab.
