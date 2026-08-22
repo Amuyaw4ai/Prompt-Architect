@@ -353,6 +353,7 @@ export const ChatInterface: React.FC<Props> = ({
   const [attachedFiles, setAttachedFiles] = useState<{ name: string, content: string }[]>([]);
   const [showFrameworks, setShowFrameworks] = useState(false);
   const [showQuickAddModifiers, setShowQuickAddModifiers] = useState(false);
+  const [uploadErrorNotice, setUploadErrorNotice] = useState<string | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isTransformingFramework, setIsTransformingFramework] = useState(false);
   const [transformingFrameworkName, setTransformingFrameworkName] = useState('');
@@ -593,9 +594,18 @@ export const ChatInterface: React.FC<Props> = ({
     }
   }, [messages]);
 
+  const MAX_FILE_SIZES_MB = {
+    IMAGE: 10,   // 10 MB limit (JPEG, PNG, GIF, WebP)
+    VIDEO: 25,   // 25 MB limit (MP4, WebM, MOV)
+    AUDIO: 15,   // 15 MB limit (MP3, WAV, OGG)
+    DOCUMENT: 10 // 10 MB limit (PDF, DOCX, TXT, CSV)
+  };
+
   const handleUnifiedFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+
+    setUploadErrorNotice(null);
 
     files.forEach(file => {
       const mimeType = (file.type || '').toLowerCase();
@@ -604,6 +614,18 @@ export const ChatInterface: React.FC<Props> = ({
       const isImage = mimeType.startsWith('image/') || /\.(jpeg|jpg|png|gif|webp)$/i.test(fileName);
       const isVideo = mimeType.startsWith('video/') || /\.(mp4|webm|mov)$/i.test(fileName);
       const isAudio = mimeType.startsWith('audio/') || /\.(mp3|wav|ogg)$/i.test(fileName);
+
+      let maxMB = MAX_FILE_SIZES_MB.DOCUMENT;
+      let formatName = 'Document';
+      if (isImage) { maxMB = MAX_FILE_SIZES_MB.IMAGE; formatName = 'Image'; }
+      else if (isVideo) { maxMB = MAX_FILE_SIZES_MB.VIDEO; formatName = 'Video'; }
+      else if (isAudio) { maxMB = MAX_FILE_SIZES_MB.AUDIO; formatName = 'Audio'; }
+
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > maxMB) {
+        setUploadErrorNotice(`"${file.name}" (${fileSizeMB.toFixed(1)}MB) exceeds Free Tier limit (${maxMB}MB max for ${formatName}s). Upgrade to Pro for high-capacity uploads & priority compute!`);
+        return;
+      }
 
       if (isImage || isVideo || isAudio) {
         const reader = new FileReader();
@@ -1562,6 +1584,41 @@ export const ChatInterface: React.FC<Props> = ({
                   </button>
                 </div>
               )}
+
+              {/* Oversized File Pro Upgrade Toast Banner */}
+              <AnimatePresence>
+                {uploadErrorNotice && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="mb-2 p-2.5 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-700/60 rounded-xl flex items-center justify-between gap-2 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-2xs"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Zap size={14} className="text-amber-500 shrink-0 animate-pulse" />
+                      <span className="truncate">{uploadErrorNotice}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          alert('Pro Subscription (Tiered file uploads up to 1GB, priority GPU compute, and unlimited cloud backup) recorded in Product Roadmap!');
+                        }}
+                        className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-2xs"
+                      >
+                        Upgrade
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUploadErrorNotice(null)}
+                        className="p-1 hover:text-amber-900 dark:hover:text-amber-100 transition-colors cursor-pointer"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Attachments Preview */}
               {(selectedImage || attachedFiles.length > 0) && (
