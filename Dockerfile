@@ -5,7 +5,7 @@
 # ------------------------------------------
 # Stage 1: Build Frontend & Native Dependencies
 # ------------------------------------------
-FROM node:20-slim AS builder
+FROM node:26-slim AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN npm run build
 # ------------------------------------------
 # Stage 2: Minimal Production Runtime
 # ------------------------------------------
-FROM node:20-slim AS production
+FROM node:26-slim AS production
 
 WORKDIR /app
 
