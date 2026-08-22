@@ -173,7 +173,7 @@ export function isTagInPrompt(promptText: string, tag: string, label: string): b
  */
 export function getContextualSuggestions(promptText: string, promptType: PromptType): QuickAddSuggestion[] {
   const raw = promptText.trim();
-  const MAX_SUGGESTIONS = 8; // Strictly between 6 and 10
+  const MAX_SUGGESTIONS = 5; // Strictly capped at max 5 items
   const suggestionsMap = new Map<string, QuickAddSuggestion>();
 
   // Rank domain rules by keyword relevance match count
@@ -208,8 +208,8 @@ export function getContextualSuggestions(promptText: string, promptType: PromptT
     if (suggestionsMap.size >= MAX_SUGGESTIONS) break;
   }
 
-  // 2. Add modality fallbacks if we have fewer than 6 suggestions to guarantee at least 6
-  if (suggestionsMap.size < 6) {
+  // 2. Add modality fallbacks if we have fewer than 5 suggestions
+  if (suggestionsMap.size < 5) {
     const fallbacks = MODALITY_FALLBACKS[promptType] || MODALITY_FALLBACKS.text;
     for (const item of fallbacks) {
       if (suggestionsMap.size >= MAX_SUGGESTIONS) break;

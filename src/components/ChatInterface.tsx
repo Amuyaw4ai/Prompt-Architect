@@ -138,113 +138,149 @@ const getDailySuggestions = (suggestions: Record<string, string[]>, count: numbe
 
 const VARIABLE_SUGGESTIONS = getDailySuggestions(ALL_VARIABLE_SUGGESTIONS);
 
-interface CalibrationGroup {
+interface CalibrationOption {
   category: string;
-  color: 'emerald' | 'amber' | 'purple';
-  options: string[];
+  label: string;
 }
 
 const getDynamicCalibrationOptions = (
   type: PromptType,
   promptContent: string,
   messageContent: string
-): CalibrationGroup[] => {
-  const combined = `${promptContent} ${messageContent}`.toLowerCase();
+): CalibrationOption[] => {
+  const text = `${promptContent} ${messageContent}`.toLowerCase();
 
   if (type === 'image') {
-    const isPortrait = combined.includes('portrait') || combined.includes('person') || combined.includes('character') || combined.includes('face') || combined.includes('model') || combined.includes('woman') || combined.includes('man');
-    const isLandscape = combined.includes('landscape') || combined.includes('environment') || combined.includes('city') || combined.includes('nature') || combined.includes('room') || combined.includes('building') || combined.includes('cyberpunk') || combined.includes('scenery');
-    const isAnimeOrArt = combined.includes('anime') || combined.includes('illustration') || combined.includes('art') || combined.includes('vector') || combined.includes('painting') || combined.includes('cartoon') || combined.includes('studio ghibli');
+    const isPortrait = /portrait|person|face|character|model|woman|man|human|smile|eyes/.test(text);
+    const isLandscape = /landscape|nature|mountain|city|street|building|environment|scenery|room|architect/.test(text);
+    const isAnimeOrArt = /anime|illustration|art|vector|digital|painting|ghibli|concept|draw/.test(text);
+    const isCyberpunk = /cyberpunk|neon|sci-fi|futuristic|night|robot|mech/.test(text);
 
+    if (isPortrait) {
+      return [
+        { category: 'Lens', label: '85mm Portrait Lens (f/1.4 Bokeh)' },
+        { category: 'Lighting', label: 'Soft Studio Keylight & Rim' },
+        { category: 'Detail', label: 'Hyper-Detailed Skin Texture' },
+        { category: 'Color', label: 'Kodak Portra 400 Color Grade' },
+        { category: 'Framing', label: 'Medium Waist-Up Shot' }
+      ];
+    }
+    if (isLandscape) {
+      return [
+        { category: 'Lighting', label: 'Cinematic Golden Hour' },
+        { category: 'Framing', label: '16:9 Ultra-Wide Angle' },
+        { category: 'Atmosphere', label: 'Atmospheric Fog & Sunbeams' },
+        { category: 'Quality', label: 'Hyperrealistic 8K Octane' },
+        { category: 'Depth', label: 'Deep Depth of Field (f/8)' }
+      ];
+    }
+    if (isAnimeOrArt) {
+      return [
+        { category: 'Style', label: 'Makoto Shinkai Sky Aesthetic' },
+        { category: 'Medium', label: 'Vibrant Digital Painting' },
+        { category: 'Technique', label: 'Soft Watercolor & Ink' },
+        { category: 'Effects', label: 'Sun Flare & Particle FX' },
+        { category: 'Character', label: 'Cel-Shaded Anime Polish' }
+      ];
+    }
+    if (isCyberpunk) {
+      return [
+        { category: 'Lighting', label: 'Vibrant Neon Rain Reflections' },
+        { category: 'FX', label: 'High-Tech Holographic Details' },
+        { category: 'Mood', label: 'Moody Cinematic Chiaroscuro' },
+        { category: 'Camera', label: 'Anamorphic Lens Flare (2.39:1)' },
+        { category: 'Surface', label: 'Cybernetic Metallic Polish' }
+      ];
+    }
     return [
-      {
-        category: 'Lighting & Mood',
-        color: 'emerald',
-        options: isLandscape 
-          ? ['Cinematic Golden Hour', 'Moody Fog & Mist', 'Dramatic Sunbeams', 'Night Cyberpunk Neon']
-          : isPortrait 
-            ? ['Soft Studio Portrait Keylight', 'Dramatic Rim Lighting', 'Warm Sunset Bokeh', 'High-Key Fashion Clean']
-            : ['Volumetric Lighting', 'Warm Cinematic Glow', 'Moody Chiaroscuro', 'Studio Softbox']
-      },
-      {
-        category: 'Style & Medium',
-        color: 'amber',
-        options: isAnimeOrArt
-          ? ['Makoto Shinkai Anime Style', 'Vibrant Concept Digital Art', 'Minimalist Flat Vector', 'Watercolor & Ink']
-          : ['35mm Film Grain (Kodak Portra)', 'Hyperrealistic 8K Octane Render', 'Editorial Photography', 'Cinematic Panavision 70mm']
-      },
-      {
-        category: 'Composition & Framing',
-        color: 'purple',
-        options: isPortrait
-          ? ['Close-Up Shot with 85mm Lens', 'Medium Waist-Up Shot', 'Low-Angle Heroic Stance', 'Centered Symmetric Framing']
-          : isLandscape
-            ? ['Wide Angle Pan (16:9)', 'Aerial Drone Top-Down', 'Rule-of-Thirds Dynamic Lines', 'Deep Depth of Field']
-            : ['16:9 Cinematic Aspect Ratio', 'Macro Detail Close-Up', 'Symmetrical Center Framing', 'Low-Angle Hero Shot']
-      }
+      { category: 'Lighting', label: 'Volumetric Cinematic Light' },
+      { category: 'Style', label: '35mm Film Grain Texture' },
+      { category: 'Quality', label: '8K Octane Render Detail' },
+      { category: 'Framing', label: 'Symmetrical Center Framing' },
+      { category: 'Color', label: 'Warm Natural Color Palette' }
     ];
   }
 
   if (type === 'video') {
-    const isAction = combined.includes('action') || combined.includes('run') || combined.includes('car') || combined.includes('fight') || combined.includes('fast') || combined.includes('sport');
+    const isAction = /action|fast|run|car|fight|sport|chase|motion/.test(text);
+    if (isAction) {
+      return [
+        { category: 'Motion', label: 'High-Speed FPV Drone Tracking' },
+        { category: 'Camera', label: 'Whip Pan Action Snap' },
+        { category: 'Framing', label: 'Dynamic Low Steadycam' },
+        { category: 'Color', label: 'Teal & Orange Grade' },
+        { category: 'Pacing', label: 'Motion Blur Shutter Sync' }
+      ];
+    }
     return [
-      {
-        category: 'Camera Motion',
-        color: 'emerald',
-        options: isAction
-          ? ['Dynamic Fast Orbit Tracking', 'High-Speed FPV Drone Chase', 'Whip Pan Action Snap', 'Dynamic Low Steadycam']
-          : ['Slow Cinematic Dolly Push-In', 'Dynamic Drone Orbit 360°', 'Smooth Steadycam Tracking', 'Subtle Organic Handheld Pan']
-      },
-      {
-        category: 'Pacing & Speed',
-        color: 'amber',
-        options: ['Slow Motion 60fps Smooth Flow', 'Fast-Paced Action Cut', 'Hyperlapse Time-Compression', 'Real-Time Natural Cadence']
-      },
-      {
-        category: 'Atmosphere & Grade',
-        color: 'purple',
-        options: ['Teal & Orange Cinematic Grade', 'Vintage 70s Warm Film Glow', 'High-Contrast Moody Noir', 'Vibrant Natural Sunlight']
-      }
+      { category: 'Motion', label: 'Slow Cinematic Dolly Push-In' },
+      { category: 'Camera', label: '360° Smooth Drone Orbit' },
+      { category: 'Speed', label: '60fps Slow Motion Flow' },
+      { category: 'Grade', label: 'Warm 70s Vintage Film Glow' },
+      { category: 'Steadi', label: 'Subtle Organic Handheld Pan' }
+    ];
+  }
+
+  if (type === 'code') {
+    const isReact = /react|next|component|hook|jsx|tsx|tailwind|frontend/.test(text);
+    const isBackend = /node|express|api|sql|database|server|auth|backend/.test(text);
+    
+    if (isReact) {
+      return [
+        { category: 'Types', label: 'TypeScript Strict Interfaces' },
+        { category: 'Styling', label: 'Tailwind CSS Responsive Utilities' },
+        { category: 'State', label: 'React Hook State & Memoization' },
+        { category: 'A11y', label: 'Accessible ARIA & Keyboard Handling' },
+        { category: 'Structure', label: 'Clean Component Architecture' }
+      ];
+    }
+    if (isBackend) {
+      return [
+        { category: 'Safety', label: 'Async Error Handling & Try-Catch' },
+        { category: 'Format', label: 'Structured JSON API Response' },
+        { category: 'Security', label: 'Input Validation & Sanitization' },
+        { category: 'SQL', label: 'Database Indexing & Query Speedup' },
+        { category: 'Arch', label: 'Clean Middleware Layer Isolation' }
+      ];
+    }
+    return [
+      { category: 'Format', label: 'Production-Ready TypeScript' },
+      { category: 'Docs', label: 'Comprehensive Inline Comments' },
+      { category: 'Safety', label: 'Edge Case & Error Handling' },
+      { category: 'Structure', label: 'Modular Refactored Architecture' },
+      { category: 'Testing', label: 'Automated Unit Test Mock Harness' }
     ];
   }
 
   // Text / Chatbot modality
-  const isCoding = combined.includes('code') || combined.includes('react') || combined.includes('python') || combined.includes('sql') || combined.includes('api') || combined.includes('function') || combined.includes('developer') || combined.includes('software');
-  const isMarketing = combined.includes('marketing') || combined.includes('copy') || combined.includes('seo') || combined.includes('campaign') || combined.includes('email') || combined.includes('brand') || combined.includes('sales') || combined.includes('ad');
-  const isAnalysis = combined.includes('analys') || combined.includes('data') || combined.includes('report') || combined.includes('business') || combined.includes('strategy') || combined.includes('review') || combined.includes('metrics');
+  const isMarketing = /marketing|copy|seo|sales|brand|email|ad|hook|cta/.test(text);
+  const isAnalysis = /analysis|data|report|business|strategy|metrics|audit/.test(text);
+
+  if (isMarketing) {
+    return [
+      { category: 'Structure', label: 'High-Converting Hook + Body + CTA' },
+      { category: 'Tone', label: 'Persuasive Copywriting Tone' },
+      { category: 'Format', label: 'Scannable Bulleted Value Props' },
+      { category: 'Variants', label: 'A/B Testing Multi-Variant Copy' },
+      { category: 'SEO', label: 'SEO Keyword Integrated Phrasing' }
+    ];
+  }
+  if (isAnalysis) {
+    return [
+      { category: 'Format', label: 'Executive Summary + 5 Key Takeaways' },
+      { category: 'Structure', label: 'Data Comparison Markdown Table' },
+      { category: 'Plan', label: 'Actionable Strategic Roadmap' },
+      { category: 'Tone', label: 'Objective & C-Level Authoritative' },
+      { category: 'Depth', label: 'Risk & Mitigation Matrix' }
+    ];
+  }
 
   return [
-    {
-      category: 'Format',
-      color: 'emerald',
-      options: isCoding 
-        ? ['Step-by-Step Code with Comments', 'Production-Ready TypeScript', 'Minimalist Code Only', 'Markdown Table Breakdown']
-        : isMarketing 
-          ? ['High-Converting Hook + Body + CTA', 'Bullet Points with Key Benefits', 'Multi-Variant Ad Copies', 'Punchy Social Post']
-          : isAnalysis
-            ? ['Executive Summary + Key Takeaways', 'Markdown Comparison Table', 'Structured JSON Schema', 'Numbered Action Plan']
-            : ['Bullet Points with Key Takeaways', 'Step-by-Step Guide', 'JSON Schema', 'Markdown Table', 'In-Depth Essay']
-    },
-    {
-      category: 'Tone',
-      color: 'amber',
-      options: isCoding
-        ? ['Senior Principal Engineer', 'Concise & Authoritative', 'Instructional Tutorial', 'Direct & Minimal']
-        : isMarketing
-          ? ['High-Energy & Persuasive', 'Warm & Friendly', 'Urgent & Compelling', 'Witty & Relatable']
-          : isAnalysis
-            ? ['Executive & Strategic', 'Objective & Data-Driven', 'Analytical & Thorough', 'Pragmatic & Clear']
-            : ['Formal & Professional', 'Casual & Friendly', 'Authoritative & Concise', 'Socratic & Educational']
-    },
-    {
-      category: 'Depth',
-      color: 'purple',
-      options: isCoding
-        ? ['Production Edge Cases Included', 'Beginner-Friendly Explanation (ELI5)', 'Strict Typings & Error Handling', 'Quick Snippet Only']
-        : isAnalysis
-          ? ['Comprehensive C-Level Brief', 'Actionable 5-Step Checklist', 'Deep-Dive Risk Assessment', 'Quick 3-Bullet Summary']
-          : ['Beginner (ELI5)', 'Intermediate Practical', 'Advanced Expert Level', 'Actionable Checklist Only']
-    }
+    { category: 'Format', label: 'Bullet Points with Key Takeaways' },
+    { category: 'Tone', label: 'Concise & Authoritative Tone' },
+    { category: 'Structure', label: 'Actionable Step-by-Step Guide' },
+    { category: 'Table', label: 'Markdown Summary Table' },
+    { category: 'Depth', label: 'Executive Level Brief' }
   ];
 };
 
@@ -1153,38 +1189,32 @@ export const ChatInterface: React.FC<Props> = ({
                               <div className="space-y-2">
                                 <div className="text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
                                   <Sparkles size={11} />
-                                  <span>Quick Answer / Calibrate:</span>
+                                  <span>Calibrate & Quick Answer:</span>
                                 </div>
-                                {dynamicSuggestions.map((group, gIdx) => (
-                                  <div key={gIdx} className="flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[10px] font-bold text-stone-400 dark:text-slate-500 mr-1 min-w-[50px]">{group.category}:</span>
-                                    {group.options.map((opt) => {
-                                      const tag = `[${group.category}: ${opt}]`;
-                                      const isSelected = selectedOptions.includes(tag);
-                                      return (
-                                        <button
-                                          key={opt}
-                                          type="button"
-                                          onClick={() => handleToggleOption(group.category, opt)}
-                                          disabled={isLoading}
-                                          className={cn(
-                                            "px-2 py-0.5 text-[10px] font-semibold rounded-md border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1",
-                                            isSelected
-                                              ? "bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 border-emerald-600 dark:border-emerald-500 shadow-sm ring-1 ring-emerald-400 font-bold"
-                                              : group.color === 'emerald'
-                                                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-200/50 dark:border-emerald-800/40"
-                                                : group.color === 'amber'
-                                                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200/50 dark:border-amber-800/40"
-                                                  : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200/50 dark:border-purple-800/40"
-                                          )}
-                                        >
-                                          {isSelected && <Check size={10} className="stroke-[3]" />}
-                                          <span>{opt}</span>
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                ))}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {dynamicSuggestions.map((item) => {
+                                    const tag = `[${item.category}: ${item.label}]`;
+                                    const isSelected = selectedOptions.includes(tag);
+                                    return (
+                                      <button
+                                        key={item.label}
+                                        type="button"
+                                        onClick={() => handleToggleOption(item.category, item.label)}
+                                        disabled={isLoading}
+                                        className={cn(
+                                          "px-2.5 py-1 text-[10.5px] font-medium rounded-lg border transition-all disabled:opacity-50 active:scale-95 shadow-2xs flex items-center gap-1.5",
+                                          isSelected
+                                            ? "bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 border-emerald-600 dark:border-emerald-500 font-bold shadow-xs ring-1 ring-emerald-400"
+                                            : "bg-stone-100/90 dark:bg-slate-800/90 text-stone-700 dark:text-slate-200 border-stone-200/80 dark:border-slate-700/70 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-300 dark:hover:border-emerald-800/60"
+                                        )}
+                                      >
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">{item.category}:</span>
+                                        {isSelected && <Check size={10} className="stroke-[3]" />}
+                                        <span>{item.label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             )}
 
