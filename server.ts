@@ -9,21 +9,164 @@ const _filename = typeof __filename !== "undefined" ? __filename : "";
 const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
 
 let db: any;
-try {
-  const Database = require("better-sqlite3");
-  const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === "production" ? ":memory:" : "prompts.db");
-  db = new Database(dbPath);
-} catch (err) {
-  console.warn("SQLite native database load bypassed or failed, using in-memory fallback:", err);
-  const memoryStore = new Map<number, any>();
-  let nextId = 1;
+if (process.env.NODE_ENV !== "production") {
+  try {
+    const Database = require("better-sqlite3");
+    const dbPath = process.env.DB_PATH || "prompts.db";
+    db = new Database(dbPath);
+  } catch (err) {
+    db = null;
+  }
+}
+
+if (!db) {
+  console.log("Using zero-dependency pure JS in-memory database engine for production runtime.");
+  const savedPrompts = new Map<number, any>();
+  const chatSessions = new Map<string, any>();
+  const feedbackList: any[] = [];
+  let autoPromptId = 1;
+
   db = {
     exec: () => {},
-    prepare: (_sql: string) => ({
-      run: (..._params: any[]) => ({ lastInsertRowid: nextId++ }),
-      all: (..._params: any[]) => Array.from(memoryStore.values()),
-      get: (id: any) => memoryStore.get(Number(id)) || null
-    })
+    prepare: (sql: string) => {
+      const s = sql.trim();
+      return {
+        run: (...params: any[]) => {
+          if (s.includes("INSERT INTO saved_prompts")) {
+            const id = autoPromptId++;
+            const now = Math.floor(Date.now() / 1000);
+            const record = {
+              id,
+              title: params[0],
+              original_idea: params[1],
+              refined_prompt: params[2],
+              type: params[3],
+              tags: params[4],
+              messages: params[5],
+              is_favorite: params[6],
+              version_notes: params[7],
+              result_history: params[8],
+              current_result_index: params[9],
+              created_at: now
+            };
+            savedPrompts.set(id, record);
+            return { lastInsertRowid: id };
+          }
+          if (s.includes("UPDATE saved_prompts SET title = ? WHERE id = ?")) {
+            const id = Number(params[1]);
+            const existing = savedPrompts.get(id);
+            if (existing) existing.title = params[0];
+            return { changes: 1 };
+          }
+          if (s.includes("UPDATE saved_prompts") && s.includes("SET title = ?")) {
+            const id = Number(params[10] !== undefined ? params[10] : params[1]);
+            const existing = savedPrompts.get(id);
+            if (existing && params.length > 2) {
+              existing.title = params[0];
+              existing.original_idea = params[1];
+              existing.refined_prompt = params[2];
+              existing.type = params[3];
+              existing.tags = params[4];
+              existing.messages = params[5];
+              existing.is_favorite = params[6];
+              existing.version_notes = params[7];
+              existing.result_history = params[8];
+              existing.current_result_index = params[9];
+            }
+            return { changes: 1 };
+          }
+          if (s.includes("SET is_favorite = ?")) {
+            const id = Number(params[1]);
+            const existing = savedPrompts.get(id);
+            if (existing) existing.is_favorite = params[0];
+            return { changes: 1 };
+          }
+          if (s.includes("DELETE FROM saved_prompts WHERE id = ?")) {
+            savedPrompts.delete(Number(params[0]));
+            return { changes: 1 };
+          }
+          if (s.includes("INSERT INTO feedback")) {
+            feedbackList.push({ id: feedbackList.length + 1, params });
+            return { lastInsertRowid: feedbackList.length };
+          }
+          if (s.includes("INSERT INTO chat_sessions")) {
+            const now = Math.floor(Date.now() / 1000);
+            const record = {
+              id: params[0],
+              title: params[1],
+              messages: params[2],
+              current_type: params[3],
+              result_history: params[4],
+              current_result_index: params[5],
+              editing_prompt_id: params[6],
+              created_at: now,
+              updated_at: now
+            };
+            chatSessions.set(params[0], record);
+            return { lastInsertRowid: params[0] };
+          }
+          if (s.includes("UPDATE chat_sessions")) {
+            const id = params[6];
+            const existing = chatSessions.get(id);
+            const now = Math.floor(Date.now() / 1000);
+            if (existing) {
+              existing.title = params[0];
+              existing.messages = params[1];
+              existing.current_type = params[2];
+              existing.result_history = params[3];
+              existing.current_result_index = params[4];
+              existing.editing_prompt_id = params[5];
+              existing.updated_at = now;
+            } else {
+              chatSessions.set(id, {
+                id,
+                title: params[0],
+                messages: params[1],
+                current_type: params[2],
+                result_history: params[3],
+                current_result_index: params[4],
+                editing_prompt_id: params[5],
+                created_at: now,
+                updated_at: now
+              });
+            }
+            return { changes: 1 };
+          }
+          if (s.includes("DELETE FROM chat_sessions WHERE id = ?")) {
+            chatSessions.delete(params[0]);
+            return { changes: 1 };
+          }
+          if (s.includes("DELETE FROM chat_sessions")) {
+            chatSessions.clear();
+            return { changes: 1 };
+          }
+          return { lastInsertRowid: 1, changes: 0 };
+        },
+        all: (...params: any[]) => {
+          if (s.includes("FROM saved_prompts")) {
+            let list = Array.from(savedPrompts.values());
+            if (params.length > 0 && params[0]) {
+              const type = params[0];
+              list = list.filter(p => p.type === type);
+            }
+            return list.sort((a, b) => b.created_at - a.created_at);
+          }
+          if (s.includes("FROM chat_sessions")) {
+            return Array.from(chatSessions.values()).sort((a, b) => b.updated_at - a.updated_at);
+          }
+          return [];
+        },
+        get: (...params: any[]) => {
+          if (s.includes("FROM saved_prompts WHERE id = ?")) {
+            return savedPrompts.get(Number(params[0])) || null;
+          }
+          if (s.includes("FROM chat_sessions WHERE id = ?")) {
+            return chatSessions.get(params[0]) || null;
+          }
+          return null;
+        }
+      };
+    }
   };
 }
 
@@ -31,14 +174,14 @@ try {
 db.exec(`
   CREATE TABLE IF NOT EXISTS saved_prompts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER,
-    derived_from_id INTEGER,
     title TEXT NOT NULL,
     original_idea TEXT NOT NULL,
     refined_prompt TEXT NOT NULL,
     type TEXT NOT NULL,
     tags TEXT,
     messages TEXT,
+    result_history TEXT,
+    current_result_index INTEGER,
     is_favorite INTEGER DEFAULT 0,
     version_notes TEXT,
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
@@ -68,7 +211,10 @@ db.exec(`
 `);
 
 try {
-  db.exec("ALTER TABLE saved_prompts ADD COLUMN derived_from_id INTEGER;");
+  db.exec("ALTER TABLE saved_prompts ADD COLUMN result_history TEXT;");
+} catch (e) {}
+try {
+  db.exec("ALTER TABLE saved_prompts ADD COLUMN current_result_index INTEGER;");
 } catch (e) {}
 try {
   db.exec("ALTER TABLE chat_sessions ADD COLUMN result_history TEXT;");
@@ -81,9 +227,6 @@ try {
 } catch (e) {}
 try {
   db.exec("ALTER TABLE saved_prompts ADD COLUMN is_favorite INTEGER DEFAULT 0;");
-} catch (e) {}
-try {
-  db.exec("ALTER TABLE saved_prompts ADD COLUMN parent_id INTEGER;");
 } catch (e) {}
 try {
   db.exec("ALTER TABLE saved_prompts ADD COLUMN version_notes TEXT;");
@@ -458,8 +601,10 @@ Please re-architect this prompt into the ${frameworkName} framework now.
     const result = rows.map((row: any) => {
       let tags = [];
       let messages = [];
+      let resultHistory = [];
       try { tags = row.tags ? JSON.parse(row.tags) : []; } catch (e) {}
       try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
+      try { resultHistory = row.result_history ? JSON.parse(row.result_history) : []; } catch (e) {}
       
       return {
         ...row,
@@ -468,46 +613,11 @@ Please re-architect this prompt into the ${frameworkName} framework now.
         versionNotes: row.version_notes,
         tags,
         messages,
+        resultHistory,
+        currentResultIndex: row.current_result_index,
         originalIdea: row.original_idea,
         refinedPrompt: row.refined_prompt,
         isFavorite: row.is_favorite === 1,
-        createdAt: row.created_at * 1000
-      };
-    });
-
-    res.json(result);
-  });
-
-  app.get("/api/prompts/:id/versions", (req, res) => {
-    const { id } = req.params;
-    
-    // First, find the root ID
-    const currentPrompt = db.prepare("SELECT id, parent_id FROM saved_prompts WHERE id = ?").get(id) as any;
-    if (!currentPrompt) return res.status(404).json({ error: "Prompt not found" });
-    
-    const rootId = currentPrompt.parent_id || currentPrompt.id;
-    
-    // Fetch all prompts in this family (chronological order: v1 -> v2 -> v3)
-    const rows = db.prepare("SELECT * FROM saved_prompts WHERE id = ? OR parent_id = ? ORDER BY created_at ASC").all(rootId, rootId);
-    
-    const result = rows.map((row: any) => {
-      let tags = [];
-      let messages = [];
-      try { tags = row.tags ? JSON.parse(row.tags) : []; } catch (e) {}
-      try { messages = row.messages ? JSON.parse(row.messages) : []; } catch (e) {}
-      
-      return {
-        id: row.id,
-        parentId: row.parent_id,
-        derivedFromId: row.derived_from_id,
-        title: row.title,
-        originalIdea: row.original_idea,
-        refinedPrompt: row.refined_prompt,
-        type: row.type,
-        tags,
-        messages,
-        isFavorite: row.is_favorite === 1,
-        versionNotes: row.version_notes,
         createdAt: row.created_at * 1000
       };
     });
@@ -516,18 +626,29 @@ Please re-architect this prompt into the ${frameworkName} framework now.
   });
 
   app.post("/api/prompts", (req, res) => {
-    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, parentId, versionNotes, derivedFromId } = req.body;
+    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, versionNotes, resultHistory, currentResultIndex } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages, is_favorite, parent_id, version_notes, derived_from_id)
+      INSERT INTO saved_prompts (title, original_idea, refined_prompt, type, tags, messages, is_favorite, version_notes, result_history, current_result_index)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, parentId || null, versionNotes || null, derivedFromId || null);
+    const info = stmt.run(
+      title,
+      originalIdea,
+      refinedPrompt,
+      type,
+      JSON.stringify(tags),
+      JSON.stringify(messages || []),
+      isFavorite ? 1 : 0,
+      versionNotes || null,
+      JSON.stringify(resultHistory || []),
+      currentResultIndex || 0
+    );
     res.json({ id: info.lastInsertRowid });
   });
 
   app.put("/api/prompts/:id", (req, res) => {
     const { id } = req.params;
-    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, versionNotes } = req.body;
+    const { title, originalIdea, refinedPrompt, type, tags, messages, isFavorite, versionNotes, resultHistory, currentResultIndex } = req.body;
 
     if (title && originalIdea === undefined) {
       const stmt = db.prepare(`UPDATE saved_prompts SET title = ? WHERE id = ?`);
@@ -537,10 +658,22 @@ Please re-architect this prompt into the ${frameworkName} framework now.
 
     const stmt = db.prepare(`
       UPDATE saved_prompts 
-      SET title = ?, original_idea = ?, refined_prompt = ?, type = ?, tags = ?, messages = ?, is_favorite = ?, version_notes = ?
+      SET title = ?, original_idea = ?, refined_prompt = ?, type = ?, tags = ?, messages = ?, is_favorite = ?, version_notes = ?, result_history = ?, current_result_index = ?
       WHERE id = ?
     `);
-    stmt.run(title, originalIdea, refinedPrompt, type, JSON.stringify(tags), JSON.stringify(messages || []), isFavorite ? 1 : 0, versionNotes || null, id);
+    stmt.run(
+      title,
+      originalIdea,
+      refinedPrompt,
+      type,
+      JSON.stringify(tags),
+      JSON.stringify(messages || []),
+      isFavorite ? 1 : 0,
+      versionNotes || null,
+      JSON.stringify(resultHistory || []),
+      currentResultIndex || 0,
+      id
+    );
     res.json({ success: true });
   });
 

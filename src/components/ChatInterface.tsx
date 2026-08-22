@@ -347,42 +347,24 @@ export const ChatInterface: React.FC<Props> = ({
 
   useEffect(() => {
     if (editingPrompt) {
-      fetch(`/api/prompts/${editingPrompt.id}/versions`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            setPromptVersions(data);
-            const historyFromVersions: PromptResult[] = data.map(v => ({
-              refinedPrompt: v.refinedPrompt,
-              explanation: v.versionNotes || `Saved Version ${v.id}`,
-              suggestedTitle: v.title
-            }));
-            setResultHistory(historyFromVersions);
-            // Find index of selected editingPrompt, defaulting to latest (last)
-            const selectedIdx = data.findIndex(v => v.id === editingPrompt.id);
-            setCurrentResultIndex(selectedIdx >= 0 ? selectedIdx : historyFromVersions.length - 1);
-          } else {
-            const singleRes: PromptResult = {
-              refinedPrompt: editingPrompt.refinedPrompt,
-              explanation: editingPrompt.versionNotes || 'Saved prompt loaded from library.',
-              suggestedTitle: editingPrompt.title
-            };
-            setResultHistory([singleRes]);
-            setCurrentResultIndex(0);
-          }
-        })
-        .catch(err => {
-          console.error('Error fetching prompt versions:', err);
-          const singleRes: PromptResult = {
-            refinedPrompt: editingPrompt.refinedPrompt,
-            explanation: editingPrompt.versionNotes || 'Saved prompt loaded from library.',
-            suggestedTitle: editingPrompt.title
-          };
-          setResultHistory([singleRes]);
-          setCurrentResultIndex(0);
-        });
-    } else {
-      setPromptVersions([]);
+      if (editingPrompt.resultHistory && editingPrompt.resultHistory.length > 0) {
+        setResultHistory(editingPrompt.resultHistory);
+        const idx = typeof editingPrompt.currentResultIndex === 'number' && editingPrompt.currentResultIndex >= 0
+          ? editingPrompt.currentResultIndex
+          : editingPrompt.resultHistory.length - 1;
+        setCurrentResultIndex(idx);
+      } else {
+        const singleRes: PromptResult = {
+          refinedPrompt: editingPrompt.refinedPrompt,
+          explanation: editingPrompt.versionNotes || 'Saved prompt loaded from library.',
+          suggestedTitle: editingPrompt.title
+        };
+        setResultHistory([singleRes]);
+        setCurrentResultIndex(0);
+      }
+      if (editingPrompt.messages && editingPrompt.messages.length > 0) {
+        setMessages(editingPrompt.messages);
+      }
     }
   }, [editingPrompt]);
 
@@ -932,50 +914,43 @@ export const ChatInterface: React.FC<Props> = ({
     try {
       let url = '/api/prompts';
       let method = 'POST';
-      let parentId = null;
 
       if (editingPrompt) {
-        if (saveMode === 'update') {
-          url = `/api/prompts/${editingPrompt.id}`;
-          method = 'PUT';
-          parentId = editingPrompt.parentId; // Keep existing parent if updating
-        } else if (saveMode === 'new_version') {
-          // Saving as a new version means the current editing prompt becomes the parent
-          // OR if the editing prompt already has a parent, they share the same parent
-          parentId = editingPrompt.parentId || editingPrompt.id;
-        }
-        // If saveMode === 'new_prompt', it remains POST to /api/prompts with parentId = null
+        url = `/api/prompts/${editingPrompt.id}`;
+        method = 'PUT';
       }
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: saveData.title,
-          originalIdea: messages.find(m => m.role === 'user')?.content || '',
-          refinedPrompt: lastResult.refinedPrompt,
-          type: promptType,
-          tags: saveData.tags.split(',').map(t => t.trim()).filter(Boolean),
-          messages: messages,
-          parentId: parentId,
-          versionNotes: saveData.versionNotes,
-          derivedFromId: saveMode === 'new_version' ? editingPrompt?.id : undefined
-        })
-      });
-      
-      const data = await res.json();
-      
-      const savedPrompt: SavedPrompt = {
-        id: method === 'POST' ? data.id : editingPrompt?.id,
+      const payload = {
         title: saveData.title,
         originalIdea: messages.find(m => m.role === 'user')?.content || '',
         refinedPrompt: lastResult.refinedPrompt,
         type: promptType,
         tags: saveData.tags.split(',').map(t => t.trim()).filter(Boolean),
         messages: messages,
-        parentId: parentId,
+        resultHistory: resultHistory,
+        currentResultIndex: currentResultIndex,
+        versionNotes: saveData.versionNotes
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      
+      const savedPrompt: SavedPrompt = {
+        id: method === 'POST' ? data.id : editingPrompt!.id,
+        title: saveData.title,
+        originalIdea: payload.originalIdea,
+        refinedPrompt: lastResult.refinedPrompt,
+        type: promptType,
+        tags: payload.tags,
+        messages: messages,
+        resultHistory: resultHistory,
+        currentResultIndex: currentResultIndex,
         versionNotes: saveData.versionNotes,
-        derivedFromId: saveMode === 'new_version' ? editingPrompt?.id : undefined,
         createdAt: method === 'POST' ? Date.now() : (editingPrompt?.createdAt || Date.now()),
         isFavorite: method === 'POST' ? false : (editingPrompt?.isFavorite || false)
       };
@@ -1074,35 +1049,6 @@ export const ChatInterface: React.FC<Props> = ({
               <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mb-6">Add this masterpiece to your library.</p>
               
               <div className="space-y-6">
-                {editingPrompt && (
-                  <div className="flex flex-col gap-2 mb-4">
-                    <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Save Mode</label>
-                    <div className="grid grid-cols-1 gap-2">
-                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'new_version' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
-                        <input type="radio" name="saveMode" value="new_version" checked={saveMode === 'new_version'} onChange={() => setSaveMode('new_version')} className="hidden" />
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Branch Sub-version</span>
-                          <span className="text-xs text-stone-500 dark:text-slate-400">Creates a new version derived from the current one</span>
-                        </div>
-                      </label>
-                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'update' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
-                        <input type="radio" name="saveMode" value="update" checked={saveMode === 'update'} onChange={() => setSaveMode('update')} className="hidden" />
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Update Current</span>
-                          <span className="text-xs text-stone-500 dark:text-slate-400">Overwrite the existing prompt</span>
-                        </div>
-                      </label>
-                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${saveMode === 'new_prompt' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700'}`}>
-                        <input type="radio" name="saveMode" value="new_prompt" checked={saveMode === 'new_prompt'} onChange={() => setSaveMode('new_prompt')} className="hidden" />
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-stone-900 dark:text-slate-100">Save as New Prompt</span>
-                          <span className="text-xs text-stone-500 dark:text-slate-400">Create a completely separate prompt entry</span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                )}
-                
                 <div>
                   <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Prompt Title</label>
                   <input 
@@ -1125,18 +1071,16 @@ export const ChatInterface: React.FC<Props> = ({
                   />
                 </div>
 
-                {saveMode === 'new_version' && (
-                  <div>
-                    <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Version Notes / Changes</label>
-                    <textarea 
-                      value={saveData.versionNotes}
-                      onChange={e => setSaveData({ ...saveData, versionNotes: e.target.value })}
-                      placeholder="e.g. Adjusted lighting and camera angle for v2"
-                      rows={2}
-                      className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100 resize-none"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-2">Version Notes / Description</label>
+                  <textarea 
+                    value={saveData.versionNotes}
+                    onChange={e => setSaveData({ ...saveData, versionNotes: e.target.value })}
+                    placeholder="e.g. Iterations include lighting and composition adjustments"
+                    rows={2}
+                    className="w-full px-4 py-3 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm text-stone-900 dark:text-slate-100 resize-none"
+                  />
+                </div>
 
                 <div className="flex gap-4 pt-4">
                   <button 

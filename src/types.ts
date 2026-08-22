@@ -41,6 +41,8 @@ export interface SavedPrompt {
   type: PromptType;
   tags: string[];
   messages: Message[];
+  resultHistory?: PromptResult[];
+  currentResultIndex?: number;
   isFavorite?: boolean;
   versionNotes?: string;
   createdAt: number;
