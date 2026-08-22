@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Image, Video, MessageSquare, ChevronDown } from 'lucide-react';
 import { PromptType } from '../types';
 import { cn } from '../utils';
+import { Tooltip } from './Tooltip';
 
 interface Props {
   selected: PromptType;
@@ -32,21 +33,22 @@ export const PromptTypeSelector: React.FC<Props> = ({ selected, onChange }) => {
 
   return (
     <div className="relative shrink-0" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-8 px-2.5 text-xs gap-1.5 flex items-center justify-between bg-stone-100/50 dark:bg-slate-800/50 hover:bg-stone-200/50 dark:hover:bg-slate-700/50 border border-stone-200/60 dark:border-slate-700/60 rounded-lg transition-all shadow-2xs whitespace-nowrap group shrink-0"
-        title="Select prompt modality"
-      >
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-stone-200/60 dark:bg-slate-700/60 shrink-0", currentType.color)}>
-            {currentType.icon}
+      <Tooltip content="Select prompt modality" position="bottom">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="h-8 px-2.5 text-xs gap-1.5 flex items-center justify-between bg-stone-100/50 dark:bg-slate-800/50 hover:bg-stone-200/50 dark:hover:bg-slate-700/50 border border-stone-200/60 dark:border-slate-700/60 rounded-lg transition-all shadow-2xs whitespace-nowrap group shrink-0 cursor-pointer"
+        >
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-stone-200/60 dark:bg-slate-700/60 shrink-0", currentType.color)}>
+              {currentType.icon}
+            </div>
+            <span className="text-[11px] font-bold text-stone-700 dark:text-slate-300 uppercase tracking-wider whitespace-nowrap">
+              {currentType.label}
+            </span>
           </div>
-          <span className="text-[11px] font-bold text-stone-700 dark:text-slate-300 uppercase tracking-wider whitespace-nowrap">
-            {currentType.label}
-          </span>
-        </div>
-        <ChevronDown size={13} className={cn("text-stone-400 dark:text-slate-500 transition-transform shrink-0 ml-0.5", isOpen ? "rotate-180" : "")} />
-      </button>
+          <ChevronDown size={13} className={cn("text-stone-400 dark:text-slate-500 transition-transform shrink-0 ml-0.5", isOpen ? "rotate-180" : "")} />
+        </button>
+      </Tooltip>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">

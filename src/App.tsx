@@ -12,6 +12,7 @@ import { NavigationMenu } from './components/NavigationMenu';
 import { PromptTypeSelector } from './components/PromptTypeSelector';
 import { CelebratoryMilestoneModal } from './components/CelebratoryMilestoneModal';
 import { shouldShowMilestoneCelebration } from './utils/persistence';
+import { Tooltip } from './components/Tooltip';
 
 type View = 'home' | 'architect' | 'templates' | 'history';
 
@@ -170,29 +171,30 @@ export default function App() {
             />
 
             {/* Clickable Brand Logo & Title */}
-            <button
-              onClick={() => setCurrentView('home')}
-              className="flex items-center gap-2 cursor-pointer group shrink-0 text-left"
-              title="Go to Home"
-              aria-label="Prompt Architect Home"
-            >
-              <div className="w-9 h-9 bg-gradient-to-tr from-emerald-600 to-teal-400 dark:from-emerald-500 dark:to-teal-300 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
-                <Sparkles className="w-5 h-5 text-white dark:text-slate-950" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <h1 className="hidden md:inline-block text-sm font-black sm:text-base tracking-tight text-stone-900 dark:text-slate-100 whitespace-nowrap group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    Prompt Architect
-                  </h1>
-                  <span className="hidden md:inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
-                    {currentView === 'architect' ? 'Studio' : currentView === 'saved' ? 'Library' : currentView.toUpperCase()}
+            <Tooltip content="Go to Home" position="bottom">
+              <button
+                onClick={() => setCurrentView('home')}
+                className="flex items-center gap-2 cursor-pointer group shrink-0 text-left"
+                aria-label="Prompt Architect Home"
+              >
+                <div className="w-9 h-9 bg-gradient-to-tr from-emerald-600 to-teal-400 dark:from-emerald-500 dark:to-teal-300 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
+                  <Sparkles className="w-5 h-5 text-white dark:text-slate-950" />
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <h1 className="hidden md:inline-block text-sm font-black sm:text-base tracking-tight text-stone-900 dark:text-slate-100 whitespace-nowrap group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      Prompt Architect
+                    </h1>
+                    <span className="hidden md:inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
+                      {currentView === 'architect' ? 'Studio' : currentView === 'saved' ? 'Library' : currentView.toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-stone-400 dark:text-slate-400 font-medium -mt-0.5 hidden sm:inline-block">
+                    Multimodal Engineering Platform
                   </span>
                 </div>
-                <span className="text-[10px] text-stone-400 dark:text-slate-400 font-medium -mt-0.5 hidden sm:inline-block">
-                  Multimodal Engineering Platform
-                </span>
-              </div>
-            </button>
+              </button>
+            </Tooltip>
           </div>
 
           {/* Center Cluster: Target Modality Selector */}
@@ -218,35 +220,38 @@ export default function App() {
 
             {/* Clear session button on desktop header */}
             {currentView === 'architect' && (currentSession || editingPrompt || prefilledPrompt) && (
-              <button 
-                onClick={handleClearSession}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-stone-500 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-400 bg-stone-100/40 dark:bg-slate-800/40 hover:bg-pink-50 dark:hover:bg-pink-950/30 rounded-xl text-xs font-bold transition-all border border-stone-200/50 dark:border-slate-700/50 shrink-0"
-                title="Clear current session"
-              >
-                <RefreshCw size={13} className="hover:rotate-180 transition-transform duration-500" />
-                <span>CLEAR</span>
-              </button>
+              <Tooltip content="Clear current session" position="bottom">
+                <button 
+                  onClick={handleClearSession}
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-stone-500 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-400 bg-stone-100/40 dark:bg-slate-800/40 hover:bg-pink-50 dark:hover:bg-pink-950/30 rounded-xl text-xs font-bold transition-all border border-stone-200/50 dark:border-slate-700/50 shrink-0 cursor-pointer"
+                >
+                  <RefreshCw size={13} className="hover:rotate-180 transition-transform duration-500" />
+                  <span>CLEAR</span>
+                </button>
+              </Tooltip>
             )}
 
             {/* Dark/Light Mode Switcher */}
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="h-9 w-9 flex items-center justify-center rounded-xl border border-stone-200/80 dark:border-slate-700/80 bg-stone-100/60 dark:bg-slate-800/60 text-stone-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0 shadow-2xs"
-              title="Toggle Appearance Theme"
-              aria-label="Toggle Theme"
-            >
-              {isDarkMode ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-stone-600" />}
-            </button>
+            <Tooltip content="Toggle Appearance Theme" position="bottom">
+              <button 
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="h-9 w-9 flex items-center justify-center rounded-xl border border-stone-200/80 dark:border-slate-700/80 bg-stone-100/60 dark:bg-slate-800/60 text-stone-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-slate-700 dark:hover:text-emerald-400 transition-all shrink-0 shadow-2xs cursor-pointer"
+                aria-label="Toggle Theme"
+              >
+                {isDarkMode ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-stone-600" />}
+              </button>
+            </Tooltip>
 
             {/* New Chat Primary CTA */}
-            <button 
-              onClick={handleNewArchitect}
-              className="h-9 px-2.5 sm:px-3.5 text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 rounded-xl font-extrabold shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-400 dark:hover:to-teal-400 transition-all shrink-0 whitespace-nowrap active:scale-95 min-w-[36px]"
-              title="Start New Architect Session"
-            >
-              <PlusCircle size={17} className="shrink-0" />
-              <span className="hidden sm:inline">NEW CHAT</span>
-            </button>
+            <Tooltip content="Start New Architect Session" position="bottom">
+              <button 
+                onClick={handleNewArchitect}
+                className="h-9 px-2.5 sm:px-3.5 text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 rounded-xl font-extrabold shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-400 dark:hover:to-teal-400 transition-all shrink-0 whitespace-nowrap active:scale-95 min-w-[36px] cursor-pointer"
+              >
+                <PlusCircle size={17} className="shrink-0" />
+                <span className="hidden sm:inline">NEW CHAT</span>
+              </button>
+            </Tooltip>
           </div>
         </div>
       </header>

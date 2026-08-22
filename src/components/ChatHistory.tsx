@@ -4,6 +4,7 @@ import { Clock, MessageSquare, Trash2, ChevronRight, Calendar, Search, Star, Edi
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
 import { getLocalChatSessions, saveLocalChatSessions } from '../utils/persistence';
+import { Tooltip } from './Tooltip';
 
 interface Props {
   onSelect: (session: ChatSession) => void;
@@ -302,27 +303,30 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
 
                   <div className="flex items-center gap-1">
                     {/* Favorite Star Toggle */}
-                    <button
-                      onClick={(e) => toggleFavorite(e, session.id, session.isFavorite)}
-                      className={cn(
-                        "p-2 rounded-lg transition-all",
-                        session.isFavorite
-                          ? "text-amber-500 fill-amber-500 bg-amber-50 dark:bg-amber-900/30 opacity-100"
-                          : "text-stone-300 dark:text-slate-600 hover:text-amber-500 dark:hover:text-amber-400 opacity-0 group-hover:opacity-100"
-                      )}
-                      title={session.isFavorite ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      <Star size={18} fill={session.isFavorite ? "currentColor" : "none"} />
-                    </button>
+                    {/* Star Favorite Toggle */}
+                    <Tooltip content={session.isFavorite ? "Remove from favorites" : "Add to favorites"} position="left">
+                      <button
+                        onClick={(e) => toggleFavorite(e, session.id, session.isFavorite)}
+                        className={cn(
+                          "p-2 rounded-lg transition-all cursor-pointer",
+                          session.isFavorite
+                            ? "text-amber-500 fill-amber-500 bg-amber-50 dark:bg-amber-900/30 opacity-100"
+                            : "text-stone-300 dark:text-slate-600 hover:text-amber-500 dark:hover:text-amber-400 opacity-0 group-hover:opacity-100"
+                        )}
+                      >
+                        <Star size={18} fill={session.isFavorite ? "currentColor" : "none"} />
+                      </button>
+                    </Tooltip>
 
                     {/* Delete Session */}
-                    <button
-                      onClick={(e) => deleteSession(e, session.id)}
-                      className="p-2 text-stone-300 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/30 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                      title="Delete session"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <Tooltip content="Delete session" position="left">
+                      <button
+                        onClick={(e) => deleteSession(e, session.id)}
+                        className="p-2 text-stone-300 dark:text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/30 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -342,7 +346,7 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
                     />
                     <button
                       onClick={() => handleSaveTitle(session.id)}
-                      className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                      className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors cursor-pointer"
                     >
                       <Check size={14} />
                     </button>
@@ -352,13 +356,14 @@ export const ChatHistory: React.FC<Props> = ({ onSelect, currentSessionId }) => 
                     <h3 className="font-bold text-stone-900 dark:text-slate-100 text-base line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                       {session.title || 'Untitled Session'}
                     </h3>
-                    <button
-                      onClick={(e) => startTitleEditing(e, session.id, session.title || 'Untitled Session')}
-                      className="p-1 text-stone-300 hover:text-stone-600 dark:text-slate-600 dark:hover:text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity"
-                      title="Rename title"
-                    >
-                      <Edit2 size={13} />
-                    </button>
+                    <Tooltip content="Rename title" position="left">
+                      <button
+                        onClick={(e) => startTitleEditing(e, session.id, session.title || 'Untitled Session')}
+                        className="p-1 text-stone-300 hover:text-stone-600 dark:text-slate-600 dark:hover:text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity cursor-pointer"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                    </Tooltip>
                   </div>
                 )}
 

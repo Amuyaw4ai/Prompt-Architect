@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
+import { Tooltip } from './Tooltip';
 
 type View = 'home' | 'architect' | 'templates' | 'history';
 
@@ -63,17 +64,18 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   return (
     <>
       {/* Hamburger Trigger Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="relative group p-2.5 rounded-xl border border-stone-200/80 dark:border-slate-800 bg-stone-100/60 dark:bg-slate-800/60 text-stone-700 dark:text-slate-200 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-slate-700/80 dark:hover:text-emerald-400 transition-all shadow-xs shrink-0 flex items-center gap-2"
-        title="Open Studio Navigation & Controls"
-        aria-label="Open Studio Menu"
-      >
-        <Sliders size={18} className="group-hover:scale-110 transition-transform text-emerald-600 dark:text-emerald-400" />
-        <span className="hidden sm:inline-block text-xs font-bold text-stone-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-          MENU
-        </span>
-      </button>
+      <Tooltip content="Open Studio Navigation & Controls" position="right">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="relative group p-2.5 rounded-xl border border-stone-200/80 dark:border-slate-800 bg-stone-100/60 dark:bg-slate-800/60 text-stone-700 dark:text-slate-200 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-slate-700/80 dark:hover:text-emerald-400 transition-all shadow-xs shrink-0 flex items-center gap-2 cursor-pointer"
+          aria-label="Open Studio Menu"
+        >
+          <Sliders size={18} className="group-hover:scale-110 transition-transform text-emerald-600 dark:text-emerald-400" />
+          <span className="hidden sm:inline-block text-xs font-bold text-stone-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+            MENU
+          </span>
+        </button>
+      </Tooltip>
 
       {/* Slide-Over Left Navigation Drawer */}
       {typeof document !== 'undefined' && createPortal(

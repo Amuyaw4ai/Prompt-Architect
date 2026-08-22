@@ -10,6 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import { cn, calculatePromptScore } from '../utils';
 import { PromptEditor } from './PromptEditor';
 import { getSavedWorkspaceLayout, saveWorkspaceLayout } from '../utils/persistence';
+import { Tooltip } from './Tooltip';
 
 const ALL_VARIABLE_SUGGESTIONS: Record<string, string[]> = {
   'SUBJECT': [
@@ -1670,15 +1671,16 @@ export const ChatInterface: React.FC<Props> = ({
 
                 {/* Direct 1-Click Add File or Media Button */}
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="h-9 px-2.5 text-stone-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center gap-1.5 border border-stone-200 dark:border-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold text-xs"
-                    title="Add File or Media (Images, Videos, Audio, Documents)"
-                  >
-                    <Paperclip size={15} className="text-emerald-600 dark:text-emerald-400" />
-                    <span className="hidden min-[400px]:inline text-[11px]">Context</span>
-                  </button>
+                  <Tooltip content="Add File or Media (Images, Videos, Audio, Documents)" position="top">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-9 px-2.5 text-stone-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center gap-1.5 border border-stone-200 dark:border-slate-700 shadow-2xs active:scale-95 cursor-pointer font-bold text-xs"
+                    >
+                      <Paperclip size={15} className="text-emerald-600 dark:text-emerald-400" />
+                      <span className="hidden min-[400px]:inline text-[11px]">Context</span>
+                    </button>
+                  </Tooltip>
                 </div>
 
                 <textarea
@@ -1700,14 +1702,15 @@ export const ChatInterface: React.FC<Props> = ({
 
                 {/* Streamlined Centered Send Button */}
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20">
-                  <button
-                    onClick={() => handleSend()}
-                    disabled={(!input.trim() && selectedOptions.length === 0 && !selectedImage && attachedFiles.length === 0) || isLoading}
-                    className="h-9 w-9 p-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center cursor-pointer"
-                    title="Send Message (Enter)"
-                  >
-                    <Send size={16} />
-                  </button>
+                  <Tooltip content="Send Message (Enter)" position="top">
+                    <button
+                      onClick={() => handleSend()}
+                      disabled={(!input.trim() && selectedOptions.length === 0 && !selectedImage && attachedFiles.length === 0) || isLoading}
+                      className="h-9 w-9 p-2 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-900 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 flex items-center justify-center cursor-pointer"
+                    >
+                      <Send size={16} />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>

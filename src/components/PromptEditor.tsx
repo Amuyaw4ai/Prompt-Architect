@@ -5,6 +5,7 @@ import 'prismjs/themes/prism.css';
 import { Pencil, Eye, ChevronLeft, ChevronRight, RefreshCw, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../utils';
+import { Tooltip } from './Tooltip';
 
 // Define custom grammar for Prompt Engineering
 Prism.languages.prompt = {
@@ -189,55 +190,58 @@ export const PromptEditor: React.FC<Props> = ({
         <div className="flex items-center gap-2 shrink-0">
           {totalVersions > 1 && (
             <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-stone-200 dark:border-slate-700 shadow-2xs">
-              <button 
-                type="button"
-                onClick={onPreviousVersion}
-                disabled={currentVersionIndex === 0}
-                className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
-                title={`Previous Version (${currentVersionIndex > 0 ? currentVersionIndex : 1}/${totalVersions})`}
-              >
-                <ChevronLeft size={13} />
-              </button>
+              <Tooltip content={`Previous Version (${currentVersionIndex > 0 ? currentVersionIndex : 1}/${totalVersions})`} position="top">
+                <button 
+                  type="button"
+                  onClick={onPreviousVersion}
+                  disabled={currentVersionIndex === 0}
+                  className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={13} />
+                </button>
+              </Tooltip>
               <span className="text-[10px] font-bold text-stone-500 dark:text-slate-400 px-1 select-none">
                 {currentVersionIndex + 1} / {totalVersions}
               </span>
-              <button 
-                type="button"
-                onClick={onNextVersion}
-                disabled={currentVersionIndex === totalVersions - 1}
-                className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors"
-                title={`Next Version (${currentVersionIndex + 2 <= totalVersions ? currentVersionIndex + 2 : totalVersions}/${totalVersions})`}
-              >
-                <ChevronRight size={13} />
-              </button>
+              <Tooltip content={`Next Version (${currentVersionIndex + 2 <= totalVersions ? currentVersionIndex + 2 : totalVersions}/${totalVersions})`} position="top">
+                <button 
+                  type="button"
+                  onClick={onNextVersion}
+                  disabled={currentVersionIndex === totalVersions - 1}
+                  className="p-1 text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:hover:text-stone-400 transition-colors cursor-pointer"
+                >
+                  <ChevronRight size={13} />
+                </button>
+              </Tooltip>
             </div>
           )}
 
-          <button
-            onClick={() => setIsPreview(!isPreview)}
-            className={cn(
-              "font-bold rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/50 transition-all flex items-center justify-center gap-1.5 text-xs shadow-2xs active:scale-95 cursor-pointer",
-              totalVersions > 1 ? "p-2 sm:px-3 sm:py-1.5" : "px-3 py-1.5"
-            )}
-            title={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
-            aria-label={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
-          >
-            {isPreview ? (
-              <>
-                <Pencil size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className={cn("font-extrabold uppercase tracking-tight text-[11px]", totalVersions > 1 ? "hidden sm:inline" : "inline")}>
-                  Edit Mode
-                </span>
-              </>
-            ) : (
-              <>
-                <Eye size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className={cn("font-extrabold uppercase tracking-tight text-[11px]", totalVersions > 1 ? "hidden sm:inline" : "inline")}>
-                  Show Preview
-                </span>
-              </>
-            )}
-          </button>
+          <Tooltip content={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"} position="top">
+            <button
+              onClick={() => setIsPreview(!isPreview)}
+              className={cn(
+                "font-bold rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/50 transition-all flex items-center justify-center gap-1.5 text-xs shadow-2xs active:scale-95 cursor-pointer",
+                totalVersions > 1 ? "p-2 sm:px-3 sm:py-1.5" : "px-3 py-1.5"
+              )}
+              aria-label={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
+            >
+              {isPreview ? (
+                <>
+                  <Pencil size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className={cn("font-extrabold uppercase tracking-tight text-[11px]", totalVersions > 1 ? "hidden sm:inline" : "inline")}>
+                    Edit Mode
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Eye size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className={cn("font-extrabold uppercase tracking-tight text-[11px]", totalVersions > 1 ? "hidden sm:inline" : "inline")}>
+                    Preview
+                  </span>
+                </>
+              )}
+            </button>
+          </Tooltip>
         </div>
       </div>
       
