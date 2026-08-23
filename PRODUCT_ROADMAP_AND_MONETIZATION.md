@@ -12,6 +12,7 @@ This document serves as the **authoritative tracking record** for all monetizati
 | Feature Area | Free Tier Limit | Pro / Enterprise Tier (Monetized) | Monetization Value Proposition |
 | :--- | :--- | :--- | :--- |
 | **File Upload Limits** | • Images: **10 MB** (JPEG, PNG, GIF, WebP)<br>• Videos: **25 MB** (MP4, WebM, MOV)<br>• Audio: **15 MB** (MP3, WAV, OGG)<br>• Documents: **10 MB** (PDF, DOCX, TXT, CSV) | • Images: **100 MB**<br>• Videos: **1 GB**<br>• Audio: **250 MB**<br>• Documents: **500 MB** (Batch document parsing & multi-file context) | High-volume media creators & enterprise developers needing large dataset uploads. |
+| **Architectural Studio Iterations** | **3 Free Iterations per session** (Unlocked trial) | **Unlimited Studio Iterations & Version Tree Cloud Storage** (Triggered on 4th iteration) | Prompts registered users to sign in to save prompt version lineages (`v1`–`v10`) across all devices. |
 | **Model Acceleration & Priority** | Standard queue processing rate limits | **Dedicated Priority Compute & Accelerated Rendering** (Zero queue wait times) | Time-sensitive agency & corporate workflows requiring instant prompt optimization. |
 | **Cloud History & Device Backup** | Local device storage (`localStorage` & SQLite local fallback) | **Unlimited Persistent Cloud Backup & Cross-Device Sync** | Access prompt architecture history seamlessly from any device or desktop. |
 | **Custom Model API Keys (BYOK)** | Built-in standard AI models | **Bring Your Own Key (BYOK)** for OpenAI (GPT-4o), Anthropic (Claude 3.5 Sonnet), and Google (Gemini 1.5 Pro) | Advanced power users needing targeted model selection and custom rate limits. |
@@ -23,6 +24,10 @@ This document serves as the **authoritative tracking record** for all monetizati
 ## 🛣️ 2. Delegated Future Implementations & Feature Backlog
 
 The following features and updates have been delegated for future release iterations:
+
+### 🧩 E. Browser Extension Ecosystem (Zero-Context Switching)
+* **Chrome / Arc / Edge Extension Bridge**: Offer a lightweight browser extension enabling users to run the Prompt Health Auditor directly inside ChatGPT, Claude, Midjourney Discord, and Cursor using hotkeys (`Cmd + Shift + P`).
+* **Instant Prompt Injection**: Automatically injects the architected prompt directly into third-party chat input fields and links back to the user's Prompt Architect Studio history.
 
 ### 🔐 A. User Onboarding & Authentication
 * **Full Authentication Flow**: Integrate Google SSO, GitHub OAuth, and email/password authentication (via Firebase / Supabase / Auth0).
@@ -55,3 +60,5 @@ The following features and updates have been delegated for future release iterat
   * Refactored mobile swipe gesture engine with high-speed velocity detection and vertical list scroll protection.
   * Streamlined context attachment button into a single 1-click file picker supporting Images, Videos, Audio, and Documents with active free-tier size enforcement.
   * Implemented **Instant Diagnostic Scoring & Prompt Health Auditor** with spin-the-wheel gauge animation, 5-point industry standards breakdown, and 1-click conversion funnel into the Architectural Studio.
+  * Configured **Automated GitHub Release Pipeline (`.github/workflows/release.yml`)** and updated Governance Standard (`v2.6`).
+  * Compiled Master Synthesis Blueprint (`master_synthesis_blueprint.md`) synthesizing Approaches 1, 2, and 3 across 309 pages with non-trigger copy governance, 4th iteration conversion hook, and SQLite/Gemini 1.5 Flash backend regrowth roadmap.
