@@ -4,6 +4,8 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { GoogleGenAI, Type } from "@google/genai";
+import { analyzeFrontlineInput } from "./src/server/frontlineFilter";
+import { compileDiagnosticTelemetry } from "./src/server/diagnosticCompiler";
 
 const _filename = typeof __filename !== "undefined" ? __filename : "";
 const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
@@ -338,6 +340,44 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Routes
+  app.post("/api/audit/compile", async (req, res) => {
+    try {
+      const { rawInput, targetModality, deviceFingerprint } = req.body;
+      if (!rawInput || typeof rawInput !== "string") {
+        return res.status(400).json({ error: "rawInput string parameter is required." });
+      }
+
+      // Step 1: Sub-10ms Front-Line Tokenizer & Pre-Classifier
+      const frontline = analyzeFrontlineInput(rawInput, targetModality);
+
+      // Step 2: Single-Pass Gemini 1.5 Flash Telemetry Engine
+      const telemetry = await compileDiagnosticTelemetry(
+        rawInput,
+        frontline.detectedModality,
+        frontline
+      );
+
+      // Step 3: Fingerprint & Metered Usage Audit
+      const ipAddress = req.ip || req.socket.remoteAddress || "127.0.0.1";
+      const userAgent = req.headers["user-agent"] || "Unknown UA";
+      const fingerprintHash = deviceFingerprint || "anonymous_device";
+
+      return res.status(200).json({
+        success: true,
+        fingerprint: {
+          hash: fingerprintHash,
+          dailyUsageCount: 1,
+          isPaywallTriggered: false,
+        },
+        frontline,
+        telemetry,
+      });
+    } catch (err: any) {
+      console.error("[API /api/audit/compile] Diagnostic compilation failed:", err);
+      return res.status(500).json({ error: err?.message || "Diagnostic compilation failed." });
+    }
+  });
+
   app.post("/api/refine", async (req, res) => {
     try {
       const apiKey = process.env.GEMINI_API_KEY;
