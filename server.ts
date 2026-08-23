@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { GoogleGenAI, Type } from "@google/genai";
 import { analyzeFrontlineInput } from "./src/server/frontlineFilter";
 import { compileDiagnosticTelemetry } from "./src/server/diagnosticCompiler";
+import { evaluateRubricAndHardGates } from "./src/server/rubricRegistry";
 
 const _filename = typeof __filename !== "undefined" ? __filename : "";
 const _dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(_filename);
@@ -357,7 +358,18 @@ async function startServer() {
         frontline
       );
 
-      // Step 3: Fingerprint & Metered Usage Audit
+      // Step 3: Task-Specific Rubric Registry & Independent Hard Gates Evaluation
+      const rubricEvaluation = evaluateRubricAndHardGates(
+        telemetry.detectedModality,
+        telemetry.overallScore,
+        telemetry.flaws ? telemetry.flaws.length : 0,
+        telemetry.upgradedPrompt
+      );
+
+      // Update score with hard gate floor if failed
+      telemetry.overallScore = rubricEvaluation.finalScore;
+
+      // Step 4: Fingerprint & Metered Usage Audit
       const ipAddress = req.ip || req.socket.remoteAddress || "127.0.0.1";
       const userAgent = req.headers["user-agent"] || "Unknown UA";
       const fingerprintHash = deviceFingerprint || "anonymous_device";
@@ -370,6 +382,7 @@ async function startServer() {
           isPaywallTriggered: false,
         },
         frontline,
+        rubricEvaluation,
         telemetry,
       });
     } catch (err: any) {
