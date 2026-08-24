@@ -390,17 +390,65 @@ async function startServer() {
       // Update score with hard gate floor if failed
       telemetry.overallScore = rubricEvaluation.finalScore;
 
-      // Step 4: Fingerprint & Metered Usage Audit
+      // Step 4: Fingerprint & Metered Usage Audit in SQLite
       const ipAddress = req.ip || req.socket.remoteAddress || "127.0.0.1";
       const userAgent = req.headers["user-agent"] || "Unknown UA";
       const fingerprintHash = deviceFingerprint || "anonymous_device";
+
+      let dailyUsageCount = 1;
+      let isPaywallTriggered = false;
+
+      try {
+        if (db) {
+          // Ensure visitor record exists
+          const visitorId = `vis_${fingerprintHash.substring(0, 16)}`;
+          db.prepare(`
+            INSERT INTO visitors (id, device_fingerprint, ip_address, user_agent)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(device_fingerprint) DO UPDATE SET updated_at = (strftime('%s', 'now'))
+          `).run(visitorId, fingerprintHash, ipAddress, userAgent);
+
+          // Count today's audits for this visitor
+          const todayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+          const countRow = db.prepare(`
+            SELECT COUNT(*) as count FROM prompt_audits
+            WHERE visitor_id = ? AND created_at >= ?
+          `).get(visitorId, todayStart) as { count: number } | undefined;
+
+          const existingCount = countRow ? countRow.count : 0;
+          dailyUsageCount = existingCount + 1;
+
+          // Attempt 4 triggers paywall intercept (3 free daily audits)
+          if (dailyUsageCount >= 4) {
+            isPaywallTriggered = true;
+          }
+
+          // Record current audit
+          const auditId = `aud_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+          db.prepare(`
+            INSERT INTO prompt_audits (id, visitor_id, raw_input, detected_modality, overall_score, verdict, upgraded_prompt, flaws_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            auditId,
+            visitorId,
+            rawInput,
+            telemetry.detectedModality,
+            telemetry.overallScore,
+            telemetry.verdict || "Audited Prompt",
+            telemetry.upgradedPrompt,
+            JSON.stringify(telemetry.flaws || [])
+          );
+        }
+      } catch (dbErr) {
+        console.warn("[API /api/audit/compile] Metered SQLite tracking warning:", dbErr);
+      }
 
       return res.status(200).json({
         success: true,
         fingerprint: {
           hash: fingerprintHash,
-          dailyUsageCount: 1,
-          isPaywallTriggered: false,
+          dailyUsageCount,
+          isPaywallTriggered,
         },
         frontline,
         rubricEvaluation,
