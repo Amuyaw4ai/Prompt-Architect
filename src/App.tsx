@@ -11,7 +11,6 @@ import { cn } from './utils';
 import { NavigationMenu } from './components/NavigationMenu';
 import { PromptTypeSelector } from './components/PromptTypeSelector';
 import { CelebratoryMilestoneModal } from './components/CelebratoryMilestoneModal';
-import { PromptDiagnosticModal } from './components/PromptDiagnosticModal';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { shouldShowMilestoneCelebration } from './utils/persistence';
 import { Tooltip } from './components/Tooltip';
@@ -25,7 +24,6 @@ export default function App() {
   const [editingPrompt, setEditingPrompt] = useState<SavedPrompt | undefined>(undefined);
   const [currentSession, setCurrentSession] = useState<ChatSession | undefined>(undefined);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
-  const [isDiagnosticModalOpen, setIsDiagnosticModalOpen] = useState(false);
 
   const handleApplyDiagnosticToStudio = (optimizedPrompt: string) => {
     setPrefilledPrompt({ content: optimizedPrompt, type: promptType });
@@ -180,7 +178,6 @@ export default function App() {
               isDarkMode={isDarkMode}
               onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
               hasActiveSession={Boolean(currentSession || editingPrompt || prefilledPrompt)}
-              onOpenDiagnostic={() => setIsDiagnosticModalOpen(true)}
             />
 
             {/* Clickable Brand Logo & Title */}
@@ -243,17 +240,6 @@ export default function App() {
                 </button>
               </Tooltip>
             )}
-
-            {/* Instant Diagnostic Auditor Header CTA */}
-            <Tooltip content="Run Instant Diagnostic Audit" position="bottom">
-              <button 
-                onClick={() => setIsDiagnosticModalOpen(true)}
-                className="h-9 px-2.5 sm:px-3 text-xs flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/80 dark:border-emerald-800/80 rounded-xl font-black transition-all shrink-0 cursor-pointer shadow-2xs group"
-              >
-                <ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline">Prompt Auditor</span>
-              </button>
-            </Tooltip>
 
             {/* Dark/Light Mode Switcher */}
             <Tooltip content="Toggle Appearance Theme" position="bottom">
@@ -490,19 +476,10 @@ export default function App() {
           </footer>
         </main>
       )}
-
-      {/* Celebratory 5-Prompt Progress Milestone Modal */}
+      {/* Celebratory 5-Prompt Progress Milestone Modal */}
       <CelebratoryMilestoneModal
         isOpen={showMilestoneModal}
         onClose={() => setShowMilestoneModal(false)}
-      />
-
-      {/* Instant Diagnostic Scoring & Prompt Health Auditor Modal */}
-      <PromptDiagnosticModal
-        isOpen={isDiagnosticModalOpen}
-        onClose={() => setIsDiagnosticModalOpen(false)}
-        onApplyToStudio={handleApplyDiagnosticToStudio}
-        initialModality={promptType}
       />
 
       {/* Non-Trigger Cookie Consent Banner */}

@@ -21,7 +21,6 @@ interface NavigationMenuProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   hasActiveSession: boolean;
-  onOpenDiagnostic?: () => void;
 }
 
 export const NavigationMenu: React.FC<NavigationMenuProps> = ({
@@ -34,7 +33,6 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   isDarkMode,
   onToggleDarkMode,
   hasActiveSession,
-  onOpenDiagnostic
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
