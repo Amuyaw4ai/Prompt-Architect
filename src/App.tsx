@@ -12,6 +12,7 @@ import { NavigationMenu } from './components/NavigationMenu';
 import { PromptTypeSelector } from './components/PromptTypeSelector';
 import { CelebratoryMilestoneModal } from './components/CelebratoryMilestoneModal';
 import { PromptDiagnosticModal } from './components/PromptDiagnosticModal';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { shouldShowMilestoneCelebration } from './utils/persistence';
 import { Tooltip } from './components/Tooltip';
 
@@ -503,6 +504,9 @@ export default function App() {
         onApplyToStudio={handleApplyDiagnosticToStudio}
         initialModality={promptType}
       />
+
+      {/* Non-Trigger Cookie Consent Banner */}
+      <CookieConsentBanner />
     </div>
   );
 }
