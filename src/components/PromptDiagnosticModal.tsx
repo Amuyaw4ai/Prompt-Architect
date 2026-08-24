@@ -1,19 +1,16 @@
-import React, { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldCheck, 
   Sparkles, 
   X, 
   Activity, 
-  CheckCircle2, 
-  AlertTriangle, 
-  ArrowRight, 
   Zap, 
   RefreshCw,
   Copy,
   Check,
   FileText,
-  Lock
+  PlayCircle
 } from 'lucide-react';
 import { PromptType } from '../types';
 import { cn } from '../utils';
@@ -26,6 +23,16 @@ interface PromptDiagnosticModalProps {
   initialPrompt?: string;
   initialModality?: PromptType;
 }
+
+// Diversity pool for dynamic inspiration chips (rotates per visit/open)
+const PRESET_CHIP_LIBRARY: Array<{ label: string; prompt: string; type: PromptType }> = [
+  { label: 'Try: SaaS Cold Email', prompt: 'Write a high-converting cold email for a B2B SaaS startup targeting CTOs.', type: 'text' },
+  { label: 'Try: Python Refactor', prompt: 'Refactor this Python script to use async/await and robust error handling.', type: 'code' },
+  { label: 'Try: Cinema Shot', prompt: 'Cinematic portrait of a Ghanaian king in golden hour light, 35mm film.', type: 'image' },
+  { label: 'Try: Drone Video', prompt: 'Drone tracking shot following a sports car on a rainy Tokyo street at night.', type: 'video' },
+  { label: 'Try: SQL Optimizer', prompt: 'Optimize this PostgreSQL join query for high concurrency and low latency.', type: 'code' },
+  { label: 'Try: Blog Headline', prompt: 'Generate 5 irresistible blog headlines for an AI product launch.', type: 'text' },
+];
 
 export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
   isOpen,
@@ -43,6 +50,17 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
   const [copiedBlueprint, setCopiedBlueprint] = useState(false);
   const [activeTab, setActiveTab] = useState<'insights' | 'spec'>('spec');
   const [assistPills, setAssistPills] = useState<SmartPillOption[]>([]);
+  const [presetChips, setPresetChips] = useState<typeof PRESET_CHIP_LIBRARY>([]);
+  const [showSimulation, setShowSimulation] = useState(false);
+
+  // Rotate preset inspiration chips dynamically every time modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const shuffled = [...PRESET_CHIP_LIBRARY].sort(() => 0.5 - Math.random());
+      setPresetChips(shuffled.slice(0, 3));
+      setShowSimulation(false);
+    }
+  }, [isOpen]);
 
   // 300ms Debounced Smart Assist Pills Update
   useEffect(() => {
@@ -73,6 +91,7 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
     setIsAuditing(true);
     setHasAudited(false);
     setDisplayScore(0);
+    setShowSimulation(false);
 
     const startTime = Date.now();
     const duration = 1200;
@@ -118,17 +137,17 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
         telemetry: {
           detectedModality: modality,
           overallScore: 15,
-          verdict: '⚠️ Low Impact Draft — Lacks Guardrails',
+          verdict: '⚠️ Low Impact Draft — Lacks Critical Guardrails',
           gradeBadge: 'Weak Draft',
           gradeColor: 'pink',
           flaws: [
-            { parameter: 'Persona & Role', critique: 'No expert persona assigned.', impact: 'AI defaults to baseline generic response.' },
-            { parameter: 'Execution Guardrails', critique: 'Missing negative rules.', impact: 'Increases hallucination risk.' }
+            { parameter: 'Persona & Role', critique: 'No expert role is assigned, causing the AI to give generic baseline answers.', impact: 'Produces unfocused text.' },
+            { parameter: 'Execution Guardrails', critique: 'Missing negative boundary rules to purge fluff.', impact: 'Increases hallucination risk.' }
           ],
           upgradedPrompt: `Act as a Senior AI Architect. Optimize: "${textToAudit}".\n\n[CONTEXT]\nTarget explicit domain boundaries and success metrics.\n\n[CONSTRAINTS]\n- Purge generic buzzwords.\n- Enforce Markdown section headers.`,
           simulatedOutputPreview: {
-            rawOutputSnippet: 'Vanilla Response: Here is a basic overview.',
-            upgradedOutputSnippet: 'Architected Spec Response:\n1. EXECUTIVE SUMMARY: Enforced domain output.'
+            rawOutputSnippet: 'Vanilla AI Response: Here is a basic overview of your request with generic points.',
+            upgradedOutputSnippet: 'Architected Spec Response:\n1. EXECUTIVE SUMMARY: Enforced domain strategy.\n2. BOUNDARIES: Zero hallucinations, clean Markdown structure.'
           }
         }
       });
@@ -140,6 +159,11 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
 
   const handleAuditClick = () => {
     runSpinningAudit(rawInput, selectedModality);
+  };
+
+  const handlePresetClick = (chip: typeof PRESET_CHIP_LIBRARY[0]) => {
+    setRawInput(chip.prompt);
+    setSelectedModality(chip.type);
   };
 
   const handlePillClick = (pill: SmartPillOption) => {
@@ -163,6 +187,7 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
   if (!isOpen) return null;
 
   const t = telemetryResult?.telemetry;
+  const characterCount = rawInput.length;
 
   return (
     <AnimatePresence>
@@ -176,7 +201,7 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
           className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
         />
 
-        {/* Main Modal Card */}
+        {/* Main Modal Card (Fixed outer bounds - zero vertical page movement) */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -216,6 +241,27 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
 
           {/* Modal Body (Scrollable) */}
           <div className="p-6 overflow-y-auto space-y-6 flex-1">
+            {/* Dynamic Preset Inspiration Chips (Rotates per open) */}
+            {!hasAudited && presetChips.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-slate-500">
+                  Try An Example:
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {presetChips.map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handlePresetClick(chip)}
+                      className="px-3 py-1 bg-stone-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-stone-200 dark:border-slate-700 hover:border-emerald-400 text-[11px] font-bold text-stone-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-all cursor-pointer shrink-0"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Input Section */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -252,6 +298,10 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
                   placeholder="e.g. I want a high converting SaaS landing page, or a cyberpunk portrait with golden hour lights..."
                   className="w-full p-4 bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-stone-900 dark:text-slate-100 font-medium placeholder:text-stone-400 dark:placeholder:text-slate-600 resize-none"
                 />
+
+                <div className="absolute left-4 bottom-3 text-[11px] font-bold text-stone-400 dark:text-slate-500">
+                  Characters: {characterCount}
+                </div>
 
                 <div className="absolute right-3 bottom-3 flex items-center gap-2">
                   <button
@@ -390,7 +440,7 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
 
                 {/* Desktop Split 40/60 View */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  {/* Left Panel: Draft & Insights */}
+                  {/* Left Panel: Draft & Insights (1-Sentence Plain English) */}
                   <div className={cn(
                     "md:col-span-5 space-y-4",
                     activeTab === 'insights' ? "block" : "hidden md:block"
@@ -398,7 +448,7 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
                     <div className="p-4 rounded-2xl bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-800 space-y-3">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
                         <Activity size={14} className="text-amber-500" />
-                        Draft Insights & Identified Gaps
+                        Draft Insights & Gaps
                       </h4>
 
                       <div className="space-y-2.5">
@@ -409,14 +459,13 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
                               <span className="text-[10px] font-bold text-stone-400 uppercase">Gap</span>
                             </div>
                             <p className="text-xs font-medium text-stone-700 dark:text-slate-300">{flaw.critique}</p>
-                            <p className="text-[11px] text-stone-500 dark:text-slate-400 italic">Impact: {flaw.impact}</p>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Panel: Architected Spec ✨ */}
+                  {/* Right Panel: Architected Spec ✨ (Seamless Custom Scrollbar) */}
                   <div className={cn(
                     "md:col-span-7 space-y-4",
                     activeTab === 'spec' ? "block" : "hidden md:block"
@@ -437,16 +486,52 @@ export const PromptDiagnosticModal: React.FC<PromptDiagnosticModalProps> = ({
                         </button>
                       </div>
 
-                      <pre className="p-4 rounded-xl bg-slate-900 text-xs text-emerald-300 font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto border border-slate-800">
+                      {/* Seamless Custom Scrollbar container */}
+                      <pre className="p-4 rounded-xl bg-slate-900 text-xs text-emerald-300 font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto border border-slate-800 scrollbar-thin scrollbar-thumb-slate-800/40 scrollbar-track-transparent">
                         {t.upgradedPrompt}
                       </pre>
                     </div>
 
-                    {/* Simulated Output Snippet */}
+                    {/* Interactive Dual Simulation Button & Drawer */}
                     {t.simulatedOutputPreview && (
-                      <div className="p-4 rounded-2xl bg-stone-50 dark:bg-slate-950 border border-stone-200 dark:border-slate-800 text-xs space-y-2">
-                        <span className="font-bold text-stone-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Simulated AI Response Preview:</span>
-                        <p className="text-stone-600 dark:text-slate-400 font-medium italic">{t.simulatedOutputPreview.upgradedOutputSnippet}</p>
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowSimulation(!showSimulation)}
+                          className="w-full py-2 px-3 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-stone-200 dark:border-slate-700"
+                        >
+                          <PlayCircle size={14} className="text-emerald-500" />
+                          <span>{showSimulation ? 'Hide AI Response Simulation' : 'Simulate AI Response Preview'}</span>
+                        </button>
+
+                        <AnimatePresence>
+                          {showSimulation && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="p-4 rounded-2xl bg-stone-900 border border-emerald-500/20 text-xs space-y-3 overflow-hidden"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 font-black text-[9px] uppercase tracking-wider rounded-md border border-emerald-500/30">
+                                  SIMULATED RUN
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium">Downstream LLM Execution Comparison</span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                                  <span className="text-[10px] font-bold text-pink-400 uppercase">Vanilla AI Output:</span>
+                                  <p className="text-slate-400 text-[11px] leading-relaxed">{t.simulatedOutputPreview.rawOutputSnippet}</p>
+                                </div>
+                                <div className="p-3 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-1">
+                                  <span className="text-[10px] font-bold text-emerald-400 uppercase">Architected Frontier Output:</span>
+                                  <p className="text-emerald-300 text-[11px] leading-relaxed">{t.simulatedOutputPreview.upgradedOutputSnippet}</p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     )}
                   </div>
