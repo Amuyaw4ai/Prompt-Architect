@@ -1,6 +1,6 @@
 # 🎨 PROMPT ARCHITECT — MASTER UI/UX DESIGN & COMPONENT SPECIFICATION
 
-> **Authoritative UI/UX Design System, Micro-Interaction Architecture & Layout Blueprint**  
+> **Authoritative UI/UX Design System, Micro-Interaction Architecture & Responsive Layout Blueprint**  
 > *Synthesized from Approaches 1, 2, and 3 (Pages 1–309)*  
 > *Visual Language: Dark Slate & Emerald Glassmorphism, Precision Micro-Animations, High-Contrast Typography, Tactile Physical States*
 
@@ -27,7 +27,11 @@ The UI design must feel like a **serious, high-tier intelligent tool** (inspired
 
 # PART I: HERO VIEWPORT & INPUT SANDBOX ARCHITECTURE
 
-The hero section is **100% zero-scroll**: the input sandbox acts as the hero itself so visitors can immediately test the engine without reading marketing fluff.
+The hero section is **100% zero-scroll** (`h-screen` / `100dvh` `overflow-hidden`): the input sandbox acts as the hero itself so visitors can immediately test the engine without reading marketing fluff.
+
+---
+
+### A. Desktop View Specification (Widescreen Overview > 1024px)
 
 ```
 +-------------------------------------------------------------------------+
@@ -45,61 +49,71 @@ The hero section is **100% zero-scroll**: the input sandbox acts as the hero its
 +-------------------------------------------------------------------------+
 ```
 
-### 1. Dynamic Inspiration Chips (Rotates Per Visit / Modal Open)
-* **Location**: Pinned directly above the text canvas.
-* **Behavior**: 3 horizontal pill buttons (`[Try: SaaS Cold Email]`, `[Try: Python Refactor]`, `[Try: Cinema Shot]`).
-* **Dynamic Refresh Rule**: The 3 chips dynamically rotate from a preset library every time the modal/auditor is opened or a new visit begins. They remain locked/pinned during an active typing session to avoid user distraction.
-* **Micro-Interaction**: Tapping any chip injects a weak prompt into the input area with a subtle flash effect, allowing 1-click testing.
+1. **Inspiration Chips**: 3 horizontal pill buttons (`[Try: SaaS Cold Email]`, `[Try: Python Refactor]`, `[Try: Cinema Shot]`) pinned above the canvas. Rotates per visit/modal open.
+2. **Text Canvas**: Auto-expanding textarea with glowing emerald focus ring (`focus:ring-2 focus:ring-emerald-500`).
+3. **Character Counter**: Pinned bottom-left (`[ Characters: 0 ]`). Pure character count.
+4. **Smart Assist Pills**: 300ms debounced auto-chips pinned bottom-left below canvas (`[+ Add Golden Hour Lighting]`).
+5. **Tactile CTA Button**: Pinned bottom-right (**`"Architect My Prompt →"`**).
 
-### 2. Auto-Expanding Text Canvas & Dynamic Character Counter
-* **Styling**: Distraction-free textarea with a glowing emerald focus ring (`focus:ring-2 focus:ring-emerald-500`).
-* **Character Counter**: Pinned to the bottom-left of the input container (`[ Characters: 142 ]`). Displays pure character count without arbitrary limit text.
+---
 
-### 3. Smart Assist Pills (300ms Debounced Auto-Chips)
-* **Location**: Pinned directly below the text canvas.
-* **Behavior**: When the user pauses typing for 300ms, 2–3 contextual completion pills appear (`[+ Add Golden Hour Lighting]`, `[+ Add TypeScript Types]`).
-* **Interaction**: Tapping any pill appends the detail into the text canvas with smooth spring animation.
+### B. Mobile View Specification (Touch-Optimized Viewports < 1024px)
 
-### 4. Tactile Primary CTA Button (**`"Architect My Prompt →"`**)
-* **Styling**: High-contrast emerald button pinned to the bottom-right of the input frame.
-* **Hover State**: Subtle scale (`hover:scale-[1.02]`) with glowing emerald backdrop blur.
+```
++--------------------------------──────────+
+| [⚡ PromptArchitect]        [ Sign In ]   | <-- Sticky Top Header Bar (h-14)
++--------------------------------──────────+
+| [ SaaS Pitch ] [ Bug Fix ] [ Portrait ]  | <-- Touch-Scroll Inspiration Rail
++--------------------------------──────────+
+| ┌──────────────────────────────────────┐ |
+| │ Textarea: Auto-Height (140px-220px)  │ |
+| │ "Type or paste your raw draft..."    │ |
+| │                                      │ |
+| │ [ Char: 28 ]         [ Paste Clip ]  │ |
+| └──────────────────────────────────────┘ |
+| Preset Assist Pills:                     |
+| [+ Golden Hour Light] [+ 85mm Lens]      |
++--------------------------------──────────+
+| [ STICKY BOTTOM THUMB-ZONE BAR ]         |
+| [ ⚡ ARCHITECT MY PROMPT → ]             | <-- Fixed Bottom Tactile CTA
++--------------------------------──────────+
+```
+
+1. **Mobile Sticky Header Bar (`h-14`)**: Pinned to top with logo + `[ Sign In ]` button.
+2. **Touch-Scroll Inspiration Rail**: Edge-to-edge horizontal scroll carousel (`overflow-x-auto no-scrollbar flex gap-2 py-1 px-3`) with subtle right fade gradient.
+3. **Mobile Text Canvas**: Auto-height textarea (`min-h-[140px] max-h-[220px]`) optimized for virtual touch keyboards. Includes `[ Paste Clip ]` helper button.
+4. **Mobile Assist Pills**: Edge-to-edge touch-scroll row beneath input box.
+5. **Sticky Thumb-Zone CTA**: Fixed to absolute bottom of mobile screen above browser navigation bar: **`[ ⚡ ARCHITECT MY PROMPT → ]`** (full-width high-contrast button).
 
 ---
 
 # PART II: THE SIGNATURE "TRANSFORMATION RITUAL" MICRO-INTERACTIONS
-
-When the user clicks **`"Architect My Prompt →"`**, the interface executes a 6-stage emotional interaction arc:
 
 ```
 CLICK ──> ACKNOWLEDGE ──> ANTICIPATE ──> REVEAL ──> REWARD ──> CONTINUATION
  (0ms)      (0-300ms)     (300-1200ms)   (1.2-1.5s)  (1.5-2.0s)   (2.0s+)
 ```
 
-### Detailed Micro-Interaction Sequence
+### A. Desktop Transformation Micro-Interactions
+1. **0-300ms**: Button contracts (`scale-95`), text changes to `"Architecting..."` with spinning refresh icon.
+2. **300-1200ms**: Glowing emerald laser-line sweeps horizontally across text canvas. Status badges cycle: `Analyzing Intention...` → `Injecting Guardrails...` → `Building Blueprint...`.
+3. **1200-1500ms**: Container smoothly transitions into the 40/60 Dual-View Transformation Dashboard.
+4. **1500-2000ms**: Health Score gauge counts up smoothly (`15 → 42 → 68 → 84`).
 
-1. **0ms to 300ms (Acknowledge)**:
-   * The button contracts slightly (`scale-95`), the text changes to **`"Architecting..."`**, and a spinning refresh pulse begins inside the button. No dead screen.
+---
 
-2. **300ms to 1200ms (Anticipate & Laser Scan Pulse)**:
-   * The input box subtly contracts (`scale-[0.99]`).
-   * A horizontal glowing emerald laser-line animation sweeps across the text box.
-   * Micro-badges cycle smoothly across the status bar:
-     * `Analyzing Intention...` → `Injecting Guardrails...` → `Building Blueprint...`
-
-3. **1200ms to 1500ms (Result Reveal)**:
-   * The container smoothly transitions into the **Dual-View Transformation Dashboard**.
-   * The prompt card settles smoothly with zero outer vertical page jumpiness (`transition={{ ease: [0.16, 1, 0.3, 1] }}`).
-
-4. **1500ms to 2000ms (Count-Up Score Reveal & Micro-Reward)**:
-   * The Health Score gauge counts up smoothly from 0 to the calculated score over 600ms (`15 → 42 → 68 → 84`).
-   * The score badge lights up in emerald, blue, amber, or pink depending on the quality tier.
-
-5. **2000ms+ (Continuation & Studio Bridge)**:
-   * The **`"Open & Refine in Studio →"`** primary conversion CTA highlights, inviting the user to step into the full product.
+### B. Mobile Transformation Micro-Interactions
+1. **0-300ms**: Fixed bottom sticky CTA button contracts (`scale-95`), text changes to `"Architecting..."` with spinning pulse.
+2. **300-1200ms**: Full-width laser scan pulse sweeps across the mobile textarea. Micro-status badge transitions smoothly above sticky bottom bar.
+3. **1200-2000ms**: Deck automatically slides to Result View (`Tab 1: Master Spec ✨`) with zero page vertical scroll jumpiness.
 
 ---
 
 # PART III: DUAL-VIEW TRANSFORMATION DASHBOARD & CHATBOT SIMULATION
+
+---
+
+### A. Desktop View Specification (40/60 Split Real Estate — Zero Scroll `100vh`)
 
 ```
 +------------------------------------+---------------------------------------------+
@@ -116,84 +130,62 @@ CLICK ──> ACKNOWLEDGE ──> ANTICIPATE ──> REVEAL ──> REWARD ─�
 +------------------------------------+---------------------------------------------+
 ```
 
-### 1. Desktop Layout (40/60 Split Real Estate — Zero Scroll `100vh`)
-* **Left Panel (40%) — Draft & Insights**:
-  * Circular progress gauge with count-up score animation.
-  * Quality tier badge (`S-Tier`, `Production Ready`, `Needs Optimization`, `Weak Draft`).
-  * **1-Sentence Plain English Insights**: Exactly 2 punchy 1-sentence flaw badges in simple English.
-* **Right Panel (60%) — Architected Spec ✨**:
-  * High-density code block rendering the master-level transformed prompt with syntax highlighting.
-  * **1-Click Copy Button**: Springs to **`"✓ Copied!"`** with a green checkmark for 1.5 seconds.
-  * **In-Place Chatbot Simulation Trigger (`"Simulate AI Response Preview"`)**: Tapping this button transforms both panels in-place into realistic chatbot threads (see Section 2 below).
+1. **Left Panel (40%)**: Circular progress gauge + Quality Badge + exactly 2 punchy 1-sentence flaw badges in simple English.
+2. **Right Panel (60%)**: Master Architected Spec code block + 1-Click Copy button + `"Simulate AI Response Preview"` button.
+3. **In-Place Chatbot Simulation (Desktop)**:
+   * Tapping `"Simulate AI Response Preview"` transforms both columns in-place into side-by-side Chatbot Conversation Threads:
+     * **Left Column (40%)**: Right-aligned User Bubble (raw draft, 3-line truncated) + Left-aligned Vanilla AI Response Bubble (full width).
+     * **Right Column (60%)**: Right-aligned User Bubble (architected spec, 3-line truncated) + Left-aligned Frontier AI Response Bubble (full width).
+     * **Return Button**: `[ ← Back to Prompt Blueprint ]` flips both columns back in under 150ms.
 
 ---
 
-### 2. Authentic Chatbot Conversation Simulation Viewport (Desktop 40/60 Split)
+### B. Mobile View Specification (Segmented `100dvh` Deck — Zero Scroll)
 
-When the user taps **`"Simulate AI Response Preview"`**, the 2-column split board transforms in-place into **two side-by-side Chatbot Conversation Threads** styled like an authentic AI interface:
-
-```
-+--------------------------------------------------+----------------------------------------------------+
-| LEFT PANEL (40%): VANILLA CHATBOT SIMULATION     | RIGHT PANEL (60%): ARCHITECTED FRONTIER SIMULATION  |
-+--------------------------------------------------+----------------------------------------------------+
-|                               [ USER BUBBLE ] 👤 |                                 [ USER BUBBLE ] 👤 |
-|                         "car driving down..."    |                 "Act as Senior Director. 4k..."    |
-|                                                  |                                                    |
-| 🤖 GENERIC LLM RESPONSE BUBBLE (Full Width):     | ❇️ FRONTIER AI RESPONSE BUBBLE (Full Width):        |
-| "Here is a basic overview of a car driving down  | "1. SCENE DIRECTION: Volumetric golden hour light, |
-| a road. The car moves along the street..."       | 85mm lens, 4k 60fps stable tracking..."           |
-|                                                  |                                                    |
-|                                                  | [ ← Back to Prompt Blueprint ]                     |
-+--------------------------------------------------+----------------------------------------------------+
-```
-
-#### Authentic Chatbot Bubble Alignment & Layout Rules:
-1. **User Prompt Bubble**: Aligned to the **RIGHT** (`ml-auto max-w-[85%] bg-slate-800 text-slate-100 rounded-2xl rounded-tr-xs p-3 text-xs shadow-sm`). Cleanly truncated at 3 to 4 lines with a subtle gradient fade mask.
-2. **AI Assistant Response Bubble**: Aligned from the **LEFT across the full panel width** (`w-full bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs text-slate-200 leading-relaxed shadow-sm`).
-3. **Left Panel (40% Width — Vanilla AI Simulation)**:
-   * Right-aligned User Bubble: Truncated raw draft prompt (`">_ car driving down a street..."`).
-   * Left-aligned Assistant Bubble: Generic LLM Bot Avatar + mediocre, un-guarded response.
-4. **Right Panel (60% Width — Frontier Architected Simulation)**:
-   * Right-aligned User Bubble: Truncated Architected Master Spec ✨ (`"Act as Senior Film Director..."`).
-   * Left-aligned Assistant Bubble: Glowing Emerald Frontier AI Avatar + structured, high-yield response.
-5. **Sticky Return Button (`[ ← Back to Prompt Blueprint ]`)**: Pinned to the panel. Tapping it smoothly flips both columns back to the Draft & Architected Spec view in under 150ms!
-
----
-
-### 3. Mobile Transformation & Chatbot Simulation Deck Layout (`100dvh` Zero Scroll)
-
-On mobile viewports (< 1024px), vertical stacking is eliminated to maintain zero-scroll bounds (`h-[100dvh] overflow-hidden`). The mobile interface renders a **3-Tab Segmented Control Deck**:
+On mobile viewports (< 1024px), vertical stacking is eliminated to maintain **zero-scroll bounds (`h-[100dvh] overflow-hidden`)** via a **3-Tab Segmented Control Deck**:
 
 ```
 +--------------------------------──────────────────+
-| 📱 MOBILE HEADER: AUDIT SCORE 84/100 (Strong)    |
+| 📱 MOBILE HEADER: AUDIT SCORE 84/100 (Strong)    | <-- Sticky Top Score Bar
 +--------------------------------------------------+
 | [ Master Spec ✨ ] [ Insights ] [ AI Simulation ]| <-- Segmented Deck Tabs
 +--------------------------------------------------+
 | (Active: Tab 3 — AI Simulation)                  |
 |                                                  |
-|   [ (•) Vanilla AI Response ]  [ Frontier Spec ]  | <-- Segmented Output Switcher
+| 💬 CONTINUOUS VERTICALLY SCROLLABLE CHAT THREAD  |
 |                                                  |
-|                               [ USER BUBBLE ] 👤 |
-|                         "car driving down..."    |
+|                               [ USER BUBBLE ] 👤 | <-- Right-Aligned User Bubble
+|                         "car driving down..."    | (Truncated at 3 lines)
 |                                                  |
-| 🤖 GENERIC LLM RESPONSE BUBBLE (Full Width):     |
+| 🤖 GENERIC LLM RESPONSE BUBBLE (Full Width):     | <-- Left-Aligned Full Width
 | "Here is a basic overview of a car driving..."   |
 |                                                  |
+| ─── ⚡ PROMPT ARCHITECT TRANSFORMED ──────────── | <-- Divider Line
+|                                                  |
+|                               [ USER BUBBLE ] 👤 | <-- Right-Aligned User Bubble
+|            "Act as Senior Director. 4k 60fps..." | (Truncated at 3 lines)
+|                                                  |
+| ❇️ FRONTIER AI RESPONSE BUBBLE (Full Width):      | <-- Left-Aligned Full Width
+| "1. SCENE DIRECTION: Volumetric golden hour..."  |
+|                                                  |
 +--------------------------------------------------+
-| [ ← Back to Master Spec ]                        | <-- Sticky Bottom CTA
-+--------------------------------──────────────────+
+| [ ← Back to Master Spec ]                        | <-- Sticky Bottom CTA Bar
++--------------------------------------------------+
 ```
 
-#### Detailed Mobile Tab Anatomy:
-* **Header Sticky Bar**: Displays `AUDIT SCORE: 84/100` + Quality Badge.
-* **`[Tab 1: Master Spec ✨]`**: Displays the complete Architected Spec code block with 1-click Copy button and `"Open in Studio →"` CTA.
-* **`[Tab 2: Insights]`**: Displays the circular Health Score gauge and the 2 punchy 1-sentence flaw badges.
-* **`[Tab 3: AI Simulation]`**: 
-  * Features a top Segmented Toggle: `[ (•) Vanilla AI Response ]` | `[ Frontier Architected Spec ✨ ]`.
-  * Selecting **Vanilla AI Response** renders the right-aligned truncated raw draft bubble + left-aligned generic LLM response.
-  * Selecting **Frontier Architected Spec ✨** renders the right-aligned truncated master spec bubble + left-aligned pristine Frontier AI response.
-  * Sticky bottom CTA bar: `[ ← Back to Master Spec ]`.
+#### Detailed Mobile Tab & Chatbot Thread Specifications:
+1. **Header Sticky Bar**: Displays `AUDIT SCORE: 84/100` + Quality Badge (`S-Tier`, `Production Ready`, `Needs Optimization`, `Weak Draft`).
+2. **Segmented Deck Navigation Tabs**:
+   * **`[Tab 1: Master Spec ✨]`**: Displays complete Architected Spec code container + Copy Spec button + sticky bottom CTA `[ Open in Studio → ]`.
+   * **`[Tab 2: Insights]`**: Displays circular SVG Health Score gauge + 2 punchy 1-sentence flaw badges.
+   * **`[Tab 3: AI Simulation]`**: Displays a **continuous, vertically scrollable Chatbot Conversation Thread**:
+     * **Message 1 (Raw User Draft)**: Right-aligned user chat bubble (`ml-auto max-w-[85%] bg-slate-800 text-slate-100 rounded-2xl rounded-tr-xs p-3.5 text-xs shadow-sm`), truncated at 3 lines with subtle gradient mask.
+     * **Message 2 (Vanilla AI Response)**: Left-aligned full-width assistant response bubble (`w-full bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs text-slate-300 leading-relaxed shadow-sm`).
+     * **Divider Line**: `─── ⚡ PROMPT ARCHITECT TRANSFORMED ───`
+     * **Message 3 (Architected Spec ✨)**: Right-aligned user chat bubble (`ml-auto max-w-[85%] bg-emerald-950/80 border border-emerald-500/40 text-emerald-100 rounded-2xl rounded-tr-xs p-3.5 text-xs font-mono shadow-sm`), truncated at 3 lines.
+     * **Message 4 (Frontier AI Response ✨)**: Left-aligned full-width assistant response bubble (`w-full bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 text-xs text-emerald-200 leading-relaxed shadow-sm`).
+3. **Seamless Custom Scrollbar**: Uses an ultra-subtle, seamless custom scrollbar (`scrollbar-none` or `scrollbar-thin scrollbar-thumb-slate-800/40 scrollbar-track-transparent`) on Tab 3 so scrolling through the thread is 100% smooth, frictionless, and keeps full focus on the prompt & response contrast!
+4. **Sticky Bottom Bar**: Pinned to bottom of Tab 3: **`[ ← Back to Master Spec ]`**.
 
 ---
 
@@ -204,34 +196,40 @@ On mobile viewports (< 1024px), vertical stacking is eliminated to maintain zero
 * **Audits 1, 2, and 3**: Run 100% free with full score dials, insights, and unlocked Architected Specs.
 * **Audit 4 (The Intercept Trigger)**: On the **4th audit attempt of the day**, the backend API (`/api/audit/compile`) sets `isPaywallTriggered: true`, activating the interactive paywall intercept.
 
-### 2. Mid-Transformation Tease Intercept Rule (Psychological Tease)
-* **Text Canvas Unlocked**: The user is **NEVER** blocked from typing or pasting their raw draft on attempt 4.
-* **Mid-Transformation Reveal & Tease**: When the user clicks **`"Architect My Prompt →"`** on Attempt 4:
-  1. The system executes its signature transformation ritual (laser scan sweeps, score dial counts up, and the master prompt begins taking shape in front of their eyes).
-  2. **Midway through the transformation**, as the user sees their prompt actively being upgraded and taking shape, the **Frosted-Glass Intercept Layer (`backdrop-filter: blur(12px)`)** drops over the output!
-* **UX Rationale**: Seeing the masterpiece taking shape right before it frosts over creates an irresistible visual proof that the upgraded prompt is ready beneath the glass.
+---
+
+### A. Desktop Paywall Intercept View
+* The **Right Column (60% Output Panel)** renders the frosted-glass overlay (`backdrop-filter: blur(12px)`) directly over the compiled prompt block.
+* **Mid-Transformation Tease**: Drops midway through the transformation ritual as the user sees their prompt actively taking shape right before their eyes.
+* **Auth Card Controls**: `[ Continue with Google ]` and `[ Continue with Email ]`.
+
+---
+
+### B. Mobile Paywall Intercept View
 
 ```
-+-------------------------------------------------------------------------+
-|                              🔒 PROMPT ARCHITECTED                       |
-|                                                                         |
-| Your raw draft was diagnosed and upgraded into a master-level spec!      |
-|                                                                         |
-| You have used your 3 free daily audits for today. Save your prompt       |
-| history & unlock your result instantly for free.                        |
-|                                                                         |
-|         [ Continue with Google ]        [ Continue with Email ]         |
-+-------------------------------------------------------------------------+
++--------------------------------------------------+
+| 📱 MOBILE HEADER: AUDIT SCORE 18/100 (Weak)      |
++--------------------------------------------------+
+| 🔒 FROSTED GLASS OVERLAY (backdrop-filter: blur) |
+|                                                  |
+| Your raw draft was diagnosed and upgraded into a |
+| master-level spec!                               |
+|                                                  |
+| You have used your 3 free daily audits today.    |
+| Save your history & unlock instantly for free.   |
+|                                                  |
+| [ Continue with Google ]  [ Continue with Email ]|
+|                                                  |
++--------------------------------------------------+
+| [ 🔒 UNLOCK FULL PROMPT FOR FREE ]               | <-- Sticky Bottom CTA Bar
++--------------------------------------------------+
 ```
 
-### 3. Direct Sign-In Shortcut Navigation & Return Redirect
-* The auth options **`[ Continue with Google ]`** and **`[ Continue with Email ]`** act as direct shortcuts to our sign-in page.
-* **Authentication Redirection Flow**:
-  1. User clicks **`"Architect My Prompt →"`** on Attempt 4.
-  2. The transformation ritual begins, and midway through taking shape, the frosted-glass intercept displays the locked prompt summary.
-  3. User clicks `[ Continue with Google ]` or `[ Continue with Email ]`.
-  4. User is directed to the sign-in page to authenticate.
-  5. Upon completing sign-in, the user is redirected right back to their active workspace with their 4th audit unlocked and their prompt history synced to their account!
+1. **Frosted-Glass Overlay (`blur(12px)`)**: Covers Tab 1 (Master Spec) and Tab 3 (AI Simulation) midway through the transformation animation.
+2. **Mobile Auth Card**: Displays locked summary + `[ Continue with Google ]` and `[ Continue with Email ]` buttons.
+3. **Mobile Sticky Bottom Bar**: Transforms into a high-contrast unlock button: **`[ 🔒 UNLOCK FULL PROMPT FOR FREE ]`**.
+4. **Direct Sign-In Shortcuts**: Google and Email buttons redirect to the sign-in page, authenticate, and return the user directly to their unlocked workspace.
 
 ---
 
@@ -239,33 +237,29 @@ On mobile viewports (< 1024px), vertical stacking is eliminated to maintain zero
 
 Below the zero-scroll hero viewport, the landing page provides proof, trust signals, and workspace teasers:
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│ 1. PROOF THROUGH EXAMPLES                                             │
-│    Interactive Before/After transformation cards categorized by user  │
-│    types (Creator, Developer, Student, Business Owner).                │
-├────────────────────────────────────────────────────────────────────────┤
-│ 2. "HOW IT HELPS" SIMPLE EXPLANATION                                  │
-│    3-step visual story: Messy Idea ──> Precision Engine ──> AI Result.│
-├────────────────────────────────────────────────────────────────────────┤
-│ 3. INTERACTIVE WORKSPACE PREVIEW                                      │
-│    Visual teaser showing prompt versioning trees (v1 -> v2 -> v3).    │
-├────────────────────────────────────────────────────────────────────────┤
-│ 4. PRIVACY & TRUST SIGNALS                                            │
-│    Privacy badges ("Private by default") & non-invasive note:         │
-│    "Free to try. Save history when you need version trees."           │
-├────────────────────────────────────────────────────────────────────────┤
-│ 5. REPEAT HERO FINAL CTA                                              │
-│    Repeats the input sandbox at the bottom: "Got something messy? Try"│
-└────────────────────────────────────────────────────────────────────────┘
-```
+### A. Desktop View Specification (Multi-Column Grid)
+1. **Proof Through Examples**: 3-column grid of interactive Before/After cards categorized by user role (`Developer`, `Creator`, `Student`, `Business Owner`).
+2. **"How It Helps" Simple Explanation**: 3-column visual narrative: Messy Idea → Precision Engine → Production Spec.
+3. **Workspace Preview**: 2-column layout showing prompt versioning trees (`v1` → `v2` → `v3`).
+4. **Privacy & Trust Signals**: Centered privacy badge (`"Private by default. Never used for public training."`).
+5. **Repeat Hero Final CTA**: Full-width input sandbox at bottom of page.
+
+---
+
+### B. Mobile View Specification (Single-Column Touch Stack)
+1. **Proof Through Examples**: Single-column touch-swipe card carousel with pagination dots.
+2. **"How It Helps" Simple Explanation**: Vertical 3-step stacked cards.
+3. **Workspace Preview**: Single-column stacked version tree preview.
+4. **Privacy & Trust Signals**: Full-width touch card.
+5. **Repeat Hero Final CTA**: Full-width mobile input sandbox with sticky bottom CTA.
 
 ---
 
 ## 📋 VERIFICATION & IMPLEMENTATION CHECKLIST
 
-- [x] **Right-Aligned User Bubbles**: User prompt bubble aligned right (`ml-auto`), truncated at 3-4 lines; AI Assistant bubble aligned left across full panel width.
-- [x] **Mobile Chatbot Deck**: Tab 3 (AI Simulation) with top toggle (`Vanilla` vs `Frontier Spec`) and `[← Back to Master Spec]` bottom bar.
+- [x] **Right-Aligned User Bubbles**: User chat bubble aligned right (`ml-auto`), truncated at 3-4 lines; AI Assistant bubble aligned left across full panel width.
+- [x] **Mobile Chatbot Deck (Tab 3)**: Continuous vertically scrollable chat thread showing Raw Draft User Bubble → Vanilla AI Response → Divider → Architected Spec User Bubble → Frontier AI Response, with seamless custom scrollbar.
+- [x] **Explicit Mobile Specs Across All Parts**: Part I (Mobile Header + Touch Rail + Sticky CTA), Part II (Mobile Scan Pulse), Part III (Mobile 3-Tab Deck), Part IV (Mobile Frosted Glass & Sticky Unlock CTA), Part V (Mobile Single-Column Stack).
 - [x] **Backend 3 Free Audits**: SQLite `visitors` and `prompt_audits` daily count check triggering `isPaywallTriggered: true` on attempt 4.
 - [x] **Mid-Transformation Paywall Tease**: Paywall drops midway through the transformation animation as the prompt is actively taking shape.
 - [x] **Zero-Scroll Viewport**: Bounded in `100vh` (Desktop) and `100dvh` (Mobile).
