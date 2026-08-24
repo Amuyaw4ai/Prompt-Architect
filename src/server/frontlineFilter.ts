@@ -2,6 +2,8 @@ import { PromptType } from '../types';
 
 export interface FrontlineAnalysisResult {
   detectedModality: PromptType;
+  supportingModalities: PromptType[];
+  isMultiTask: boolean;
   wordCount: number;
   characterCount: number;
   isScantyInput: boolean;
@@ -12,7 +14,7 @@ export interface FrontlineAnalysisResult {
 
 /**
  * Sub-10ms Server-Side Front-Line Tokenizer & Pre-Classifier
- * Analyzes raw input before sending to LLM for single-pass compilation.
+ * Analyzes raw input for Primary Modality, Supporting Modalities, and Multi-Task requests.
  */
 export function analyzeFrontlineInput(rawInput: string, preferredModality?: PromptType): FrontlineAnalysisResult {
   const text = rawInput.trim();
@@ -24,20 +26,36 @@ export function analyzeFrontlineInput(rawInput: string, preferredModality?: Prom
 
   // 1. Regex Modality Classification Heuristics
   let detectedModality: PromptType = preferredModality || 'text';
+  const supportingModalitiesSet = new Set<PromptType>();
 
   const codeKeywords = /\b(function|const|let|var|import|export|class|interface|type|return|async|await|select|from|where|react|typescript|python|html|css|json|sql|api|bug|error|refactor)\b/i;
   const videoKeywords = /\b(video|clip|movie|film|animation|b-roll|drone shot|panning|tracking shot|zooming|fps|slow-motion|cinematic scene|runway|kling|sora)\b/i;
   const imageKeywords = /\b(photo|picture|image|draw|paint|illustration|logo|poster|portrait|landscape|rendering|midjourney|sdxl|flux|photorealistic|cinematic|lighting|35mm)\b/i;
+  const textKeywords = /\b(copywriting|marketing|article|headline|essay|resume|script|story|blog|email|summary|bullet points)\b/i;
 
-  if (codeKeywords.test(lower)) {
-    detectedModality = 'code';
-  } else if (videoKeywords.test(lower)) {
-    detectedModality = 'video';
-  } else if (imageKeywords.test(lower)) {
-    detectedModality = 'image';
-  } else if (!preferredModality) {
-    detectedModality = 'text';
+  const hasCode = codeKeywords.test(lower);
+  const hasVideo = videoKeywords.test(lower);
+  const hasImage = imageKeywords.test(lower);
+  const hasText = textKeywords.test(lower);
+
+  // Determine Primary vs Supporting Modalities
+  if (hasCode) {
+    detectedModality = preferredModality || 'code';
+    if (hasImage) supportingModalitiesSet.add('image');
+    if (hasText) supportingModalitiesSet.add('text');
+  } else if (hasVideo) {
+    detectedModality = preferredModality || 'video';
+    if (hasImage) supportingModalitiesSet.add('image');
+    if (hasText) supportingModalitiesSet.add('text');
+  } else if (hasImage) {
+    detectedModality = preferredModality || 'image';
+    if (hasText) supportingModalitiesSet.add('text');
+  } else {
+    detectedModality = preferredModality || 'text';
   }
+
+  const supportingModalities = Array.from(supportingModalitiesSet).filter((m) => m !== detectedModality);
+  const isMultiTask = supportingModalities.length > 0;
 
   // 2. Token Matching Engine
   const detectedTokens: string[] = [];
@@ -56,7 +74,7 @@ export function analyzeFrontlineInput(rawInput: string, preferredModality?: Prom
     }
   });
 
-  // 3. Estimated Baseline Score (Authentic Low Scoring: 12-18% for scanty 2-word inputs)
+  // 3. Estimated Baseline Score
   let estimatedBaselineScore = 12;
 
   if (wordCount === 0) {
@@ -71,11 +89,13 @@ export function analyzeFrontlineInput(rawInput: string, preferredModality?: Prom
     estimatedBaselineScore = Math.min(85, 20 + wordCount * 2 + detectedTokens.length * 15);
   }
 
-  // 4. Dynamic Smart Assist Pills (Contextual auto-chips)
+  // 4. Dynamic Smart Assist Pills
   const suggestedAssistPills = generateAssistPillsForModality(detectedModality, lower);
 
   return {
     detectedModality,
+    supportingModalities,
+    isMultiTask,
     wordCount,
     characterCount,
     isScantyInput,
@@ -84,10 +104,6 @@ export function analyzeFrontlineInput(rawInput: string, preferredModality?: Prom
     suggestedAssistPills,
   };
 }
-
-/**
- * Generates 2-3 contextual completion pills based on detected modality and missing parameters
- */
 
 function generateAssistPillsForModality(modality: PromptType, lowerText: string): string[] {
   const pills: string[] = [];

@@ -11,6 +11,8 @@ export interface FlawItem {
 
 export interface DiagnosticCompilerResult {
   detectedModality: PromptType;
+  supportingModalities: PromptType[];
+  isMultiTask: boolean;
   overallScore: number;
   verdict: string;
   gradeBadge: 'S-Tier' | 'Production Ready' | 'Needs Optimization' | 'Weak Draft';
@@ -25,7 +27,7 @@ export interface DiagnosticCompilerResult {
 
 /**
  * Single-Pass Gemini 1.5 Flash Diagnostic Engine
- * Collapses Intent Classification, Spec Extraction, Modality Compiling, and Prompt Architecture into a single < 1.2s JSON invocation.
+ * Supports Multi-Modal Routing (Primary Modality + Supporting Modalities).
  */
 export async function compileDiagnosticTelemetry(
   rawInput: string,
@@ -44,22 +46,16 @@ export async function compileDiagnosticTelemetry(
 
   const systemInstruction = `
 You are the core diagnostic engine for a high-conversion AI prompt optimizer website.
-Analyze the user's raw, scanty input, detect its intended modality (Image, Video, Text, or Code), calculate an authoritative Health Score (0-100), identify 2-4 critical structural flaws with their output impacts, and output a master-level "Architected Spec" (upgraded prompt).
+Analyze the user's raw input, detect its PRIMARY modality (Image, Video, Text, or Code) AND any SUPPORTING modalities (e.g. image + video, or code + text).
+Calculate an authoritative Health Score (0-100), identify 2-4 critical structural flaws with output impacts, and output a master-level "Architected Spec" (upgraded prompt).
 
 CRITICAL RULES:
-1. Detect modality first. If user prompt is ambiguous, default to '${targetModality}'.
-2. Calculate "overallScore" out of 100 based on 5 core dimensions:
-   - IMAGE: Subject (20), Style/Medium (20), Volumetric Lighting (20), Camera Angle/Composition (20), Technical Engine Tokens (20).
-   - VIDEO: Action/Motion (20), Scene Flow/Continuity (20), Camera Speed/FPS (20), Lighting (20), Resolution (20).
-   - TEXT: Persona/Role (20), Core Context (20), Tone/Constraints (20), Format Blueprint (20), Quality Guardrails (20).
-   - CODE: Language/Stack (20), Functional Spec (20), Architecture Pattern (20), Edge Cases (20), Defensive Constraints (20).
-3. Scanty inputs (1-3 words like "dog photo" or "make login") should receive an authentic low score between 10 and 18.
-4. Provide exactly 2 to 4 distinct flaws. Each flaw must have:
-   - "parameter": The missing dimension (e.g. "Lighting & Volumetrics", "Execution Guardrails", "Language Stack").
-   - "critique": Short explanation of what is missing.
-   - "impact": How this flaw degrades the AI model output.
-5. "upgradedPrompt": Expand the user's idea into a master-level, visually striking, or contextually rich prompt blueprint with negative rules, explicit role, and output layout specs.
-6. "simulatedOutputPreview": Provide a short 2-sentence side-by-side snippet comparing how a vanilla AI responds to the raw input vs how a frontier AI executes the upgraded prompt.
+1. Detect Primary Modality and any Supporting Modalities. If multi-task is detected, set "isMultiTask" to true.
+2. Calculate "overallScore" out of 100 based on 5 core dimensions matching the primary modality.
+3. Scanty inputs (1-3 words) should receive an authentic low score between 10 and 18.
+4. Provide exactly 2 to 4 distinct flaws detailing missing parameters, critiques, and AI output impacts.
+5. "upgradedPrompt": Expand the user's idea into a master-level prompt blueprint combining primary and supporting modality instructions if multi-task.
+6. "simulatedOutputPreview": Provide a short 2-sentence side-by-side snippet comparing vanilla vs. architected frontier AI responses.
 `;
 
   try {
@@ -70,7 +66,7 @@ CRITICAL RULES:
           role: 'user',
           parts: [
             {
-              text: `RAW DRAFT INPUT: "${rawInput}"\nPREFERRED MODALITY: ${targetModality}\nFRONTLINE BASELINE SCORE: ${frontline.estimatedBaselineScore}`,
+              text: `RAW DRAFT INPUT: "${rawInput}"\nPREFERRED MODALITY: ${targetModality}\nDETECTED PRIMARY: ${frontline.detectedModality}\nSUPPORTING MODALITIES: ${frontline.supportingModalities.join(', ')}\nIS MULTI-TASK: ${frontline.isMultiTask}`,
             },
           ],
         },
@@ -82,7 +78,9 @@ CRITICAL RULES:
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            detectedModality: { type: Type.STRING, description: 'text, image, video, or code' },
+            detectedModality: { type: Type.STRING, description: 'primary modality: text, image, video, or code' },
+            supportingModalities: { type: Type.ARRAY, items: { type: Type.STRING } },
+            isMultiTask: { type: Type.BOOLEAN },
             overallScore: { type: Type.INTEGER, description: '0 to 100 integer score' },
             verdict: { type: Type.STRING, description: 'Short headline e.g. Low Impact Draft' },
             gradeBadge: { type: Type.STRING, description: 'S-Tier, Production Ready, Needs Optimization, or Weak Draft' },
@@ -131,11 +129,12 @@ CRITICAL RULES:
 
     const parsed = JSON.parse(jsonText) as DiagnosticCompilerResult;
 
-    // Sanitize and guarantee valid badge/colors
     parsed.detectedModality = (['text', 'image', 'video', 'code'].includes(parsed.detectedModality)
       ? parsed.detectedModality
       : targetModality) as PromptType;
 
+    parsed.supportingModalities = (parsed.supportingModalities || frontline.supportingModalities) as PromptType[];
+    parsed.isMultiTask = parsed.isMultiTask ?? frontline.isMultiTask;
     parsed.overallScore = Math.max(0, Math.min(100, Math.round(parsed.overallScore || frontline.estimatedBaselineScore)));
 
     if (parsed.overallScore >= 90) {
@@ -164,7 +163,7 @@ CRITICAL RULES:
 }
 
 /**
- * Deterministic fallback generator when offline or missing API key
+ * Deterministic fallback generator
  */
 function generateDeterministicFallback(
   rawInput: string,
@@ -172,7 +171,6 @@ function generateDeterministicFallback(
   frontline: FrontlineAnalysisResult
 ): DiagnosticCompilerResult {
   const score = frontline.estimatedBaselineScore;
-  const isScanty = frontline.isScantyInput;
 
   let gradeBadge: 'S-Tier' | 'Production Ready' | 'Needs Optimization' | 'Weak Draft' = 'Weak Draft';
   let gradeColor: 'emerald' | 'blue' | 'amber' | 'pink' = 'pink';
@@ -205,20 +203,6 @@ function generateDeterministicFallback(
     },
   ];
 
-  if (targetModality === 'image') {
-    flaws.push({
-      parameter: 'Lighting & Volumetrics',
-      critique: 'No ambient illumination, light source, or color temperature specified.',
-      impact: 'The image generator defaults to flat, artificial digital daylight.',
-    });
-  } else if (targetModality === 'code') {
-    flaws.push({
-      parameter: 'Language & Stack',
-      critique: 'Missing strict typing and framework version boundaries.',
-      impact: 'Generates unsecure code vulnerable to injection with no visual error handling.',
-    });
-  }
-
   const upgradedPrompt = targetModality === 'code'
     ? `Write a secure, robust ${rawInput || 'application component'} using React 19, TypeScript, and Tailwind CSS. Enforce defensive programming with strict typing, Zod schema validation, try-catch error boundaries, and accessible ARIA attributes.`
     : targetModality === 'image'
@@ -227,6 +211,8 @@ function generateDeterministicFallback(
 
   return {
     detectedModality: targetModality,
+    supportingModalities: frontline.supportingModalities,
+    isMultiTask: frontline.isMultiTask,
     overallScore: score,
     verdict,
     gradeBadge,
