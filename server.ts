@@ -212,6 +212,27 @@ db.exec(`
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
+
+  CREATE TABLE IF NOT EXISTS visitors (
+    id TEXT PRIMARY KEY,
+    device_fingerprint TEXT NOT NULL UNIQUE,
+    ip_address TEXT NOT NULL,
+    user_agent TEXT NOT NULL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS prompt_audits (
+    id TEXT PRIMARY KEY,
+    visitor_id TEXT NOT NULL,
+    raw_input TEXT NOT NULL,
+    detected_modality TEXT NOT NULL,
+    overall_score INTEGER NOT NULL,
+    verdict TEXT NOT NULL,
+    upgraded_prompt TEXT NOT NULL,
+    flaws_json TEXT NOT NULL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now'))
+  );
 `);
 
 try {

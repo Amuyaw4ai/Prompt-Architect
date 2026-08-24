@@ -1,4 +1,4 @@
-export type PromptType = 'image' | 'video' | 'text';
+export type PromptType = 'image' | 'video' | 'text' | 'code';
 
 export interface Message {
   id: string;
