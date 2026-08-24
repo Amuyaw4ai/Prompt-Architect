@@ -5,7 +5,7 @@
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://reactjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8.svg)](https://tailwindcss.com/)
 [![Vite](https://img.shields.io/badge/Vite-6.0-646cff.svg)](https://vitejs.dev/)
-[![Security Audit](https://img.shields.io/badge/Security-Passed-brightgreen.svg)](SECURITY_AUDIT.md)
+[![Security Audit](https://img.shields.io/badge/Security-Passed-brightgreen.svg)](<context docs/security+ docs/SECURITY_AUDIT.md>)
 
 **Prompt Architect Studio** is a state-of-the-art visual studio application designed to refine, structure, and expand raw ideas into production-ready prompts across **Text/LLM, Image, Video, Audio, and Code** modalities.
 
@@ -125,7 +125,25 @@ Prompt Architect enforces strict security practices:
 - **Zero API Key Leakage**: API Keys remain server-side in `process.env`.
 - **Database Safety**: Parameterized queries using `better-sqlite3` protect against SQL Injection.
 - **Dependency Hardening**: Regular `npm audit` fixes to ensure no high or critical vulnerabilities exist.
-- **Vulnerability Reporting**: See [`SECURITY.md`](SECURITY.md) and [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) for full compliance details.
+- **Vulnerability Reporting**: See [`SECURITY.md`](<context docs/security+ docs/SECURITY.md>) and [`SECURITY_AUDIT.md`](<context docs/security+ docs/SECURITY_AUDIT.md>) for full compliance details.
+
+---
+
+## 📚 Context & Architectural Documentation
+
+All reference manuals, design blueprints, standards, and security audits are housed inside [`context docs`](<context docs>):
+
+- **Universal Standards** ([`context docs/universal standards/`](<context docs/universal standards>)):
+  - [`CONTAINERIZATION_STANDARD.md`](<context docs/universal standards/CONTAINERIZATION_STANDARD.md>): Universal Containerization & Scaling SOP.
+  - [`SECURE_VIBE_CODING_STANDARDS.md`](<context docs/universal standards/SECURE_VIBE_CODING_STANDARDS.md>): Master Security & Governance Framework.
+- **Project Specifications** ([`context docs/project docs/`](<context docs/project docs>)):
+  - [`master_ui_design_spec.md`](<context docs/project docs/master_ui_design_spec.md>): Master UI/UX Design System & Component Specification.
+  - [`PRODUCT_ROADMAP_AND_MONETIZATION.md`](<context docs/project docs/PRODUCT_ROADMAP_AND_MONETIZATION.md>): Product Roadmap & Monetization Blueprint.
+  - [`DEPLOYMENT.md`](<context docs/project docs/DEPLOYMENT.md>): Deployment & Scaling Guide across Docker, Cloud Run & Kubernetes.
+- **Security Governance** ([`context docs/security+ docs/`](<context docs/security+ docs>)):
+  - [`SECURITY.md`](<context docs/security+ docs/SECURITY.md>): Security Policy & Vulnerability Disclosure.
+  - [`SECURITY_AUDIT.md`](<context docs/security+ docs/SECURITY_AUDIT.md>): Automated & Codebase Security Audit Report.
+  - [`Secure Vibe Coding Risk Management.pdf`](<context docs/security+ docs/Secure Vibe Coding Risk Management.pdf>): Risk Management Blueprint.
 
 ---
 
