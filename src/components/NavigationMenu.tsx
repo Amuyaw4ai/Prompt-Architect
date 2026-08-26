@@ -77,6 +77,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
         </button>
       </Tooltip>
 
+<<<<<<< HEAD
       {/* Slide-Over Left Navigation Drawer */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
@@ -134,6 +135,30 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     >
                       <X size={18} />
                     </button>
+=======
+        {isOpen && (
+          <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-2 space-y-1">
+              {views.map((view) => (
+                <button
+                  key={view.id}
+                  onClick={() => {
+                    onViewChange(view.id);
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all",
+                    currentView === view.id
+                      ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                      : "text-stone-500 dark:text-slate-400 hover:bg-stone-50 dark:hover:bg-slate-700 hover:text-stone-900 dark:hover:text-slate-200"
+                  )}
+                >
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center",
+                    currentView === view.id ? "bg-white dark:bg-slate-800 shadow-sm" : "bg-stone-100 dark:bg-slate-700"
+                  )}>
+                    {view.icon}
+>>>>>>> 8658bd2 (fix(desktop): fix navigation menu blank screen, align dropdown below button, omit modality selector, add dynamic chip rotation, and upgrade dynamic flaws)
                   </div>
 
                   {/* Section 1: TOP APPEARANCE & THEME CONTROL */}

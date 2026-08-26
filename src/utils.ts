@@ -6,6 +6,55 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function deriveDynamicTaskTitle(promptText: string, type: PromptType): string {
+  if (!promptText || promptText.trim().length === 0) return 'AI Architecture Spec';
+  const lower = promptText.toLowerCase();
+  if (lower.includes('email') || lower.includes('saas') || lower.includes('sales')) return 'B2B Cold Email Blueprint';
+  if (lower.includes('scrape') || lower.includes('python') || lower.includes('async')) return 'Async Web Scraper Spec';
+  if (lower.includes('cinema') || lower.includes('photo') || lower.includes('portrait') || lower.includes('shot')) return 'Cinematic Vision Spec';
+  if (lower.includes('pitch') || lower.includes('startup') || lower.includes('deck')) return 'Startup Pitch Deck Spec';
+  if (lower.includes('react') || lower.includes('hook') || lower.includes('typescript')) return 'React Custom Hook Spec';
+  if (lower.includes('sql') || lower.includes('database') || lower.includes('schema')) return 'Database Schema Spec';
+  
+  const words = promptText.trim().split(/\s+/).slice(0, 4).join(' ');
+  return words.length > 0 ? `${words.slice(0, 28)} Blueprint` : 'Master Architectural Spec';
+}
+
+export function generateDynamicFlaws(promptText: string, type: PromptType): { parameter: string; critique: string }[] {
+  const flaws: { parameter: string; critique: string }[] = [];
+  const lower = (promptText || '').toLowerCase();
+
+  if (!/(act as|you are|expert|role)/i.test(lower)) {
+    flaws.push({
+      parameter: 'Persona & Role Assignment',
+      critique: 'No explicit expert persona assigned. AI will default to a generic baseline response.'
+    });
+  }
+
+  if (!/(must|only|do not|avoid|constraint|bounds|limit)/i.test(lower)) {
+    flaws.push({
+      parameter: 'Defensive Guardrails',
+      critique: 'Missing negative constraints and boundary limits. Increases hallucination risk.'
+    });
+  }
+
+  if (flaws.length < 2 && !/(format|json|markdown|bullet|table|headers|#)/i.test(lower)) {
+    flaws.push({
+      parameter: 'Output Format Specification',
+      critique: 'Output structure is ambiguous. Specify explicit JSON, Markdown, or tabular formatting.'
+    });
+  }
+
+  if (flaws.length < 2) {
+    flaws.push({
+      parameter: 'Few-Shot Example Context',
+      critique: 'No sample output provided. Adding an example output increases response accuracy by 40%.'
+    });
+  }
+
+  return flaws.slice(0, 2);
+}
+
 export function calculatePromptScore(promptText: string, type: PromptType): { score: number; strengths: string[]; improvements: string[] } {
   if (!promptText || promptText.trim().length === 0) {
     return { score: 0, strengths: [], improvements: ['Prompt is empty.'] };

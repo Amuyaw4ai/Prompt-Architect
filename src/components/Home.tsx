@@ -12,12 +12,33 @@ interface HomeProps {
   onSelectTemplate: (content: string, type: PromptType, autoSend?: boolean) => void;
 }
 
+const ALL_INSPIRATION_CHIPS = [
+  { label: 'Try: SaaS Cold Email', prompt: 'Write a high-converting B2B cold email campaign targeting VPs of Sales for an AI analytics platform.' },
+  { label: 'Try: Python Scraper', prompt: 'Write an async Python 3.12 web scraper using httpx and BeautifulSoup4 with exponential backoff retries.' },
+  { label: 'Try: Cinema Shot', prompt: 'Cinematic wide shot of a cyberpunk street market, neon lights reflecting in rain puddles, volumetric fog, 8k render.' },
+  { label: 'Try: Pitch Deck Copy', prompt: 'Draft a compelling elevator pitch and vision statement for a fintech startup solving cross-border payments.' },
+  { label: 'Try: React Custom Hook', prompt: 'Write a custom React TypeScript hook for managing WebSocket auto-reconnections with exponential backoff.' },
+  { label: 'Try: Fantasy Citadel', prompt: 'A majestic floating island with a glowing crystal castle, surrounded by cloud-level waterfalls, digital concept art.' },
+  { label: 'Try: SQL Schema', prompt: 'Design a PostgreSQL schema for an e-commerce platform handling multi-currency orders and inventory.' },
+  { label: 'Try: Technical RFC', prompt: 'Draft an RFC document for migrating a monolithic Node.js backend to microservices architecture.' },
+];
+
 export const Home: React.FC<HomeProps> = ({ onNavigate, onNewArchitect, onSelectTemplate }) => {
+<<<<<<< HEAD
   const [selectedModality, setSelectedModality] = useState<PromptType>('text');
   const [engineState, setEngineState] = useState<'idle' | 'ritual' | 'dashboard'>('idle');
   const [activeRawInput, setActiveRawInput] = useState('');
   const [compiledTelemetry, setCompiledTelemetry] = useState<any>(null);
   const [isPaywallLocked, setIsPaywallLocked] = useState(false);
+=======
+  const [isFirstTime, setIsFirstTime] = useState(true);
+  const [recentPrompts, setRecentPrompts] = useState<SavedPrompt[]>([]);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [activeChips, setActiveChips] = useState(() => {
+    const shuffled = [...ALL_INSPIRATION_CHIPS].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  });
+>>>>>>> 8658bd2 (fix(desktop): fix navigation menu blank screen, align dropdown below button, omit modality selector, add dynamic chip rotation, and upgrade dynamic flaws)
 
   const handleStartArchitect = async (rawInput: string, modality: PromptType) => {
     setActiveRawInput(rawInput);
@@ -81,11 +102,169 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onNewArchitect, onSelect
   };
 
   return (
+<<<<<<< HEAD
     <div className="w-full flex flex-col space-y-16">
       {/* ZERO-SCROLL HERO TRANSFORMATION ENGINE SECTION */}
       <section className="relative w-full min-h-[calc(100vh-6rem)] md:min-h-[600px] flex items-center justify-center border-b border-stone-200 dark:border-slate-800 bg-stone-50/50 dark:bg-slate-950/50 rounded-[2.5rem] overflow-hidden p-2 sm:p-6 shadow-xs">
         <AnimatePresence mode="wait">
           {engineState === 'idle' && (
+=======
+    <div className="w-full pb-24 relative">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-6xl mx-auto"
+      >
+        {/* Top Right Stats Button */}
+        <div className="flex justify-end mb-6">
+          <button
+            onClick={() => setShowStatsModal(true)}
+            className="flex items-center gap-4 px-5 py-2.5 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-full shadow-sm hover:shadow-md hover:border-emerald-500 dark:hover:border-emerald-500 transition-all text-sm font-bold text-stone-700 dark:text-slate-200 group"
+            title="View Detailed Stats"
+          >
+            <div className="flex items-center gap-2">
+              <Activity size={16} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+              <span>{totalGenerated} <span className="hidden sm:inline text-stone-400 dark:text-slate-500 font-medium">Generated</span></span>
+            </div>
+            <div className="w-px h-4 bg-stone-200 dark:bg-slate-700" />
+            <div className="flex items-center gap-2">
+              <Bookmark size={16} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+              <span>{totalSaved} <span className="hidden sm:inline text-stone-400 dark:text-slate-500 font-medium">Saved</span></span>
+            </div>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Welcome & Quick Actions */}
+          <div className="lg:col-span-8 space-y-8">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 sm:p-12 shadow-sm border border-stone-200 dark:border-slate-700 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+              
+              <h1 className="text-4xl sm:text-5xl font-black text-stone-900 dark:text-slate-100 mb-4 tracking-tight relative z-10">
+                {isFirstTime ? "Welcome to Prompt Architect." : "Welcome back, Architect."}
+              </h1>
+              <p className="text-lg text-stone-500 dark:text-slate-400 mb-10 max-w-xl relative z-10">
+                {isFirstTime 
+                  ? "Engineer the perfect AI prompt in seconds. Choose a modality below to start building your first architecture."
+                  : "Ready to build? Jump back into your recent projects or start a fresh architecture."}
+              </p>
+
+              {/* Dynamic Rotating Inspiration Chips */}
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Quick Start Idea Chips:
+                  </span>
+                  <button
+                    onClick={() => {
+                      const shuffled = [...ALL_INSPIRATION_CHIPS].sort(() => 0.5 - Math.random());
+                      setActiveChips(shuffled.slice(0, 3));
+                    }}
+                    className="text-xs font-semibold text-stone-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors"
+                  >
+                    🔄 Refresh Chips
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {activeChips.map((chip, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => onSelectTemplate(chip.prompt, 'text')}
+                      className="px-4 py-2 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-2xl text-xs font-bold text-stone-800 dark:text-slate-200 transition-all hover:scale-105 shadow-sm"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-2">
+                  <button
+                    onClick={() => onNewArchitect('text')}
+                    className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 text-white dark:text-slate-900 font-black text-sm uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Zap size={18} />
+                    <span>Architect My Prompt →</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {inspirationItems.map((item, i) => (
+                  <div key={i} className="relative group rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 shadow-sm h-48">
+                    {item.img ? (
+                      <img src={item.img} alt="Gallery item" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="p-6 h-full flex items-center justify-center bg-stone-50 dark:bg-slate-900">
+                        <Type size={32} className="text-stone-300 dark:text-slate-700 absolute top-4 right-4" />
+                        <p className="text-stone-700 dark:text-slate-300 font-medium text-sm leading-relaxed line-clamp-4">"{item.text}"</p>
+                      </div>
+                    )}
+                    
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-stone-900/90 dark:bg-slate-900/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          {item.type === 'image' ? <ImageIcon size={14} className="text-emerald-400" /> : <Type size={14} className="text-emerald-400" />}
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">{item.type} Prompt</span>
+                        </div>
+                        <p className="text-white text-xs leading-relaxed line-clamp-4">
+                          {item.prompt || item.text}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => onSelectTemplate(item.prompt || item.text || '', item.type as PromptType)}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Sparkles size={14} /> Use Architecture
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: History */}
+          <div className="lg:col-span-4 space-y-8">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-stone-200 dark:border-slate-700 h-full">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                  <Clock size={18} className="text-stone-400" />
+                  Recent Work
+                </h3>
+                <button onClick={() => onNavigate('saved')} className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                  View all
+                </button>
+              </div>
+              
+              {recentPrompts.length > 0 ? (
+                <div className="space-y-4">
+                  {recentPrompts.map(prompt => (
+                    <div key={prompt.id} onClick={() => onNavigate('saved')} className="p-4 rounded-xl bg-stone-50 dark:bg-slate-900/50 border border-stone-100 dark:border-slate-700/50 hover:bg-stone-100 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                      <h4 className="font-semibold text-sm text-stone-900 dark:text-slate-100 mb-1 truncate">{prompt.title}</h4>
+                      <p className="text-xs text-stone-500 dark:text-slate-400 truncate">{prompt.refinedPrompt}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-sm text-stone-500 dark:text-slate-400 mb-4">No saved prompts yet.</p>
+                  <button onClick={() => onNewArchitect('text')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-lg">
+                    Create your first
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Detailed Stats Modal */}
+      <AnimatePresence>
+        {showStatsModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+>>>>>>> 8658bd2 (fix(desktop): fix navigation menu blank screen, align dropdown below button, omit modality selector, add dynamic chip rotation, and upgrade dynamic flaws)
             <motion.div
               key="hero"
               initial={{ opacity: 0, y: 15 }}
